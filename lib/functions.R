@@ -2,13 +2,13 @@
 import_data <- function(){
   
   # countries
-  load("data/countries.rda")
-  countries <- countries[validTo == "12.2999", .(Landcode = numCode, isoCode)]
+  load("dat/countries.rda")
+  countries <- countries[validTo == "12.2999", .(numCode, isoCode, regCode)]
   
   # define data files to import
   ls_files <- data.table(
-    exports = list.files(file.path("data/exports"), "*.txt", full.names = TRUE, recursive = TRUE),
-    imports = list.files(file.path("data/imports"), "*.txt", full.names = TRUE, recursive = TRUE)
+    exports = list.files(file.path("dat/exports"), "*.txt", full.names = TRUE, recursive = TRUE),
+    imports = list.files(file.path("dat/imports"), "*.txt", full.names = TRUE, recursive = TRUE)
   )
   
   ls_files <- data.table::melt(ls_files, measure.vars = c("exports", "imports"), variable.name = "dat", value.name = "fil")
@@ -19,12 +19,12 @@ import_data <- function(){
                        .SD[, {
                          message(sprintf("Reading file %s...", fil));
                          laf_open_fwf(fil,
-                                      column_types = c("character","character","numeric",
+                                      column_types = c("character","character","integer",
                                                        "character","character","numeric",
                                                        "numeric","numeric"),
                                       column_widths = c(1,12,3,7,4,13,13,13),
                                       column_names = c("direction","group",
-                                                       "Landcode","period","volumecode",
+                                                       "numCode","period","volumecode",
                                                        "volume","weight","value")
                          )[,]
                        }
@@ -32,18 +32,20 @@ import_data <- function(){
                        , by = list(id, dat)]
   
   data_raw <- data_raw[!is.na(value)]
+  data_raw <- data_raw[!(group %in% c("13.1","13.2","14.1","14.2")),]
+  data_raw <- data_raw[, numCode:=as.integer(numCode)]
   
   message("Processing raw data...")
   
   # aggregate value of goods in each entry
   data_agg <- data_raw[, .(value = sum(value)),
-                       by = list(dat, direction, Landcode, group, period)]
+                       by = list(dat, direction, numCode, group, period)]
   
   # merge iso country codes and data
-  total <- merge(data_agg, countries)[, Landcode := NULL][, tradingPartner := isoCode][, isoCode := NULL]
+  total <- merge(data_agg, countries, by = "numCode")
   
-  # remove entries at the lowest level of aggregation (random shit anyways)
-  total = total[-which(nchar(total$group) == 12 | nchar(total$group) == 9), ]
+  # # remove entries at the lowest level of aggregation
+  # total = total[-which(nchar(total$group) == 12 | nchar(total$group) == 9), ]
   
   # generate keys
   total[, group_clean := gsub("[.]","",group)]
@@ -51,7 +53,7 @@ import_data <- function(){
   total[, group_8dig := sapply(1:nrow(total), function(jx) {
     paste0(total$group_clean[jx],
            paste(rep(0, 8 - total$group_nchar[jx]),collapse = ""))})]
-  total[, tsKey := paste(direction, tradingPartner, group_8dig, sep = "")]
+  total[, tsKey := paste0(direction, regCode, isoCode, group_8dig)]
   
   # retrieve dates
   toNumericDate <- function(x) {
@@ -62,7 +64,7 @@ import_data <- function(){
   total[, dateNumeric := toNumericDate(period)]
   
   # transform to time series
-  value_dt <- dcast(total[, .(tsKey, dateNumeric, value)], "dateNumeric ~ tsKey", value.var = "value")
+  value_dt <- dcast(total[, .(tsKey, dateNumeric, value)], "dateNumeric ~ tsKey", value.var = "value", fun.aggregate = sum)
   class(value_dt) <- "data.frame"
   tsl <- as.list(as.ts(zoo::zoo(x = value_dt[,-1], order.by = value_dt[, 1])))
   tsl <- lapply(tsl, function(x) {
@@ -93,3 +95,21 @@ create_predictions <- function(x,h){
   return(out)
   
 }
+
+
+# This function returns a sparse matrix supported by Matrix pkg
+smatrix2 <- function(xgts) { 
+  # Sparse matrices stored in coordinate format
+  # gmatrix contains all the information to generate smatrix
+  gmat <- xgts$groups
+  num.bts <- ncol(gmat)
+  sparse.S <- apply(gmat, 1L, function(x) {
+    ia <- as.integer(x)
+    ra <- as.integer(rep(1L, num.bts))
+    ja <- as.integer(1L:num.bts)
+    s <- sparseMatrix(i = ia, j = ja, x = ra)
+  })
+  sparse <- do.call("rbind", sparse.S)
+  return(sparse)
+}
+

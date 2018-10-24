@@ -3,14 +3,18 @@
 
 rm(list = ls())
 
+# Packages
 library(MCMCpack)
 library(hts)
 library(LaF)
 library(data.table)
 library(bsts)
 
+# Functions
 source("lib/functions.R")
 
+# Metadata
+load("data/countries.rda")
 
 
 # 1. IMPORT DATA -----------------------------------------------------------
@@ -21,25 +25,27 @@ tsl <- import_data()
 
 
 
+
 # 2. GENERATE HIERARCHY ----------------------------------------------------
 
 # extract all exports from tsl
 dat_exp <- do.call(cbind,tsl[which(substr(names(tsl),1,1) == "E")])
-colnames(dat_exp) = substr(colnames(dat_exp),2,7)
+colnames(dat_exp) = substr(colnames(dat_exp),2,13)
 
 # define hierarchy
-dat_gts <- gts(y = dat_exp,
-               gnames = c("Country Total","Goods Lvl 1","Goods Lvl 2","Goods Lvl 3",
-                          "Goods Lvl 1 per Country","Goods Lvl 2 per Country"),
-               characters = list(2, c(2,1,1)))
+tradegts <- gts(y = dat_exp,
+                gnames = c("Regions Total", "Countries Total" ,"Goods Lvl 1","Goods Lvl 2",
+                           "Goods Lvl 3","Goods Lvl 4","Goods Lvl 5","Goods Lvl 1 per Region",
+                           "Goods Lvl 2 per Region","Goods Lvl 3 per Region","Goods Lvl 4 per Region",
+                           "Goods Lvl 5 per Region","Goods Lvl 1 per Country","Goods Lvl 2 per Country",
+                           "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
+                characters = list(c(2,2), c(2,1,1,2,2)))
 
-# compute summation matrix
-S <- smatrix(dat_gts)
+# # compute summation matrix
+S <- smatrix2(tradegts)
 
 # get aggregate time series
-dat_agg <- aggts(dat_gts)
-
-
+dat_agg <- as.list(aggts(tradegts))
 
 
 
@@ -47,10 +53,9 @@ dat_agg <- aggts(dat_gts)
 # 3. FORECASTS -------------------------------------------------------------
 
 # Forecast each series individually in order to keep model flexibility
-start.time = Sys.time() # Tic
+start.time <-  Sys.time() # Tic
 fcasts <- lapply(as.list(dat_agg), function(x) create_predictions(x, h = 24))
 Sys.time() - start.time # Toc
-
 
 
 

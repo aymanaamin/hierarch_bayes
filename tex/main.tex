@@ -1,0 +1,366 @@
+% !TeX spellcheck = en_US
+\documentclass[a4paper,fleqn,11pt]{article}
+
+% header
+\include{header}
+
+\begin{document}
+
+% title page
+%\include{title}			
+
+
+
+
+% 2. Model	
+\section{Introduction}
+\label{sec:model}
+
+Example of a hierarchy with $k = 3$ levels, $m = 13$ series in total and $q = 9$ series at the bottom of the hierarchy.\\
+
+\begin{figure}[H]
+	\centering
+	\begin{forest}
+	before packing={
+		forked edges,
+	}
+		[{$Y_0$}
+			 [{$Y_{01}$}
+		 		[{$Y_{011}$}]
+				[{$Y_{012}$}]
+		 		[{$Y_{012}$}]
+		 	]
+			 [{$Y_{02}$}
+		 		[{$Y_{021}$}]
+				[{$Y_{022}$}]
+		 		[{$Y_{023}$}]
+		 	]
+			 [{$Y_{03}$}
+				[{$Y_{031}$}]
+				[{$Y_{032}$}]
+				[{$Y_{033}$}]
+			]
+		]
+	\end{forest}
+\vspace{0.5cm}
+	\caption{Simple Example Hierarchy}
+\end{figure}
+
+If we define $Y_t = [Y_0, Y_{01}, Y_{02}, \hdots, Y_{033}]'$ to be an ($m \times 1$) vector of top-down stacked observations from all levels, it must hold at each point in time $t$ that
+\begin{align}
+Y_t &= S Y_{k,t}
+\end{align}
+where $Y_{k,t}$ is a ($q \times 1$) vector containing the observations at level $k$, the bottom of the hierarchy, and $S$ is an ($m \times q$) aggregation matrix. For the above example, $S$ has to be constructed in the following way.
+\begin{align*} S &=
+\begin{bmatrix}
+\ 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1\ \ \\
+\ 1 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0\ \ \\
+\ 0 & 0 & 0 & 1 & 1 & 1 & 0 & 0 & 0\ \ \\
+\ 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 1\ \ \\
+\ 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\ \ \\
+\ 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0\ \ \\
+  &   &   &   & \vdots &   &   &   &   \\
+\ 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1\ \ 
+\end{bmatrix}
+\end{align*}
+For the forecasts to be consistent and additive, they usually have to be estimated either top-down or bottom-up. However, there are benefits to forecasting all series in the hierarchy. It might be that different models provide better fits, varying information sets are available, or judgment predictions have to be used. As a result of this, the different levels of the forecasted hierarchy usually cannot be aggregated consistently. In order to reconcile forecasts at each level of the hierarchy, \cite{Hyndman2011} show that optimal predictions at the bottom level can be obtained using the following regression approach.
+\begin{align}
+Y_t(h) &= S\beta_{h} + e_t(h)
+\end{align}
+where $Y_t(h)$ is an ($m \times 1$) vector containing the h-periods-ahead forecasts at time $t$ for each level in the hierarchy. $\beta_{h}$ represents the optimal predictions at the bottom level that minimize the deviations between the individual forecasts and the consistent hierarchy. The reconciliation error term $e_t(h)$ follows a normal distribution with mean 0 and covariance matrix $\Sigma_h$. There is obviously a high level of heteroskedasticity in the error terms, which is why $\beta_h$ has to be estimated using generalized least squares. The optimal point forecasts result therefore from the following weighted least squares regression.
+\begin{align}
+\label{eq:reg}
+\beta_{h} &= \left(S'\Sigma_h^{-1}S \right)^{-1} S'\Sigma_h^{-1}Y_t(h)
+\end{align}
+Intuitively, $\beta_h$ minimizes the reconciliation error, which is the squared distance between the actual and reconciled forecasts. As a result of the weighting matrix, forecasts with a higher prediction error receive less weight in the regression.\\
+
+
+\section{Bayesian Forecast Reconciliation}
+\subsection{Proposition}
+Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation. It is assumed that we have $n$ samples from the predictive distribution of each of the $m$ predictions. Therefore, $Y_{i}$ denotes a vector length $m$ that contains a draw $i$ from the predictive distribution of all forecasts, where $i = 1,\hdots, n$. The unobservable error term consists of two components, a prediction error $e_{i}$ and a fixed effect $\alpha$. The latter is a vector of length $m$ and can be interpreted as containing the reconciliation errors that are specific to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{Y}$ and the reconciled forecast mean $\tilde{Y}$. Furthermore, there is no common intercept by design. When all predictors are zero, no bottom-level forecasts are aggregated and the expected response should therefore be zero as well. Because the slope line passes through the origin, the reconciliation errors also do not necessarily sum to zero. The following regression equation can then be used to estimate $\alpha$ and $\beta$.
+\begin{align}
+Y_{i} &= \alpha + S\beta + e_{i}
+\end{align}
+where $e$ follows a normal distribution with mean zero and variance $\Sigma$. An error-components model of this form is quite frequently used in panel data regressions. Since the aggregation matrix $S$ is fixed, the reconciliation error is uncorrelated with the explanatory variables. It is therefore possible to treat the reconciliation errors as random effects and to omit $\alpha$ from the above regression. The optimal forecasts at the bottom level are then still estimated consistently. 
+
+Estimating the reconciliation errors explicitly as a fixed effect has several advantages, but proves to be rather tricky. A standard technique in panel models is to get rid of the fixed effect by demeaning the data or taking first differences. If there is a sufficient number of observations, the fixed effects can then be retrieved by subtracting the fitted values from the responses. This is not possible here because there is no variation in the regressor $S$. Another approach would be to include a dummy for each variable to account for the fixed effects. However, this is unfeasible too because it leads to perfect multicollinearity in the explanatory variables.
+
+\begin{figure}[H]
+\label{jacksonpollock}
+\begin{tikzpicture}[
+    thick,
+    >=stealth',
+    dot/.style = {
+      draw,
+      fill = white,
+      circle,
+      inner sep = 0pt,
+      minimum size = 4pt
+    }
+  ]
+    \coordinate (O) at (0,0);
+    \draw (0,0)+(0:0.9) arc(0:45:0.9);
+    \node at (22.5:0.6) {\footnotesize $45^\circ$};
+    \draw[->] (0,0) -- (0,7) coordinate[label = {below left:$Y_{i}$}] (ymax);
+    \draw[->] (0,0) -- (10,0) coordinate[label = {below left:$S \beta$}] (xmax);
+    \draw[gray] (0,0) -- (6,6);
+    \foreach \Point in {(2,1.4), (2,1.9), (2,2), (2,2.1), (2,2.3),
+                      (2,2.7), (2,2.8), (2,3.2), (2,3.4), (2,3.5)} \node at \Point {\textbullet};
+    \foreach \Point in {(3,2.5), (3,2.8), (3,3), (3,3.2), (3,3.3),
+                      (3,3.7), (3,3.8), (3,4), (3,4.1), (3,4.4)} \node at \Point {\textbullet};
+    \foreach \Point in {(5,2.8), (5,3.1), (5,3.4), (5,3.7), (5,3.8),
+                      (5,4.2), (5,4.3), (5,4.5), (5,4.9), (5,5.4)} \node at \Point {\textbullet};    
+
+    \node [label = {[shift={(-0.35,-0.55)}] \footnotesize $\hat{Y}_T$}] at (5,4) {$\circ$};
+    \node [label = {[shift={(-0.3,-0.55)}] \footnotesize $\hat{Y}_2$}] at (3,3.5) {$\circ$};
+    \node [label = {[shift={(-0.3,-0.55)}] \footnotesize $\hat{Y}_1$}] at (2,2.5) {$\circ$};
+    
+    \draw[gray,dashed] (0,5) node[left]{\footnotesize $\tilde{Y}_T = \tilde{Y}_1 + \tilde{Y}_2$} -- (5,5);
+    \draw[gray,dashed] (0,3) node[left]{\footnotesize $\tilde{Y}_2$} -- (3,3);    
+    \draw[gray,dashed] (0,2) node[left]{\footnotesize $\tilde{Y}_1$} -- (2,2); 
+
+    \draw[gray,decoration={brace,raise=5pt},decorate]
+  (5.2,5) -- node[right=6pt] {\footnotesize Reconciliation error for $Y_T$} (5.2,4);
+    
+\end{tikzpicture}
+\caption{Graphical Representation of a Reconciliation Regression.}
+\end{figure}
+
+A convenient solution to this identification problem comes from Bayesian econometrics. There are several other fields, where identification is achieved by means of informative priors. In structural vector auto-regressions, the structural coefficient matrices can be identified through prior assumptions about the sign of shocks \citep{Baumeister2015}. In dynamic factor models, different rotations of latent factors and loadings are observationally equivalent. The factors can be identified through prior restrictions on the factor loadings \citep{Bai2015}.
+
+In Bayesian statistics, data is considered to be fixed and parameters are treated as random variables. The researcher has a prior belief about the distribution of the parameters in a model. After observing the data, this prior belief is combined with the likelihood according to Bayes' theorem in order to obtain the posterior distribution of the parameters. This principle can be applied to $\alpha$, $\beta$ and $\Sigma$ in the reconciliation regression. The consistent bottom-level forecasts $\beta$ follow a normal distribution with mean $b$ and covariance $B$. The reconciliation errors $\alpha$ are also distributed normally with mean $a$ and covariance $A$. The prediction errors follow a normal distribution with mean zero and variance $\Sigma$. The aggregation matrix $S$ and the sample of unreconciled forecasts $Y$ are believed to be fixed.
+\begin{align}
+f(\alpha, \beta, \Sigma\ |\ S,Y) \propto f(Y,S\ |\ \alpha, \beta, \Sigma) \times f(\alpha, \beta, \Sigma)
+\end{align}
+In other words, the posterior distribution of the bottom-level forecasts is proportional to the likelihood (of the hierarchy to be consistent) times the prior distribution of the bottom-level forecasts. We have little prior knowledge about the reconciled bottom-level forecasts $\beta$ and the predictive distribution $\Sigma$. However, we may have some prior belief about the reconciliation errors because we trust some forecasting models more than others. This could be due to better data availability, better forecasting performance in the past or subjective judgment of the forecaster. A sufficiently narrow prior for $\alpha$ allows the identification of the model parameters.\\
+
+
+
+
+\subsection{Estimation}
+In order to approximate the distribution of $Y_t(h)$, we draw $n$ h-periods-ahead-predictions $Y_i$, with $i = 1, \hdots, n$, from their forecasted distributions. This is equivalent to solving a seemingly unrelated regression using generalized least squares. Following \cite{Greenberg2008}, the likelihood function for the data is given by 
+\begin{align*}
+f(Y,S\ |\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Sigma|}\exp\left[\frac{1}{2} \sum_i (Y_i - \alpha - S\beta)'\Sigma^{-1}(Y_i - \alpha - S\beta)\right]
+\end{align*}
+and the posterior distribution is accordingly given by
+\begin{align*}
+f(\alpha,\beta,\Sigma\ |\ Y,S) & \propto \frac{1}{|\Sigma|^{n/2}}\exp\left[-\frac{1}{2} \sum_i (Y_i - \alpha - S\beta)'\Sigma^{-1}(Y_i - \alpha - S\beta)\right] \\
+&\times \exp \left[-\frac{1}{2}(\alpha - a_0)'A_0^{-1}(\alpha - a_0)\right] \\
+&\times \exp \left[-\frac{1}{2}(\beta - b_0)'B_0^{-1}(\beta - b_0)\right] \\
+&\times \frac{1}{|\Sigma|(v_0 - m - 1)} \exp \left[-\frac{1}{2} tr(R_0^{-1}\Sigma^{-1}) \right]
+\end{align*}
+We are interested in the marginal distribution of $\alpha$, $\beta$ and $\Sigma$. This can be achieved by approximating the joint posterior distribution through Gibbs sampling from the conditional distributions and then averaging the samples. See for instance \cite{Kim1999} (...) for derivation. First some random starting values for the parameters are chosen. Afterwards, the following steps are repeated until convergence:
+
+\begin{enumerate}
+\item \textbf{Draw $\alpha$ conditional on $\beta,\Sigma,Y,S$}\\
+The fixed effects $\alpha$ can be obtained from a regression of $Y_i - S\beta$ on an identity matrix. The conditional posterior distribution for $\alpha$ is given by
+\begin{align}
+\alpha\ |\ \beta,\Sigma,Y,S &\sim N(a_1,A_1)
+\end{align}
+where
+\begin{align*}
+A_1 &= \left(\sum_i \Sigma^{-1} + A_0^{-1}\right)^{-1} = \left(n\Sigma^{-1} + A_0^{-1} \right)^{-1}\\
+a_1 &= A_1 \left(\sum_i \Sigma^{-1} (Y_i - S\beta) + A_0^{-1}a_0\right)
+\end{align*}
+The prior mean $a_0$ should be set to zero and the prior covariance $A_0$ should be a diagonal matrix. The entries on the diagonal should be lower for forecasts that the researcher is more confident in. Entries that correspond to uncertain forecasts can be set higher. Perhaps a reasonable prior can be derived from the level of aggregation that the forecast is in. Different weighting schemes might be tested and conclusions can be drawn from the forecast combination literature, such as \cite{Cesur2016} or \cite{Brooks2001}.\\
+
+\item \textbf{Draw $\beta$ conditional on $\alpha,\Sigma,Y,S$}\\
+The slope coefficients $\beta$ can be obtained from a regression of $Y_i - \alpha$ on $S$. The conditional posterior distribution for $\beta$ is given by
+\begin{align}
+\beta\ |\ \alpha,\Sigma,Y,S &\sim N(b_1,B_1)
+\end{align}
+where
+\begin{align*}
+B_1 &= \left(\sum_i S'\Sigma^{-1}S + B_0^{-1}\right)^{-1} = \left(nS'\Sigma^{-1}S + B_0^{-1} \right)^{-1}\\
+b_1 &= B_1 \left(\sum_i S'\Sigma^{-1} (Y_i - \alpha) + B_0^{-1}b_0\right)
+\end{align*}
+Unless we have some reason to believe otherwise, the priors $b_0$ and $B_0$ should be chosen as uninformative as possible. Prior belief on the divergence between the initial and the reconciled forecasts should be incorporated in the prior on $\alpha$. \\
+
+\item \textbf{Draw $\Sigma$ conditional on $\alpha,\beta,Y,S$}\\
+$\Sigma$ is a diagonal matrix since the $n$ draws from the predictive distribution come from different models and the approximated densities are generated independently. Because the off-diagonal elements are zero, it could also be seen as a weighted least squares regression. This resembles the alternative estimator \#3 for the coherency errors in \cite{Wickramasuriya2015}. Each entry $\sigma_{i}$ on the diagonal can therefore be drawn equation-by-equation from an inverse Gamma distribution.
+\begin{align}
+\sigma_{i}\ |\ \alpha,\beta,Y,S \sim IG(v_1/2,d_1/2)
+\end{align}
+where
+\begin{align*}
+v_1 &= v_0 + n\\
+d_1 &= d_0 + \sum_i e_i'e_i
+\end{align*}
+where $e_i = Y_i - \alpha - S \beta$.\\
+
+\item \textbf{Draw $\tilde{Y}$ conditional on $\alpha,\Sigma,\beta,S$}\\
+We can also generate the predictive distribution (in the fitted value senses) for $\tilde{Y}$, the predictive density of $Y$. \cite{Percy1992} has shown that an analytic solution is difficult to calculate and it is far easier to draw samples from the joint posterior distribution of the parameters and then generate the predicted values of $Y$ conditional on the data.
+\begin{align}
+\tilde{Y}\ |\ \alpha,\beta,\Sigma,S \sim N(S\beta,\Sigma)
+\end{align}
+Convergence of the Gibbs sampler can be checked using the recursive mean of the chains. After convergence is achieved, a sufficiently large number of these draws are saved.
+\end{enumerate}
+
+\noindent The mean of the hierarchically consistent forecasts can then be computed using discrete statistics on the saved draws from the posterior.\\
+
+\subsection{Prior Selection}
+As noted before, the priors for the parameters should be as diffuse as possible with the exception of $A_0$, the prior variance of the fixed effects. There are several outcomes, depending on the information content of the prior.
+\begin{itemize}
+    \item\textbf{Diffuse prior}. Setting the prior variance of $\alpha$ close to infinity assumes that we have absolutely no knowledge about the reconciliation errors. As a result, the parameters cannot be uniquely identified and the Gibbs sampler does not converge. [Proof: Where is the boundary between diffuse and vague?]
+    \item \textbf{Vague prior}. The prior variance of $\alpha$ can be set such that each entry is the same and reasonably low. This implies that we have some prior knowledge that the reconciliation errors are distributed around zero. As a result, $\beta$ reduces to the OLS estimate in \cite{Hyndman2011}. [Proof]
+    \item \textbf{Informed prior}. The prior variance of $\alpha$ can also reflect prior knowledge. A high value on the diagonal of $A_0$ implies a belief that the reconciliation error is larger, whereas a small value implies a belief that the reconciliation error should be small. A natural choice for $A_0$ is a matrix with the corresponding variances of the prediction errors on the diagonal, which leads to the GLS estimate for $\beta$ in \cite{Hyndman2016}. [Proof]. Other possibilities for the prior variance could be the number of series at each node or manually setting the prior variance on specific reconciliation errors to zero. 
+\end{itemize}
+
+\clearpage
+
+\section{Simulation Exercise}
+
+Simulate hierarchies of various sizes, levels and time series properties and compare benchmark performance / forecasting accuracy with other methods such as
+\begin{itemize}
+    \item Top-Down Approach
+    \item Bottom-Up Approach
+    \item Middle-Out Approach
+    \item GLS Reconciliation \cite{Hyndman2011}
+    \item Minimum Trace Reconciliation \cite{Wickramasuriya2015}
+    \item Alternative Weighting Matrices
+    \item No Reconciliation\\
+\end{itemize}
+
+What happens if we have forecasts that do not follow a normal distribution? An example from my own experience: Swiss imports are driven quite heavily by imports of airplanes and it is uncertain when they arrive, e.g. forecasts are bimodal.
+
+\clearpage
+
+\section{Empirical Application}
+\subsection{Data}
+We use a comprehensive dataset of Swiss foreign trade in goods. For both exports and imports, it contains the nominal value in Swiss francs of goods traded with 245 countries and dependent territories. They are aggreg The goods are categorized according to the economic sector, following a national nomenclature covering 14 main groups and 272 subgroups. The hierarchy is unbalanced, meaning that certain goods categories are available more disaggregated than others. This results in a hierarchy with up to 5 levels. The 14 main groups are the following:
+\begin{enumerate}[itemsep=-1ex,partopsep=1ex,parsep=1ex]
+    \item Forestry and agricultural products, fisheries
+    \item Energy source
+    \item Textiles, clothing, shoes
+    \item Paper, stationery and graphical products
+    \item Leather, rubber, plastics 
+    \item Products of the chemical and pharmaceutical industry
+    \item Stones and earth
+    \item Metals
+    \item Machines, appliances, electronics
+    \item Vehicles
+    \item Precision instruments, clocks and watches and jewellery  
+    \item Various goods such as music instruments, home furnishings, toys, sports equipment
+    \item Precious metals, precious and semi-precious stones
+    \item Works of art and antiques
+\end{enumerate}
+Because of the geographical and the categorical dimension, there is no unique hierarchical structure. Following \cite{Hyndman2016}, these time series can therefore be thought of as a grouped time series. There are 63'516 time series with non-zero entries in total, 35'602 for the export hierarchy and 27'914 for the import hierarchy. The time series are available in monthly frequency from 1989 on and are not adjusted for working days or seasonality. The data is collected by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}} and made available in a machine-friendly data format only on basis of a subscription.\\
+
+
+\subsection{Results}
+Repeat comparison from simulation exercise, construct export and import hierarchies by geographical region, countries and product categories. As a by-product, there could a visualization in the spirit of the MIT Trade Atlas\footnote{\url{https://atlas.media.mit.edu/en/visualize/tree_map/hs92/export/ltu/all/show/2016/ }} be developed.\\
+
+Results from running hts on the data, using the average across the root mean squared errors and mean absolute percentage errors of all series.\\
+\begin{table}[H]
+\centering
+\caption{Forecast Accuracy by Standard Aggregation Methods}
+\small
+\begin{tabularx}{\textwidth}{Xcclcclcclcc}
+\toprule
+& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
+\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
+& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
+\midrule
+Bottom-up &  &  &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\addlinespace
+Middle-out &  &  &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\addlinespace
+\multicolumn{3}{l}{Top-down (Gross-Sohl A)} &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\addlinespace
+\multicolumn{3}{l}{Top-down (Gross-Sohl F)} &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\addlinespace
+\multicolumn{3}{l}{Top-down (Forecast Proportions)} &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Using optimal forecast combination with different weighting schemes:\\
+\begin{table}[H]
+\centering
+\caption{Forecast Accuracy by Optimal Forecast Combination Weights}
+\small
+\begin{tabularx}{\textwidth}{Xcclcclcclcc}
+\toprule
+& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
+\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
+& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
+\midrule
+\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\addlinespace
+\multicolumn{3}{l}{WLS (forecast variance weights) } &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\addlinespace
+\multicolumn{3}{l}{MinT (full covariance weights) } &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\addlinespace
+\multicolumn{3}{l}{nseries (numer of series at each node)} &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\ \\
+
+Results from Bayesian estimation.. In addition, it might be interesting to look at forecast errors for different regional/categorical aggregates:
+\begin{table}[H]
+\centering
+\caption{Forecast Accuracy by Regional and Categorical Aggregates}
+\small
+\begin{tabularx}{\textwidth}{Xcclcclcclcc}
+\toprule
+& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
+\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
+& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
+\midrule
+\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
+\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+
+\clearpage
+
+\section{Conclusion}
+
+
+
+
+
+
+
+\clearpage
+
+% bibliography
+\pagenumbering{Roman}
+\setcounter{page}{3}
+\bibliography{library}
+\bibliographystyle{apalike}
+
+\clearpage
+
+
+% appendix
+\include{appendix}
+
+
+
+
+\end{document}

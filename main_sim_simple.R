@@ -11,19 +11,19 @@ source("lib/functions.R")
 
 # Options
 options(scipen=10)
-set.seed(123)
-
+# set.seed(123)
 
 
 # 1. GENERATE DATA ---------------------------------------------------------
 
 # Model Parameters
 t <-  100
-n <-  1000 # Forecast draws
-q <- 5 # Series at the bottom level
+n <-  10000 # Forecast draws
+q <- 30 # Series at the bottom level
 
 # Some example forecasts to play around with
 beta_sim <- runif(q,0,100)
+# beta_sim <- rep(20,q)
 dat_hts <- hts(y = ts(t(beta_sim), start = 2015))
 
 plot(dat_hts)
@@ -45,8 +45,8 @@ dat_agg <- aggts(dat_hts)
 
 # 3. SIMULATE FORECAST ERRORS ---------------------------------------------
 
-alpha_sim = runif(m,-5,5)
-fcasts = cbind(t(dat_agg + alpha_sim), S %*% runif(q,0,20))
+alpha_sim = c(100,rep(0,q))#
+fcasts = cbind(t(dat_agg + alpha_sim), S %*% runif(q,0,100))
 colnames(fcasts) = c("mean","var")
 
 
@@ -58,7 +58,8 @@ colnames(fcasts) = c("mean","var")
 
 # 4.1 Define Important Prior
 # Reflects our certainty about reconciliation error being closer to zero
-A0 = diag(rep(1e+3,m))#; A0[1,1] = 0.01 
+# A0 = diag(rep(100,m))#; A0[3,3] = 0.01 
+A0 = diag(fcasts[,2])
 
 # 4.2 Define Irrelevant Priors
 b0 = matrix(rep(0,q)) # diffuse prior for beta
@@ -68,9 +69,9 @@ v0 = rep(0,m) # scale, beta
 d0 = rep(0,m) # shape, alpha
 
 # 4.3 Gibbs Sampler Preliminaries
-length_max = 100000
-length_min = 5000
-length_sample = 5000
+length_max = 5000
+length_min = 2000
+length_sample = 1000
 
 # Preallocation
 chain = matrix(NA, nrow = length_max, ncol = q+2*m)
@@ -170,7 +171,7 @@ colnames(check) <- c("Fitted","Original")
 print(check)
 
 
-# 5.2 Compare Fitted to Simulated Forecasts (but excluding alpha)
+# 5.2 Compare Fitted to Simulated Forecasts
 cmprsn <- round(cbind(fcasts,cbind(X_mean, diag(X_var))),2)
 colnames(cmprsn) <- c("Inc Mean","Inc Var","Cons Mean","Cons Var")
 print(cmprsn)
@@ -179,10 +180,10 @@ rownames(cmprsn_sums) <- c("Total","Sum of Bottom-LvL")
 print(cmprsn_sums)
 
 # 5.3 Compare OLS, WLS and B-SUR
-regs <- round(cbind(coef(lm(fcasts[,1] ~ 0 + S)),
-            coef(lm(fcasts[,1] ~ 0 + S, weights = 1/fcasts[,2])),
-            beta_mean,
-            beta_sim),2)
+regs <- round(cbind(solve(t(S) %*% S) %*% t(S) %*% fcasts[,1],
+                    solve(t(S) %*% solve(diag(fcasts[,2])) %*% S) %*% t(S) %*% solve(diag(fcasts[,2])) %*% fcasts[,1],
+                    beta_mean,
+                    beta_sim),2)
 colnames(regs) <- c("OLS","WLS","B-SUR","Simulated")
 regs
 
