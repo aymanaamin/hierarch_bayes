@@ -14,7 +14,7 @@ library(bsts)
 source("lib/functions.R")
 
 # Metadata
-load("data/countries.rda")
+load("dat/countries.rda")
 
 
 # 1. IMPORT DATA -----------------------------------------------------------
@@ -32,8 +32,8 @@ colnames(dat_exp) = substr(colnames(dat_exp),2,13)
 
 # define hierarchy
 tradegts <- gts(y = dat_exp,
-               gnames = c("Regions Total", "Countries Total" ,"Goods Lvl 1","Goods Lvl 2",
-                          "Goods Lvl 3","Goods Lvl 4","Goods Lvl 5","Goods Lvl 1 per Region",
+               gnames = c("Regions Total", "Countries Total" ,"Goods Total Lvl 1","Goods Total Lvl 2",
+                          "Goods Total Lvl 3","Goods Total Lvl 4","Goods Total Lvl 5","Goods Lvl 1 per Region",
                           "Goods Lvl 2 per Region","Goods Lvl 3 per Region","Goods Lvl 4 per Region",
                           "Goods Lvl 5 per Region","Goods Lvl 1 per Country","Goods Lvl 2 per Country",
                           "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
@@ -41,8 +41,14 @@ tradegts <- gts(y = dat_exp,
 
 
 # aggregate
-# agg_gts <- as.list(aggts(tradegts))
+agg_gts <- as.list(aggts(tradegts))
 
+# check out some series
+plot(agg_gts$Total) 
+plot(agg_gts$'Goods Total Lvl 1/06') # Total Pharmaceutical products, very inelastic
+plot(agg_gts$'Goods Total Lvl 1/09') # Total Machinery & Equipment, depends strongly on European business cycle and CHF exchange rate
+plot(agg_gts$'Goods Lvl 1 per Country/AOAU11') # Watches to Australia
+plot(agg_gts$'Goods Lvl 1 per Region/AF10') # Vehicles to Region 'Africa and Middle East'
 
 
 # 3. FORECASTS -------------------------------------------------------------

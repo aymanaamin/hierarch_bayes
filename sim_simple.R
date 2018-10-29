@@ -18,12 +18,12 @@ options(scipen=10)
 
 # Model Parameters
 t <-  100
-n <-  10000 # Forecast draws
-q <- 30 # Series at the bottom level
+n <-  1000 # Forecast draws
+q <- 5 # Series at the bottom level
 
 # Some example forecasts to play around with
-beta_sim <- runif(q,0,100)
-# beta_sim <- rep(20,q)
+# beta_sim <- runif(q,0,100)
+beta_sim <- rep(20,q)
 dat_hts <- hts(y = ts(t(beta_sim), start = 2015))
 
 plot(dat_hts)
@@ -45,7 +45,7 @@ dat_agg <- aggts(dat_hts)
 
 # 3. SIMULATE FORECAST ERRORS ---------------------------------------------
 
-alpha_sim = c(100,rep(0,q))#
+alpha_sim = c(20,rep(0,q))#
 fcasts = cbind(t(dat_agg + alpha_sim), S %*% runif(q,0,100))
 colnames(fcasts) = c("mean","var")
 
@@ -69,8 +69,8 @@ v0 = rep(0,m) # scale, beta
 d0 = rep(0,m) # shape, alpha
 
 # 4.3 Gibbs Sampler Preliminaries
-length_max = 5000
-length_min = 2000
+length_max = 10000
+length_min = 5000
 length_sample = 1000
 
 # Preallocation
