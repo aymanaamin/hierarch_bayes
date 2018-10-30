@@ -113,3 +113,81 @@ smatrix2 <- function(xgts) {
   return(sparse)
 }
 
+
+run_gibbs <- function(length_max,length_min,length_sample){
+  
+  # Preallocation
+  chain = matrix(NA, nrow = length_max, ncol = q+2*m)
+  alpha_save = matrix(NA,length_max,m)
+  beta_save = matrix(NA,length_max,q)
+  Sigma_save = array(NA,c(m,m,length_max))
+  X_save = matrix(NA,length_max,m)
+  
+  # Starting values
+  Sigma = diag(m)
+  alpha = matrix(0,m)
+  beta = matrix(0,q)
+  
+  for(jx in 1:length_max){
+    
+    if(jx %% 1000 == 0){print(sprintf('Gibbs Sampler at %d out of a maximum of %d Draws.',jx,length_max))}
+    
+    # 1. Compute Alpha
+    A1 <- solve(n*solve(Sigma) + solve(A0))
+    a1 <- A1 %*% (rowSums(diag(m) %*% solve(Sigma) %*% (Y - matrix(rep(S %*% beta,n),ncol = n,nrow = m))) + solve(A0) %*% a0)
+    alpha <- a1 + t(rnorm(m,0,1) %*% chol(A1))
+    
+    
+    # 2. Compute Beta
+    B1  <- solve(n*(t(S) %*% solve(Sigma) %*% S) + solve(B0))
+    b1 <- B1 %*% (rowSums(t(S) %*% solve(Sigma) %*% (Y - matrix(rep(alpha,n),ncol = n,nrow = m))) + solve(B0) %*% b0)
+    beta <- b1 + t(rnorm(q,0,1) %*% chol(B1))
+    
+    
+    # 3. Compute Sigma
+    E <- (Y - matrix(rep(alpha,n),ncol = n,nrow = m)) - matrix(1,1,n) %x% (S %*% beta)
+    Sigma <- riwish(v = n, S = E %*% t(E))
+    
+    # X.1 Save draws
+    alpha_save[jx,] = alpha
+    beta_save[jx,] = beta
+    Sigma_save[,,jx] = Sigma
+    X_save[jx,] = S %*% beta + t(rnorm(m,0,1) %*% chol(Sigma)) 
+    
+    # X.2 Convergence check
+    chain[jx,] = c(alpha,beta,diag(Sigma))
+    
+    # Trace Plot
+    if(jx %% 1000 == 0) plot(mcmc(chain[c(1:jx),c(1,m+1,m+q+1)]))
+    
+    # Check for Convergence
+    if(jx %% 1000 == 0 & jx > length_min){
+      
+      check_geweke = geweke.diag(mcmc(chain[c((jx-length_sample+1):jx),]))
+      print(sprintf('Convergence achieved for %d%% of chains.',
+                    round(100*sum(abs(check_geweke$z) < 1.96)/length(check_geweke$z)),jx))
+      
+      
+      if(sum(abs(check_geweke$z) < 1.96)/length(check_geweke$z) > 0.9){
+        
+        alpha_out = alpha_save[c((jx-length_sample):(jx-1)),]
+        beta_out = beta_save[c((jx-length_sample):(jx-1)),]
+        Sigma_out = Sigma_save[,,c((jx-length_sample):(jx-1))]
+        X_out = X_save[c((jx-length_sample):(jx-1)),]
+        
+        # Compute discrete statistics of posterior distribution
+        result <- list(
+          "beta" = colMeans(beta_out),
+          "beta_var" = var(beta_out),
+          "alpha" = colMeans(alpha_out),
+          "alpha_var" = var(alpha_out),
+          "Sigma_mean" = apply(Sigma_out, 1:2, mean),
+          "X" = colMeans(X_out),
+          "X_var" = var(X_out))
+        
+        return(result)
+        
+      }
+    }
+  }
+}
