@@ -44,9 +44,6 @@ import_data <- function(){
   # merge iso country codes and data
   total <- merge(data_agg, countries, by = "numCode")
   
-  # # remove entries at the lowest level of aggregation
-  # total = total[-which(nchar(total$group) == 12 | nchar(total$group) == 9), ]
-  
   # generate keys
   total[, group_clean := gsub("[.]","",group)]
   total[, group_nchar := nchar(group_clean)] 
@@ -55,16 +52,24 @@ import_data <- function(){
            paste(rep(0, 8 - total$group_nchar[jx]),collapse = ""))})]
   total[, tsKey := paste0(direction, regCode, isoCode, group_8dig)]
   
+  return(total[, .(period,value,tsKey)])
+  
+}
+
+
+dt2ts <- function(dtx){
+  
   # retrieve dates
   toNumericDate <- function(x) {
     num <- as.numeric(x)
     mnth <- floor(num)
     10000*(num - mnth) + (mnth - 1)/12
   }
-  total[, dateNumeric := toNumericDate(period)]
+  
+  dtx[, dateNumeric := toNumericDate(period)]
   
   # transform to time series
-  value_dt <- dcast(total[, .(tsKey, dateNumeric, value)], "dateNumeric ~ tsKey", value.var = "value", fun.aggregate = sum)
+  value_dt <- dcast(dtx[, .(tsKey, dateNumeric, value)], "dateNumeric ~ tsKey", value.var = "value", fun.aggregate = sum)
   class(value_dt) <- "data.frame"
   tsl <- as.list(as.ts(zoo::zoo(x = value_dt[,-1], order.by = value_dt[, 1])))
   tsl <- lapply(tsl, function(x) {
@@ -72,9 +77,11 @@ import_data <- function(){
     x
   })
   
-  return(tsl)
+  return(do.call(cbind,tsl))
   
 }
+
+
 
 create_predictions <- function(x,h){
   
@@ -121,6 +128,7 @@ run_gibbs <- function(length_max,length_min,length_sample){
   alpha_save = matrix(NA,length_max,m)
   beta_save = matrix(NA,length_max,q)
   Sigma_save = array(NA,c(m,m,length_max))
+  A1_save = array(NA,c(m,m,length_max))
   X_save = matrix(NA,length_max,m)
   
   # Starting values
@@ -148,46 +156,51 @@ run_gibbs <- function(length_max,length_min,length_sample){
     E <- (Y - matrix(rep(alpha,n),ncol = n,nrow = m)) - matrix(1,1,n) %x% (S %*% beta)
     Sigma <- riwish(v = n, S = E %*% t(E))
     
+    
     # X.1 Save draws
     alpha_save[jx,] = alpha
     beta_save[jx,] = beta
     Sigma_save[,,jx] = Sigma
+    A1_save[,,jx] = A1
     X_save[jx,] = S %*% beta + t(rnorm(m,0,1) %*% chol(Sigma)) 
     
     # X.2 Convergence check
-    chain[jx,] = c(alpha,beta,diag(Sigma))
+    if(jx == 1){
+      chain[jx,] = c(alpha,beta,diag(Sigma))
+    } else {
+      chain[jx,] = (chain[jx-1,]*(jx-1) + c(alpha,beta,diag(Sigma)))/jx
+    }
     
     # Trace Plot
     if(jx %% 1000 == 0) plot(mcmc(chain[c(1:jx),c(1,m+1,m+q+1)]))
     
     # Check for Convergence
-    if(jx %% 1000 == 0 & jx > length_min){
+    if(jx == length_min){
+    
+      # Compute discrete statistics of posterior distribution
+      results <- list(
+        "beta" = colMeans(beta_save[c((jx-length_sample):(jx-1)),]),
+        "beta_var" = var(beta_save[c((jx-length_sample):(jx-1)),]),
+        "alpha" = colMeans(alpha_save[c((jx-length_sample):(jx-1)),]),
+        "alpha_var" = var(alpha_save[c((jx-length_sample):(jx-1)),]),
+        "Sigma_mean" = apply(Sigma_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
+        "A1" = apply(A1_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
+        "X" = colMeans(X_save[c((jx-length_sample):(jx-1)),]),
+        "X_var" = var(X_save[c((jx-length_sample):(jx-1)),]))
       
-      check_geweke = geweke.diag(mcmc(chain[c((jx-length_sample+1):jx),]))
-      print(sprintf('Convergence achieved for %d%% of chains.',
-                    round(100*sum(abs(check_geweke$z) < 1.96)/length(check_geweke$z)),jx))
+      return(results)
       
-      
-      if(sum(abs(check_geweke$z) < 1.96)/length(check_geweke$z) > 0.9){
-        
-        alpha_out = alpha_save[c((jx-length_sample):(jx-1)),]
-        beta_out = beta_save[c((jx-length_sample):(jx-1)),]
-        Sigma_out = Sigma_save[,,c((jx-length_sample):(jx-1))]
-        X_out = X_save[c((jx-length_sample):(jx-1)),]
-        
-        # Compute discrete statistics of posterior distribution
-        result <- list(
-          "beta" = colMeans(beta_out),
-          "beta_var" = var(beta_out),
-          "alpha" = colMeans(alpha_out),
-          "alpha_var" = var(alpha_out),
-          "Sigma_mean" = apply(Sigma_out, 1:2, mean),
-          "X" = colMeans(X_out),
-          "X_var" = var(X_out))
-        
-        return(result)
-        
-      }
     }
   }
+}
+
+
+define_prior <- function(cov, x, factor){
+  
+  mat <- cov
+  mat[x,x] <- mat[x,x]/factor^(1/length(x))
+  mat[-x,-x] <-  mat[-x,-x] * factor^(1/(ncol(mat)-length(x)))
+  
+  return(mat)
+  
 }
