@@ -83,25 +83,25 @@ dt2ts <- function(dtx){
 
 
 
-create_predictions <- function(x,h){
-  
-  # Run the bsts model
-  ss = AddLocalLinearTrend(list(), x)
-  ss = AddSeasonal(ss, x, nseasons = 4)
-  bsts.model = bsts(x, state.specification = ss, niter = 500, ping = 0)
-  
-  # Get a suggested number of burn-ins
-  burn = SuggestBurn(0.1, bsts.model)
-  
-  # Predict
-  p = predict.bsts(bsts.model, horizon = h, burn = burn)
-  
-  out = cbind(p$mean,apply(p$distribution, 2, var))
-  colnames(out) = c("mean","var")
-  
-  return(out)
-  
-}
+# create_predictions <- function(x,h){
+#   
+#   # Run the bsts model
+#   ss = AddLocalLinearTrend(list(), x)
+#   ss = AddSeasonal(ss, x, nseasons = 4)
+#   bsts.model = bsts(x, state.specification = ss, niter = 500, ping = 0)
+#   
+#   # Get a suggested number of burn-ins
+#   burn = SuggestBurn(0.1, bsts.model)
+#   
+#   # Predict
+#   p = predict.bsts(bsts.model, horizon = h, burn = burn)
+#   
+#   out = cbind(p$mean,apply(p$distribution, 2, var))
+#   colnames(out) = c("mean","var")
+#   
+#   return(out)
+#   
+# }
 
 
 # This function returns a sparse matrix supported by Matrix pkg
@@ -129,16 +129,19 @@ run_gibbs <- function(length_max,length_min,length_sample){
   beta_save = matrix(NA,length_max,q)
   Sigma_save = array(NA,c(m,m,length_max))
   A1_save = array(NA,c(m,m,length_max))
+  A0_save = array(NA,c(m,m,length_max))
   X_save = matrix(NA,length_max,m)
   
   # Starting values
   Sigma = diag(m)
   alpha = matrix(0,m)
-  beta = matrix(0,q)
+  beta = solve(t(S) %*% S) %*% t(S) %*% rowMeans(Y) 
   
   for(jx in 1:length_max){
     
     if(jx %% 1000 == 0){print(sprintf('Gibbs Sampler at %d out of a maximum of %d Draws.',jx,length_max))}
+    
+    A0 <- riwish(v = n, S = lambda^0.5 %*%  Sigma %*% lambda^0.5)
     
     # 1. Compute Alpha
     A1 <- solve(n*solve(Sigma) + solve(A0))
@@ -162,6 +165,7 @@ run_gibbs <- function(length_max,length_min,length_sample){
     beta_save[jx,] = beta
     Sigma_save[,,jx] = Sigma
     A1_save[,,jx] = A1
+    A0_save[,,jx] = A0
     X_save[jx,] = S %*% beta + t(rnorm(m,0,1) %*% chol(Sigma)) 
     
     # X.2 Convergence check
@@ -176,7 +180,7 @@ run_gibbs <- function(length_max,length_min,length_sample){
     
     # Check for Convergence
     if(jx == length_min){
-    
+      
       # Compute discrete statistics of posterior distribution
       results <- list(
         "beta" = colMeans(beta_save[c((jx-length_sample):(jx-1)),]),
@@ -185,6 +189,7 @@ run_gibbs <- function(length_max,length_min,length_sample){
         "alpha_var" = var(alpha_save[c((jx-length_sample):(jx-1)),]),
         "Sigma_mean" = apply(Sigma_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
         "A1" = apply(A1_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
+        "A0" = apply(A0_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
         "X" = colMeans(X_save[c((jx-length_sample):(jx-1)),]),
         "X_var" = var(X_save[c((jx-length_sample):(jx-1)),]))
       
@@ -195,12 +200,61 @@ run_gibbs <- function(length_max,length_min,length_sample){
 }
 
 
-define_prior <- function(cov, x, factor){
+define_lambda <- function(x, eta){
   
-  mat <- cov
-  mat[x,x] <- mat[x,x]/factor^(1/length(x))
-  mat[-x,-x] <-  mat[-x,-x] * factor^(1/(ncol(mat)-length(x)))
+  mat = diag(m)
+  
+  if(!is.null(x)){
+    
+    mat[x,x] <- mat[x,x]/eta^(1/length(x))
+    mat[-x,-x] <-  mat[-x,-x] * eta^(1/(ncol(mat)-length(x)))
+    
+  }
   
   return(mat)
   
+}
+
+
+# Some example forecasts to play around with
+sim_hierarch <- function(nodes){
+  
+  # Generate hierarchy
+  q <- sum(tail(nodes,1)[[1]])
+  beta_sim <- runif(q,80,120)
+  dat_hts <- hts(ts(t(beta_sim)), nodes = nodes)
+  
+  # Add recon error
+  S <- smatrix(dat_hts)
+  alpha_sim = runif(nrow(S),-10,10)
+  dat_agg <- aggts(dat_hts)
+  
+  fcasts <- cbind(t(dat_agg + alpha_sim), S %*% runif(q,0,10))
+  colnames(fcasts) <- c("mean","var")
+  
+  return(list("fcasts" = fcasts,
+              "beta" = beta_sim,
+              "alpha" = alpha_sim,
+              "S" = S))
+  
+}
+
+
+
+get_values <- function(recon,fmethod,fdate,horizon, measure = "MASE"){
+  t(results[[recon]][[fmethod]][[fdate]][[horizon]])[,measure]}
+
+
+
+get_table <- function(recon,fmethod,fdate,horizon,measure = "MASE",levels = c("Total")){
+  grid <- expand.grid(list("Reconciliation" = recon,
+                           "Forecast" = fmethod,
+                           "Date" = as.character(fdate),
+                           "Horizon" = as.character(horizon)),
+                      stringsAsFactors = F)
+  out <- as.matrix(t(sapply(1:nrow(grid), function(ix) t(results[[grid[ix,1]]][[grid[ix,2]]]
+                                               [[grid[ix,3]]][[grid[ix,4]]])[levels,measure])))
+  if(length(levels) == 1) out <- t(out)
+  colnames(out) <- levels
+  cbind(grid,out)
 }

@@ -149,12 +149,13 @@ f(\alpha,\beta,\Sigma\ |\ Y,S) & \propto \frac{1}{|\Sigma|^{n/2}}\exp\left[-\fra
 &\times \exp \left[-\frac{1}{2}(\beta - b_0)'B_0^{-1}(\beta - b_0)\right] \\
 &\times \frac{1}{|\Sigma|(v_0 - m - 1)} \exp \left[-\frac{1}{2} tr(R_0^{-1}\Sigma^{-1}) \right]
 \end{align*}
-We are interested in the marginal distribution of $\alpha$, $\beta$ and $\Sigma$. This can be achieved by approximating the joint posterior distribution through Gibbs sampling from the conditional distributions and then averaging the samples. First some random starting values for the parameters are chosen. Afterwards, the following steps are repeated until convergence:
+We are interested in the marginal distribution of $\alpha$, $\beta$ and $\Sigma$. Following \cite{Percy1992}, this can be achieved by approximating the joint posterior distribution through Gibbs sampling from the conditional distributions and then averaging the samples. First some random starting values for the parameters are chosen. Afterwards, the following steps are repeated until convergence:
 
 \begin{enumerate}
 \item \textbf{Draw $\alpha$ conditional on $\beta,\Sigma,Y,S$}\\
 The fixed effects $\alpha$ can be obtained from a regression of $Y_i - S\beta$ on an identity matrix. The conditional posterior distribution for $\alpha$ is given by
 \begin{align}
+	\label{eq:alpha}
 \alpha\ |\ \beta,\Sigma,Y,S &\sim N(a_1,A_1)
 \end{align}
 where
@@ -177,7 +178,6 @@ b_1 &= B_1 \left(\sum_i S'\Sigma^{-1} (Y_i - \alpha) + B_0^{-1}b_0\right)
 Unless we have some reason to believe otherwise, the priors $b_0$ and $B_0$ should be chosen as uninformative as possible. Prior belief on the divergence between the initial and the reconciled forecasts should be incorporated in the prior on $\alpha$. \\
 
 \item \textbf{Draw $\Sigma$ conditional on $\alpha,\beta,Y,S$}\\
-%$\Sigma$ is a diagonal matrix since the $n$ draws from the predictive distribution come from different models and the approximated densities are generated independently. Because the off-diagonal elements are zero, it could also be seen as a weighted least squares regression. This resembles the alternative estimator \#3 for the coherency errors in \cite{Wickramasuriya2015}. Each entry $\sigma_{i}$ on the diagonal can therefore be drawn equation-by-equation from an inverse Gamma distribution.
 $\Sigma$ is the covariance matrix of the prediction errors. Depending on how the draws from each predictive distribution are ordered in $Y$, there is more or less structure in the off-diagonal elements. $\Sigma$ can be drawn from an inverse Wishart distribution.
 \begin{align}
 \Sigma\ |\ \alpha,\beta,Y,S \sim W^{-1}(v_1,R_1)
@@ -188,36 +188,35 @@ v_1 &= v_0 + n\\
 R_1 &=  \left( R_0^{-1} + \sum_i (Y_i - \alpha - S \beta)'(Y_i - \alpha - S \beta) \right)^{-1}
 \end{align*}
 
-%\item \textbf{Draw $\tilde{Y}$ conditional on $\alpha,\Sigma,\beta,S$}\\
-%We can also generate the predictive distribution for $\tilde{Y}$, the predictive density of $Y$. \cite{Percy1992} has shown that an analytic solution is difficult to calculate and it is far easier to draw samples from the joint posterior distribution of the parameters and then generate the predicted values of $Y$ conditional on the data.
-%\begin{align}
-%\tilde{Y}\ |\ \alpha,\beta,\Sigma,S \sim N(S\beta,\Sigma)
-%\end{align}
-
 \end{enumerate}
 
 \noindent Convergence of the Gibbs sampler can be checked using the recursive mean of the chains. After convergence is achieved, a sufficiently large number of these draws are saved. The mean of the hierarchically consistent forecasts can then be computed using discrete statistics on the saved draws from the posterior.\\
 
 \subsection{Prior Selection}
-As noted before, the priors for the parameters should be as diffuse as possible with the exception of $A_0$, the prior variance of the reconciliation errors $\alpha$. 
-\begin{align*}
-	A_1 &= \left(n\Sigma^{-1} + A_0^{-1}\right)
-\end{align*}
-There are several outcomes, depending on the information content of the prior.
+As noted before, the priors for the parameters should be as diffuse as possible with the exception of $A_0$, the prior variance of the reconciliation errors $\alpha$. $A_0$ can also reflect prior knowledge about the reconciliation errors. A high value on the diagonal of $A_0$ implies a belief that the reconciliation errors are larger, whereas a small value implies a belief that the reconciliation error should be small. There are several outcomes, depending on the information content of the prior.
 \begin{itemize}
     \item\textbf{Diffuse prior}. Setting the diagonal entries on the prior variance $A_0$ close to infinity assumes that we have no knowledge about the reconciliation errors. As a result, the parameters cannot be uniquely identified and the Gibbs sampler does not converge.
     \item \textbf{Strong prior}. Setting the diagonal entries on the prior variance $A_0$ very close to zero assumes that the reconciliation errors are distributed very tight around the prior mean, which is zero. In this case, the information in the prior dominates the informational content of the data entirely and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}. 
-    \item \textbf{Informed prior}. $A_0$ can also reflect prior knowledge about the reconciliation errors. A high value on the diagonal of $A_0$ implies a belief that the reconciliation errors are larger, whereas a small value implies a belief that the reconciliation error should be small. Even though in theory an infinite number of prior choices are available, only a few lead to reasonable outcomes.\\
-    A natural choice for $A_0$ is the squared standard errors of the coefficients in an intercept only model. It can simply be estimated by $\Omega n^{-1}$, where $\Omega $ is a diagonal matrix with the variance of the draws from each forecasted series. As a result, $A_1$ is given by
-\begin{align*}
-	A_1 &= \left(n\Sigma^{-1} + n\Omega^{-1} \right)
-\end{align*}
-    This implies that the posterior variance of the reconciliation error is an equally weighted mean of the variation in the regression residuals and our prior belief that they are anchored at the variation in the original forecasts. If we want to shrink some of these reconciliation errors to zero, we want at the same time to increase the variation of other errors. As a measure of the total variability of the multivariate normal constant, the generalized variance as described in \cite{Mutonen1997} is used. It is defined as the determinant of a covariance matrix and therefore the product of the eigenvalues. Since $\Omega$ is diagonal, we therefore need to keep the product of the variances constant. This can be achieved using the following equation.
+    \item \textbf{Informed prior}. Parameter shrinkage has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. Well known examples include the Lasso and the Horseshoe penalty functions.\footnote{See for instance \cite{Piironen2017} for a comprehensive overview.}
+    
+    However, our prior knowledge about the reconciliation errors requires not only certain parameters to be shrunk towards zero, but others to be less restricted. A suitable framework is given by the global-local scale mixtures of normal distributions by \cite{Polson2010}. They assume that the prior variance of the coefficient $\alpha_j$ consists of a global variance component $\tau^2$ and a local variance component $\lambda_j^2$. A commonly used technique in this framework is the adaptive ridge estimator developed by \cite{Brown1980}, which has been shown by \cite{Firinguetti1997} and \cite{Haitovsky1987} to take an equivalent form to equation (\ref{eq:alpha}) in a seemingly unrelated regression framework. This implies that $A_0$ can be interpreted as a ridge matrix. Following \cite{Polson2010}, an appropriate form of the adaptive ridge matrix in a global-local shrinkage framework is given by
     \begin{align*}
-    	|\Omega| &= \sigma_1 \sigma_2 \hdots \sigma_m 
-    	= \prod_{i = 1}^{x} \sigma_{i}\tau^{-\frac{1}{x}}   \prod_{j = x+1}^{m} \sigma_{j}\tau^{\frac{1}{m-x}}
+	A_0 &= \tau^{2}(\lambda \Sigma \lambda')
     \end{align*}
-where $\tau$ is the shrinking factor, $\sigma_i$ are the prior variances of the series to be shrinked towards their base forecast and $\sigma_j$ correspond to the prior variances of the series that are less restricted.
+    Using $\tau^2 = 1/n$ as the global variance component and $\lambda_j^2 = 1$ for each local variance component shrinks the posterior variance of $\alpha$ towards the squared standard errors in an intercept only regression. This leads to the familiar GLS result in a hierarchical reconciliation.
+    
+    Deviations from this global shrinkage can be controlled by letting the local components deviate from unity. However, if we want to shrink some of the reconciliation errors to zero, we want at the same time to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased aggregation error at their level of the hierarchy. One way to do this is to keep the total dispersion of the reconciliation errors constant. A convenient measure for total variability in a multivariate normal distribution is the generalized variance described in \cite{Mustonen1997}. It is defined as the determinant of a covariance matrix. Since our baseline local variance component $\lambda^2$ is an identity matrix, its diagonal elements can be changed in any way as long as the determinant of $\lambda^2$ remains constant at 1. A simple approach is the following scaling function:
+    \begin{align*}
+   	|\lambda^2| &= \lambda_1^2 \lambda_2^2 \hdots \lambda_m^2 
+   	= \prod_{s^- = 1}^{x} \lambda_{s^-}\ \eta^{-\frac{1}{x}}   \prod_{s^+ = x+1}^{m} \lambda_{s^+}\ \eta^{\frac{1}{m-x}} = 1
+    \end{align*}
+    The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\eta^{\frac{1}{x}}$ and the remaining $(m-x)$ components $\lambda_{s^+}$ are correspondingly scaled up by a factor $\eta^{\frac{1}{m-x}}$. The generalized variance remains at unity irrespective of the scaling factor $\eta$. Treating $A_0$ as a random parameter, we draw it from an inverse Wishart distribution conditional on the local variance hyperparameters $\lambda^2$. 
+    \begin{align}
+    	A_0\ |\ \alpha,\beta,Y,S,\lambda^2 \sim W^{-1}\left(n,\lambda \Sigma \lambda'\right)
+    \end{align}  
+    This setup has several advantages: The prior variance for the reconciliation errors is informed by the data and depends on the other model parameters. This allows us to place very few restrictions on the model and at the same time selectively shrink certain reconciled forecast towards their base forecasts.\footnote{The adaptive ridge estimator is therefore given by $\hat{\alpha} = \Bigl(n \Sigma^{-1} + n (\lambda \Sigma \lambda')^{-1}\Bigr)^{-1} \Bigl(\sum_i \Sigma^{-1} (Y_i - S\beta)\Bigr)$}
+   
+   
 \end{itemize}
 
 \clearpage
@@ -236,6 +235,8 @@ Simulate hierarchies of various sizes, levels and time series properties and com
 \end{itemize}
 
 What happens if we have forecasts that do not follow a normal distribution? An example from my own experience: Swiss imports are driven quite heavily by imports of airplanes and it is uncertain when they arrive, e.g. forecasts are bimodal.
+
+Another advantage of the bayesian approach: we can discard draws where a bottom level forecast is negative.
 
 \clearpage
 
