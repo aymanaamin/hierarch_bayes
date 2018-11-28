@@ -5,7 +5,6 @@ rm(list = ls())
 
 library(MCMCpack)
 library(hts)
-library(bsts)
 
 source("lib/functions.R")
 
@@ -16,7 +15,7 @@ set.seed(123)
 
 # 1. GENERATE DATA ---------------------------------------------------------
 
-hsim <- sim_hierarch(nodes = list(2, c(3,2)))
+hsim <- sim_hierarch(nodes = list(2, c(2,2)))
 fcasts <- hsim$fcasts
 
 # get parameters
@@ -46,6 +45,9 @@ series_to_be_shrunk <- c(2,8)
 
 lambda <- define_lambda(series_to_be_shrunk,
                         eta = 1e+9)
+
+
+lambda <- define_lambda_nseries(10)
 
 
 # 4.2 Define irrelevant, diffuse priors
