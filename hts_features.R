@@ -11,6 +11,7 @@ library(data.table)
 library(tsfeatures)
 library(ggplot2)
 library(gridExtra)
+library(tidyverse)
 
 # Functions
 source("lib/functions.R")

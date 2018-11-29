@@ -85,7 +85,7 @@ dt2ts <- function(dtx){
 
 create_predictions <- function(x,h,n){
   
-  fit <- ets(x)
+  fit <- auto.arima(x)
   fc <- forecast(fit, h = h)
   out <- t(replicate(n,simulate(fit, future=TRUE, nsim=h)))
   
@@ -94,7 +94,7 @@ create_predictions <- function(x,h,n){
 
 
 
-run_recon <- function(x,h,length_sample=1000,length_max=2e+4){
+run_recon <- function(x,h,length_sample=1000,length_max=1e+5){
   
   # Loop reconciliation over forecasting horizon
   out <- lapply(1:h, function(hx){
@@ -128,7 +128,7 @@ run_recon <- function(x,h,length_sample=1000,length_max=2e+4){
       
       jx <- jx+1
       
-      A0 <- riwish(v = n, S = lambda^0.5 %*%  Sigma %*% lambda^0.5)
+      A0 <- riwish(v = n, S = lambda %*%  Sigma %*% lambda)
       
       # 1. Compute Alpha
       A1 <- solve(n*solve(Sigma) + solve(A0))
@@ -143,7 +143,7 @@ run_recon <- function(x,h,length_sample=1000,length_max=2e+4){
       
       
       # 3. Compute Sigma
-      E <- (Y - matrix(rep(alpha,n),ncol = n,nrow = m)) - matrix(1,1,n) %x% (S %*% beta)
+      E <- Y - matrix(rep(alpha,n),ncol = n,nrow = m) - matrix(1,1,n) %x% (S %*% beta)
       Sigma <- riwish(v = n, S = E %*% t(E))
       
       
@@ -159,7 +159,7 @@ run_recon <- function(x,h,length_sample=1000,length_max=2e+4){
       if(jx %% 1000 == 0) plot(mcmc(chain[c(1:jx),c(1,m+1,m+q+1)]))
       
       # convergence check
-      if(jx > length_sample) if(all(chain[jx,]/chain[jx-length_sample,]-1 < 1e-2)) checks$convergence <- T
+      if(jx > length_sample) if(all(chain[jx,]/chain[jx-length_sample,]-1 < 5e-2)) checks$convergence <- T
       
       # X2. start sampling upon convergence
       if(checks$convergence & !checks$sampling){
@@ -201,7 +201,7 @@ run_recon <- function(x,h,length_sample=1000,length_max=2e+4){
   })
   
   # clean up results and return them in an appropriate manner
-  names(out) <- paste("details for h = ",1:h)
+  names(out) <- paste("h = ",1:h)
   return(out)
   
 }
@@ -222,6 +222,9 @@ define_lambda <- function(x = NULL, nser_shr = 0, xser_shr = 1){
   return(mat)
   
 }
+
+
+
 
 
 get_prior_mean <- function(x, h, wndw = 10, fmethod){

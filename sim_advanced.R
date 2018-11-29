@@ -19,7 +19,7 @@ n <- 1000 # draws
 h <-  5 # forecast horizon
 
 # define training sample
-test_date = 1994
+test_date = 1995
 infantgts_training <- window(infantgts, end = test_date)
 infantgts_test <- window(infantgts, start = test_date+1, end = test_date+h)
 
@@ -33,7 +33,7 @@ q <- ncol(S) # bottom level series
 
 # 2. CREATE FORECASTS ------------------------------------------------------
 
-# Fit an ETS model to the data and simulate n different outcomes to create predictive densities
+# Fit a  model to the data and simulate n different outcomes to create predictive densities
 fc_list <- lapply(as.list(aggts(infantgts_training)), function(x) create_predictions(x, h, n))
 
 
@@ -45,13 +45,15 @@ fc_list <- lapply(as.list(aggts(infantgts_training)), function(x) create_predict
 # A0 reflects our certainty about the reconciliation error being closer to a0
 
 # define priors and hyperparameters
-series_to_be_shrunk <- c(1)
-lambda <- define_lambda(x = series_to_be_shrunk, 
-                        nser_shr = 1, xser_shr = 1e+2)
+series_to_be_shrunk <- c()
+lambda <- define_lambda(x = series_to_be_shrunk, nser_shr = 0, xser_shr = 1e+6)
 
 # get in-sample reconciliation errors from the last 10 periods
-a0_all <- get_prior_mean(x = infantgts_training, h, fmethod = "ets")
-a0_all[series_to_be_shrunk,] <- 0 # If we shrink some series towards their base 
+a0_all <- get_prior_mean(x = infantgts_training, h, fmethod = "arima")
+# a0_all[series_to_be_shrunk,] <- 0
+# a0_all <- lambda %*% a0_all
+a0_all[,] <- 0
+# If we shrink some series towards their base 
 # forecast, we better set a0 to zero for those series
 
 # loop reconciliation over forecast horizon
@@ -65,14 +67,34 @@ results <- run_recon(x = fc_list, h = h)
 # 5. RESULTS ---------------------------------------------------------------
 
 # get forecast gts, this is a bit hacky so far.. :)
-base_forecasts <- t(do.call(cbind, lapply(results,function(x) x$beta)))
-colnames(base_forecasts) <- colnames(infantgts_training$bts)
-infantgts_forecast <- gts(ts(base_forecasts, start = test_date+1), groups = infantgts_training$groups)
+bottom_forecasts <- t(do.call(cbind, lapply(results,function(x) x$beta)))
+colnames(bottom_forecasts) <- colnames(infantgts_training$bts)
+infantgts_forecast <- gts(ts(bottom_forecasts, start = test_date+1), groups = infantgts_training$groups)
 infantgts_forecast$histy <- infantgts_training$bts
 acc_bsr <- t(accuracy.gts(f = infantgts_forecast, test = infantgts_test))
 
-# Compare
-infantgts_forecast_other <- forecast(infantgts_training, h = h, method = "comb", weights = "mint", fmethod = "ets")
-acc_other <- t(accuracy(infantgts_forecast_other, infantgts_test))
+# Compare different reconciliation methods
+infantgts_forecast_mint <- forecast(infantgts_training, h = h, method = "comb", weights = "mint", fmethod = "arima")
+infantgts_forecast_wls <- forecast(infantgts_training, h = h, method = "comb", weights = "wls", fmethod = "arima")
+infantgts_forecast_ols <- forecast(infantgts_training, h = h, method = "comb", weights = "ols", fmethod = "arima")
 
-round(cbind(acc_bsr,acc_other),2)
+acc_mint <- t(accuracy(infantgts_forecast_mint, infantgts_test))
+acc_wls <- t(accuracy(infantgts_forecast_wls, infantgts_test))
+acc_ols <- t(accuracy(infantgts_forecast_ols, infantgts_test))
+
+comparison <- round(cbind(acc_bsr[,"MASE"],acc_mint[,"MASE"],acc_wls[,"MASE"],acc_ols[,"MASE"]),2)
+colnames(comparison) <- c("BSR","MinT","WLS","OLS")
+comparison
+
+
+# Compare base forecast and reconciled forecasts
+hor = 1
+test <- round(cbind(as.logical(1:m %in% series_to_be_shrunk),
+              rowMeans(do.call(rbind, lapply(as.list(aggts(infantgts_forecast)), function(fx) fx[hor]))),
+              rowMeans(do.call(rbind, lapply(as.list(aggts(infantgts_forecast_mint)), function(fx) fx[hor]))),
+              rowMeans(do.call(rbind, lapply(as.list(aggts(infantgts_forecast_wls)), function(fx) fx[hor]))),
+              rowMeans(do.call(rbind, lapply(as.list(aggts(infantgts_forecast_ols)), function(fx) fx[hor]))),
+              do.call(rbind, lapply(fc_list, function(fx) mean(fx[,hor]))),
+              do.call(rbind, lapply(fc_list, function(fx) var(fx[,hor])))),2)
+colnames(test) <- c("Shrinkage","BSR","MinT","WLS","OLS","Base Forecast Mean","Base Forecast Variance")
+test
