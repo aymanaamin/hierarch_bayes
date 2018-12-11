@@ -8,18 +8,19 @@ library(hts)
 library(forecast)
 library(data.table)
 library(ggplot2)
-
+library(gridExtra)
+library(tidyverse)
 
 # Functions
-source("lib/functions.R")
+source("lib/functions_evaluation.R")
 
 # Data & Metadata
 load("dat/results_backtest.Rdata")
+load("dat/tradegts.Rdata")
 load("dat/countries.rda")
 
 # Options
 options(scipen=10)
-
 
 
 
@@ -46,32 +47,60 @@ tab <- get_table(recon = "bu",
 
 # GRAPHICAL VISUALIZATION -------------------------------------------------
 
-# by aggregation method
-
-
-
-# by forecasting horizon
-
-
-# x = year, y = accuracy
-tab <- get_table(recon = "bu",
-                 fmethod = c("ets","rw","arima"),
-                 fdate = seq(2000,2014,2),
-                 horizon = 1,
+# 1. by reconciliation method
+# x = year, y = accuracy, lines = reconciliation, facets = horizon
+tab <- get_table(recon = names(results),
+                 fmethod = c("arima"),
+                 fdate = seq(2000,2014,1),
+                 horizon = 1:3,
                  measure = "MASE",
                  levels = c("Total"))
 
-p <- ggplot(data = tab, aes(Date, Total)) + geom_point()
-p + facet_grid(Forecast ~ .)
+ggplot(data = tab, aes(Date, Total, group = Reconciliation)) + 
+  geom_line(aes(colour = Reconciliation)) +
+  facet_grid(Horizon ~ .) +
+  theme_bw() +
+  theme(legend.position="bottom")
 
 
-# by forecasting method
-dat <- sapply(c("rw","ets","arima"), function(x) get_values("bu",x,"2000","1"))
-p <- ggplot(data = mpg, aes(displ, cty)) + geom_point()
-p + facet_grid(. ~ drv)
+# 2. by reconciliation method
+# x = year, y = accuracy, lines = reconciliation, facets = horizon
+tab <- get_table(recon = c("bu","mo_cat","tdfp_cat","unrecon",
+                           "ols","wls_cat","nseries"),
+                 fmethod = c("arima"),
+                 fdate = seq(2000,2015,1),
+                 horizon = 1:3,
+                 measure = "MASE",
+                 levels = c("Total"))
+
+
+ggplot(data = tab, aes(Date, Total, col = Reconciliation, group = Reconciliation)) + 
+  geom_line() +
+  facet_grid(Horizon ~ Category) +
+  scale_x_discrete(breaks = seq(2000, 2018, by = 4)) +
+  theme_bw() +
+  theme(legend.position="bottom") +
+  guides(color=guide_legend(nrow=4))
+
+
+# 3. by forecasting method
+# x = year, y = accuracy, lines = fmethod, facets = horizon
+tab <- get_table(recon = "ols",
+                 fmethod = c("ets","rw","arima"),
+                 fdate = seq(2000,2014,1),
+                 horizon = 1:3,
+                 measure = "MASE",
+                 levels = c("Total"))
+
+ggplot(data = tab, aes(x=Date, y=Total, group = Forecast)) + 
+  geom_line(aes(colour = Forecast)) +
+  facet_grid(Horizon ~ .) +
+  theme_bw() +
+  theme(legend.position="bottom")
+
+
 
 # by hierarchical level
-
 
 
 # by category

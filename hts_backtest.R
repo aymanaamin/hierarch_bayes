@@ -54,35 +54,30 @@ tradehts <- list(cat = hts(y = dat_exp_cat, characters = c(2,1,1,2,2)),
                  reg = hts(y = dat_exp_reg, characters = c(2,2)))
 
 # define reduced hierarchy for mint and wls estimations
-agggts_red_cat <- aggts(tradegts, levels = 12) # Reduced to regions lvl 2
-agggts_red_reg <- aggts(tradegts, levels = 13) # Reduced to categories lvl 2
-colnames(agggts_red_cat) <- substr(colnames(agggts_red_cat), 24,40)
-colnames(agggts_red_reg) <- substr(colnames(agggts_red_reg), 25,40)
-tradegts_reduced <- list("cat" = gts(y = agggts_red_cat,
-                                     gnames = c("Regions Total", "Goods Total Lvl 1",
-                                                "Goods Total Lvl 2","Goods Total Lvl 3",
-                                                "Goods Total Lvl 4", "Goods Total Lvl 5",
-                                                "Goods Lvl 1 per Region","Goods Lvl 2 per Region",
-                                                "Goods Lvl 3 per Region", "Goods Lvl 4 per Region"),
-                                     characters = list(2, c(2,1,1,2,2))),
-                         "reg" = gts(y = agggts_red_reg,
-                                     gnames = c("Regions Total", "Countries Total",
-                                                "Goods Total Lvl 1", "Goods Lvl 1 per Region"),
-                                     characters = list(c(2,2), 2)))
+agggts_red <- aggts(tradegts, levels = 10) # Reduced to regions lvl 2
+colnames(agggts_red) <- substr(colnames(agggts_red), 24,40)
+tradegts_reduced <- gts(y = agggts_red,
+                        gnames = c("Regions Total", "Goods Total Lvl 1",
+                                   "Goods Total Lvl 2","Goods Total Lvl 3",
+                                   "Goods Lvl 1 per Region","Goods Lvl 2 per Region"),
+                        characters = list(2, c(2,1,1)))
 
 rm(dat_exp,dat_exp_reg,dat_exp_cat,total_exp,total_exp_reg,
-   total_exp_cat,agggts_red_cat,agggts_red_reg,total)
+   total_exp_cat,agggts_red,total)
 
 
-
+# test <- aggts(tradegts, levels = 8) # Reduced to regions lvl 2
+# colnames(test) <- substr(colnames(test), 24,40)
+# swisstrade <- gts(y = test,
+#                   gnames = c("Region", "Category"),
+#                   characters = list(2, 2))
 
 
 # 3. INSPECT DATA ----------------------------------------------------------
 
 # aggregate
 agg_gts <- as.list(aggts(tradegts))
-agg_gts_red_reg <- as.list(aggts(tradegts_reduced$reg))
-agg_gts_red_cat <- as.list(aggts(tradegts_reduced$cat))
+agg_gts_red <- as.list(aggts(tradegts_reduced))
 agg_hts_reg <- as.list(aggts(tradehts$reg))
 agg_hts_cat <- as.list(aggts(tradehts$cat))
 
@@ -95,13 +90,13 @@ plot(agg_gts$'Goods Lvl 1 per Region/AF10') # Vehicles to Region 'Africa and Mid
 
 # crosscheck to ensure the different hierarchies are aggregated correctly
 all.equal(agg_hts_reg$Total,agg_gts$Total)
-all.equal(agg_gts$Total,agg_gts_red_cat$Total)
+all.equal(agg_gts$Total,agg_gts_red$Total)
 all.equal(agg_hts_reg$AOAU,agg_gts$`Countries Total/AOAU`)
-all.equal(agg_hts_cat$`061`,agg_gts_red_cat$`Goods Total Lvl 2/061`)
-all.equal(agg_hts_reg$EUDE,agg_gts_red_reg$`Countries Total/EUDE`)
+all.equal(agg_hts_cat$`061`,agg_gts_red$`Goods Total Lvl 2/061`)
+all.equal(agg_hts_reg$EU,agg_gts_red$`Regions Total/EU`)
 all.equal(agg_hts_cat$`061101`,agg_gts$`Goods Total Lvl 4/061101`)
 
-rm(agg_hts_reg,agg_hts_cat,agg_gts_red_cat,agg_gts_red_reg)
+rm(agg_hts_reg,agg_hts_cat,agg_gts_red)
 
 
 
@@ -113,8 +108,8 @@ rm(agg_hts_reg,agg_hts_cat,agg_gts_red_cat,agg_gts_red_reg)
 method = c("mo" = "mo","tdgsa" = "tdgsa","tdgsf" = "tdgsf", "tdfp" = "tdfp")
 fmethods <- c("ets" = "ets", "arima" = "arima", "rw" = "rw")
 hierarchy = c("cat" = "cat", "reg" = "reg")
-fdate <- 2000:2015; names(fdate) = fdate
-horizons <- seq(1,3); names(horizons) = horizons
+fdate <- 1998:2017; names(fdate) = fdate
+horizons <- seq(1,3); names(horizons) = horizons # h = 1 means we have data until just before
 
 # Create Cluster for parallel processing on windows
 ncores = 30
@@ -131,22 +126,22 @@ results_basic <-  lapply(hierarchy, function(rx){
       message(sprintf("Processing %s reconciliation on %s hierarchy with %s 
                       forecasting method...", toupper(mx), rx, toupper(fx)))
       
-      lapply(fdate, function(dx){
+      parLapply(cl, fdate, function(dx){
         
-        # Run forecasting and aggregation methods
-        fcast <- forecast(window(tradehts[[rx]], end = dx-1/12),
-                          h = tail(horizons,1)*12,
-                          parallel = T,
-                          num.cores = ncores,
-                          method = mx,
-                          level = 2,
-                          fmethod = fx)
+        library(forecast)
         
         lapply(horizons, function(hx){
           
+          # Run forecasting and aggregation methods
+          fcast <- forecast(window(tradehts[[rx]], end = dx-hx+11/12),
+                            h = tail(horizons,1)*12,
+                            method = mx,
+                            level = 2,
+                            fmethod = fx)
+          
           # Analyze forecast accuracy at different horizons and return summary
-          test_wndw <- window(tradehts[[rx]], start = dx+hx-1, end = dx+hx-1/12)
-          fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
+          test_wndw <- window(tradehts[[rx]], start = dx, end = dx+11/12)
+          fcast_wndw = window(fcast, start = dx, end = dx+11/12)
           accuracy.gts(fcast_wndw, test_wndw)
           
         })
@@ -163,21 +158,21 @@ results_bu <- lapply(fmethods, function(fx){
   # Print status message
   message(sprintf("Processing bottom up aggregation with %s forecasting method...", toupper(fx)))
   
-  lapply(fdate, function(dx){
+  parLapply(cl, fdate, function(dx){
     
-    # Run forecasting and aggregation methods
-    fcast <- forecast(window(tradegts, end = dx-1/12),
-                      h = tail(horizons,1)*12,
-                      parallel = T,
-                      num.cores = ncores,
-                      method = "bu",
-                      fmethod = fx)
+    library(forecast)
     
     lapply(horizons, function(hx){
       
+      # Run forecasting and aggregation methods
+      fcast <- forecast(window(tradegts, end = dx-hx+11/12),
+                        h = tail(horizons,1)*12,
+                        method = "bu",
+                        fmethod = fx)
+      
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts, start = dx+hx-1, end = dx+hx-1/12)
-      fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
+      test_wndw <- window(tradegts, start = dx, end = dx+11/12)
+      fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
     })
@@ -192,22 +187,22 @@ results_ols <- lapply(fmethods, function(fx){
   # Print status message
   message(sprintf("Processing OLS optimal combination with %s forecasting method...", toupper(fx)))
   
-  lapply(fdate, function(dx){
+  parLapply(cl, fdate, function(dx){
     
-    # Run forecasting and aggregation methods
-    fcast <- forecast(window(tradegts, end = dx-1/12),
-                      h = tail(horizons,1)*12, 
-                      parallel = T,
-                      num.cores = ncores,
-                      method = "comb",
-                      weights = "ols",
-                      fmethod = fx)
+    library(forecast)
     
     lapply(horizons, function(hx){
       
+      # Run forecasting and aggregation methods
+      fcast <- forecast(window(tradegts, end = dx-hx+11/12),
+                        h = tail(horizons,1)*12, 
+                        method = "comb",
+                        weights = "ols",
+                        fmethod = fx)
+      
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts, start = dx+hx-1, end = dx+hx-1/12)
-      fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
+      test_wndw <- window(tradegts, start = dx, end = dx+11/12)
+      fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
     })
@@ -215,61 +210,57 @@ results_ols <- lapply(fmethods, function(fx){
 })
 
 
-results_wls <- lapply(hierarchy, function(rx){
-  lapply(fmethods, function(fx){
+results_wls <- lapply(fmethods, function(fx){
+  
+  # Print status message
+  message(sprintf("Processing WLS optimal combination with %s forecasting method...", toupper(fx)))
+  
+  parLapply(cl, fdate, function(dx){
     
-    # Print status message
-    message(sprintf("Processing WLS optimal combination on %s reduced hierarchy with %s forecasting method...", rx, toupper(fx)))
+    library(forecast)
     
-    lapply(fdate, function(dx){
+    lapply(horizons, function(hx){
       
       # Run forecasting and aggregation methods
-      fcast <- forecast(window(tradegts_reduced[[rx]], end = dx-1/12),
+      fcast <- forecast(window(tradegts_reduced, end = dx-hx+11/12),
                         h = tail(horizons,1)*12, 
-                        parallel = T,
-                        num.cores = ncores,
                         method = "comb",
                         weights = "wls",
                         fmethod = fx)
       
-      lapply(horizons, function(hx){
-        
-        # Analyze forecast accuracy at different horizons and return summary
-        test_wndw <- window(tradegts_reduced[[rx]], start = dx+hx-1, end = dx+hx-1/12)
-        fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
-        accuracy.gts(fcast_wndw, test_wndw)
-        
-      })
+      # Analyze forecast accuracy at different horizons and return summary
+      test_wndw <- window(tradegts_reduced, start = dx, end = dx+11/12)
+      fcast_wndw = window(fcast, start = dx, end = dx+11/12)
+      accuracy.gts(fcast_wndw, test_wndw)
+      
     })
   })
 })
 
 
-results_mint <- lapply(hierarchy, function(rx){
-  lapply(fmethods, function(fx){
+results_mint <- lapply(fmethods, function(fx){
+  
+  # Print status message
+  message(sprintf("Processing MinT optimal combination with %s forecasting method...", toupper(fx)))
+  
+  parLapply(cl, fdate, function(dx){
     
-    # Print status message
-    message(sprintf("Processing MinT optimal combination on %s reduced hierarchy with %s forecasting method...", rx, toupper(fx)))
+    library(forecast)
     
-    lapply(fdate, function(dx){
+    lapply(horizons, function(hx){
       
       # Run forecasting and aggregation methods
-      fcast <- forecast(window(tradegts_reduced[[rx]], end = dx-1/12),
+      fcast <- forecast(window(tradegts_reduced, end = dx-hx+11/12),
                         h = tail(horizons,1)*12, 
-                        parallel = T,
-                        num.cores = ncores,
                         method = "comb",
                         weights = "mint",
                         fmethod = fx)
       
-      lapply(horizons, function(hx){
-        
-        # Analyze forecast accuracy at different horizons and return summary
-        test_wndw <- window(tradegts_reduced[[rx]], start = dx+hx-1, end = dx+hx-1/12)
-        fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
-        accuracy.gts(fcast_wndw, test_wndw)
-        
-      })
+      # Analyze forecast accuracy at different horizons and return summary
+      test_wndw <- window(tradegts_reduced, start = dx, end = dx+11/12)
+      fcast_wndw = window(fcast, start = dx, end = dx+11/12)
+      accuracy.gts(fcast_wndw, test_wndw)
+      
     })
   })
 })
@@ -280,22 +271,22 @@ results_nseries <- lapply(fmethods, function(fx){
   # Print status message
   message(sprintf("Processing nseries optimal combination with %s forecasting method...", toupper(fx)))
   
-  lapply(fdate, function(dx){
+  parLapply(cl, fdate, function(dx){
     
-    # Run forecasting and aggregation methods
-    fcast <- forecast(window(tradegts, end = dx-1/12),
-                      h = tail(horizons,1)*12, 
-                      parallel = T,
-                      num.cores = ncores,
-                      method = "comb",
-                      weights = "nseries",
-                      fmethod = fx)
+    library(forecast)
     
     lapply(horizons, function(hx){
       
+      # Run forecasting and aggregation methods
+      fcast <- forecast(window(tradegts, end = dx-hx+11/12),
+                        h = tail(horizons,1)*12, 
+                        method = "comb",
+                        weights = "nseries",
+                        fmethod = fx)
+      
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts, start = dx+hx-1, end = dx+hx-1/12)
-      fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
+      test_wndw <- window(tradegts, start = dx, end = dx+11/12)
+      fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
     })
@@ -310,35 +301,36 @@ results_unreconciled <- lapply(fmethods, function(fx){
   # Print status message
   message(sprintf("Unreconciled estimation with %s forecasting method...", toupper(fx)))
   
-  lapply(fdate, function(dx){
+  parLapply(cl, fdate, function(dx){
     
-    # Run forecasts methods
-    fcasts_unrecon <- do.call(cbind, parLapply(cl, agg_gts, function(xs){
+    library(forecast)
+    
+    lapply(horizons, function(hx){
       
-      library(forecast)
-      
-      if(fx == "rw"){
+      # Run forecasts methods
+      fcasts_unrecon <- do.call(cbind, parLapply(cl, agg_gts, function(xs){
         
-        rwf(window(xs, end = dx-1/12), h = tail(horizons,1)*12)$mean
+        library(forecast)
         
-      } else if(fx == "ets"){
-        
-        forecast(ets(window(xs, end = dx-1/12)), h = tail(horizons,1)*12, PI = FALSE)$mean
-        
-      } else if(fx == "arima"){
-        
-        forecast(auto.arima(window(xs, end = dx-1/12)),h = tail(horizons,1)*12)$mean
-        
-      }
-    }))
-    
-    histy <- window(do.call(cbind,agg_gts), end = dx-1/12)
-    
-    parLapply(cl, horizons, function(hx){
+        if(fx == "rw"){
+          
+          rwf(window(xs, end = dx-hx+11/12), h = tail(horizons,1)*12)$mean
+          
+        } else if(fx == "ets"){
+          
+          forecast(ets(window(xs, end = dx-hx+11/12)), h = tail(horizons,1)*12, PI = FALSE)$mean
+          
+        } else if(fx == "arima"){
+          
+          forecast(auto.arima(window(xs, end = dx-hx+11/12)),h = tail(horizons,1)*12)$mean
+          
+        }
+      }))
       
       # Analyze forecast accuracy at different horizons and return summary
-      x <- window(do.call(cbind,agg_gts), start = dx+hx-1, end = dx+hx-1/12)
-      fcast <- window(fcasts_unrecon, start = dx+hx-1, end = dx+hx-1/12)
+      histy <- window(do.call(cbind,agg_gts), end = dx-hx+11/12)
+      x <- window(do.call(cbind,agg_gts), start = dx, end = dx+11/12)
+      fcast <- window(fcasts_unrecon, start = dx, end = dx+11/12)
       res <- x-fcast
       
       pe <- res/x * 100
@@ -378,10 +370,8 @@ results <- list("bu" = results_bu,
                 "tdfp_cat" = results_basic$cat$tdfp,
                 "tdfp_reg" = results_basic$reg$tdfp,
                 "ols" = results_ols,
-                "wls_cat" = results_wls$cat,
-                "wls_reg" = results_wls$reg,
-                "mint_cat" = results_mint$cat,
-                "mint_reg" = results_mint$reg,
+                "wls" = results_wls,
+                "mint" = results_mint,
                 "nseries" = results_nseries,
                 "unrecon" = results_unreconciled)
 

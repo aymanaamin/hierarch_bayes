@@ -37,26 +37,21 @@ Y <- do.call(rbind, lapply(1:m, function(mx) rnorm(n = n,
 # 4. RECONCILIATION --------------------------------------------------------
 
 # 4.1 A0 reflects our certainty about reconciliation error being closer to zero
-# series_to_be_shrunk <- c() # Shrink no recon error
-# series_to_be_shrunk <- c(1) # Shrink the recon error on the top level series
-# series_to_be_shrunk <- c(1,3,5,6,7) # Shrink selected series
-# series_to_be_shrunk <- c(1:7) # Shrink all but the error on the last bottom level series (slower)
-series_to_be_shrunk <- c(2,8)
+series_to_be_shrunk <- c(2,6)
 
-lambda <- define_lambda(series_to_be_shrunk,
-                        eta = 1e+9)
-
-
-lambda <- define_lambda_nseries(10)
+lambda <- define_lambda(series_to_be_shrunk, S,
+                        nser_shr = 0,
+                        xser_shr = 1e+6)
 
 
 # 4.2 Define irrelevant, diffuse priors
 b0 = matrix(rep(0,q))
 B0 = diag(rep(1e+16,q))
-a0 = matrix(rep(0,m))
+a0 = hsim$alpha;a0[series_to_be_shrunk] = 0
 
-results <- run_gibbs(length_max = 100000,
-                     length_min = 10000,
+results <- run_gibbs(Y = Y,
+                     length_max = 100000,
+                     length_min = 20000,
                      length_sample = 1000)
 
 

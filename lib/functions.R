@@ -83,30 +83,75 @@ dt2ts <- function(dtx){
 
 
 
-create_predictions <- function(x,h,n){
+
+run_recon <- function(object, h, fmethod = "arima", 
+                      series_to_be_shrunk = NULL,
+                      nser_shr = 0, xser_shr = 1e+6,
+                      in_sample_prior = F){
+
+  start.time = Sys.time() # Tic
   
-  fit <- auto.arima(x)
-  fc <- forecast(fit, h = h)
-  out <- t(replicate(n,simulate(fit, future=TRUE, nsim=h)))
+  # Get Parameters
+  in_sample_prior = T
+  sparse=T
+  length_sample = 1000
+  length_max = 1e+5
+  S <- Matrix(smatrix(object))
+  m <- nrow(S) # total series
+  q <- ncol(S) # bottom level series
   
-}
-
-
-
-
-run_recon <- function(x,h,length_sample=1000,length_max=1e+5){
   
-  # Loop reconciliation over forecasting horizon
+  
+  # Step 1: Run Forecasting Model
+  print("Running base forecast models...")
+  fcl <- lapply(as.list(aggts(object)), function(x){
+    
+    if(fmethod == "rw"){
+      fit <- Arima(x, order = c(0, 1, 0))
+    } else if(fmethod == "ets"){
+      fit <- ets(x)
+    } else if(fmethod == "arima"){
+      fit <- auto.arima(x)
+    }
+    
+    t(matrix(replicate(n, simulate(fit, future=TRUE, nsim=h)),ncol=n))
+    
+  })
+  
+  
+  
+  
+  # Step 2. Set Priors
+  if(isTRUE(in_sample_prior)){
+    
+    print("Define prior from in-sample data...")
+    a0_all <- get_prior_mean(x = object, h, fmethod = fmethod)
+    a0_all[series_to_be_shrunk,] <- 0
+    
+  } else {
+    
+    print("Define mean zero prior...")
+    a0_all <- matrix(0,m,h)
+    
+  }
+  
+  lambda <- define_lambda(x = series_to_be_shrunk, S, m,
+                          nser_shr = nser_shr, xser_shr = xser_shr)
+  
+  
+  # Step 3. Run Reconciliation (loop over forecasting periods)
+  print("Running reconciliation...")
   out <- lapply(1:h, function(hx){
     
     # Get matrix with forecasts and prior mean
-    Y <- do.call(rbind, lapply(x, function(fx) fx[,hx]))
-    a0 <- matrix(a0_all[,hx])
-    b0 <- matrix(rep(0,q))
-    B0 <- diag(rep(1e+16,q))
+    Y <- Matrix(do.call(rbind, lapply(fcl, function(fx) fx[,hx])))
+    # a0 <- Matrix(0,m,1)
+    a0 <- Matrix(a0_all[,hx])
+    b0 = Matrix(0,q,1)
+    B0 = Diagonal(n = q, x = 1e+16)
     
     # Preallocation
-    chain <- matrix(NA, nrow = length_max, ncol = q+2*m)
+    chain <- matrix(NA, nrow = length_max, ncol = 3)
     
     draw_save <- list("alpha" = matrix(NA,length_sample,m),
                       "beta" = matrix(NA,length_sample,q),
@@ -115,20 +160,33 @@ run_recon <- function(x,h,length_sample=1000,length_max=1e+5){
                       "A0" = array(NA,c(m,m,length_sample)))
     
     # Starting values
-    Sigma = diag(m)
-    alpha = matrix(0,m)
-    beta = solve(t(S) %*% S) %*% t(S) %*% rowMeans(Y)
+    Sigma = Diagonal(x = apply(Y, 1, var))
+    alpha = Matrix(0,m,1)
+    beta = solve(t(S) %*% S) %*% (t(S) %*% rowMeans(Y))
     
     checks <- list("convergence" = F,
-                   "sampling" = F)
-    jx <- 0
-    ix <- 0
+                   "sampling" = F,
+                   "jx" = 0,
+                   "ix" = 0)
     
-    while(jx < length_max){
+    while(checks$jx < length_max){
       
-      jx <- jx+1
+      checks$jx <- checks$jx+1
       
-      A0 <- riwish(v = n, S = lambda %*%  Sigma %*% lambda)
+      if(sparse==T){
+        
+        A0 <- lambda %*%Diagonal(x = sapply(1:m, function(sx){
+          
+          1/rgamma(n = 1, shape = n, rate = Sigma[sx,sx])
+          
+        })) %*% lambda
+        
+      } else {
+        
+        A0 <- riwish(v = n, S = lambda %*%  Sigma %*% lambda)
+        
+      }
+      
       
       # 1. Compute Alpha
       A1 <- solve(n*solve(Sigma) + solve(A0))
@@ -144,41 +202,55 @@ run_recon <- function(x,h,length_sample=1000,length_max=1e+5){
       
       # 3. Compute Sigma
       E <- Y - matrix(rep(alpha,n),ncol = n,nrow = m) - matrix(1,1,n) %x% (S %*% beta)
-      Sigma <- riwish(v = n, S = E %*% t(E))
+      
+      if(sparse==T){
+        
+        Sigma <- Diagonal(x = sapply(1:m, function(sx){
+          
+          # Draw from Inverse Gamma
+          1/rgamma(n = 1, shape = n, rate = t(E[sx,]) %*% E[sx,])
+          
+        }))
+        
+      } else {
+       
+        Sigma <- Matrix(riwish(v = n, S = E %*% t(E)))
+         
+      }
       
       
       # X1. convergence check
-      if(jx == 1){
-        chain[jx,] <- c(alpha,beta,diag(Sigma))
+      if(checks$jx == 1){
+        chain[checks$jx,] <- c(mean(alpha),mean(beta),mean(diag(Sigma)))
       } else {
-        chain[jx,] <- (chain[jx-1,]*(jx-1) + c(alpha,beta,diag(Sigma)))/jx
+        chain[checks$jx,] <- (chain[checks$jx-1,]*(checks$jx-1) + 
+                                c(mean(alpha),mean(beta),mean(diag(Sigma))))/checks$jx
+        if(all(abs(chain[checks$jx,]/chain[checks$jx-1,]-1) < 1e-6)) checks$convergence <- T
+  
       }
       
       
       # recursive mean trace plot
-      if(jx %% 1000 == 0) plot(mcmc(chain[c(1:jx),c(1,m+1,m+q+1)]))
-      
-      # convergence check
-      if(jx > length_sample) if(all(chain[jx,]/chain[jx-length_sample,]-1 < 5e-2)) checks$convergence <- T
+      if(checks$jx %% 250 == 0) plot(mcmc(chain[c(1:checks$jx),]))
       
       # X2. start sampling upon convergence
       if(checks$convergence & !checks$sampling){
         
-        ix <- ix + 1
+        checks$ix <- checks$ix + 1
         
-        draw_save$alpha[ix,] = alpha
-        draw_save$beta[ix,] = beta
-        draw_save$Sigma[,,ix] = Sigma
-        draw_save$A1[,,ix] = A1
-        draw_save$A0[,,ix] = A0
+        draw_save$alpha[checks$ix,] = as.matrix(alpha)
+        draw_save$beta[checks$ix,] = as.matrix(beta)
+        draw_save$A1[,,checks$ix] = as.matrix(A1)
+        draw_save$A0[,,checks$ix] = as.matrix(A0)
+        draw_save$Sigma[,,checks$ix] = as.matrix(Sigma)
         
-        if(ix == length_sample) checks$sampling <- T
+        if(checks$ix == length_sample) checks$sampling <- T
         
       }
       
       if(checks$convergence & checks$sampling){
         
-        print(sprintf('h = %d: convergence achieved and sampling completed after %d draws.',hx,jx+1))
+        print(sprintf('h = %d: convergence achieved and sampling completed after %d draws.',hx,checks$jx+1))
         
         # Compute discrete statistics of posterior distribution
         results <- list(
@@ -200,26 +272,49 @@ run_recon <- function(x,h,length_sample=1000,length_max=1e+5){
     
   })
   
+  print(Sys.time() - start.time) # Toc
+  
   # clean up results and return them in an appropriate manner
   names(out) <- paste("h = ",1:h)
+  bottom_forecasts <- t(do.call(cbind, lapply(out,function(x) x$beta)))
+  colnames(bottom_forecasts) <- colnames(object$bts)
+  if("hts" %in% class(object)){
+    
+    out$forecast <- hts(ts(bottom_forecasts, 
+                           start = test_date+1,
+                           frequency = frequency(object$bts)))
+    
+  } else {
+    
+    out$forecast <- gts(ts(bottom_forecasts, 
+                           start = test_date+1,
+                           frequency = frequency(object$bts)), 
+                        groups = object$groups)
+    
+  }
+
+  out$forecast$histy <- object$bts
+  out$pars <- list("m" = m,"q" = q, "h" = h,"n" = n, "S" = S, "lambda" = lambda) 
+  out$base <- fcl
+  
   return(out)
   
 }
 
 
-define_lambda <- function(x = NULL, nser_shr = 0, xser_shr = 1){
+define_lambda <- function(x = NULL, S, m, nser_shr = 0, xser_shr = 1){
   
   nser <- (1/rowSums(S))^nser_shr
-  mat <- diag(nser/prod(nser)^(1/m))
+  mat <- nser/prod(nser)^(1/m)
   
   if(!is.null(x)){
     
-    mat[x,x] <- mat[x,x]/xser_shr^(1/length(x))
-    mat[-x,-x] <-  mat[-x,-x] * xser_shr^(1/(ncol(mat)-length(x)))
+    mat[x] <- mat[x]/xser_shr^(1/length(x))
+    mat[-x] <-  mat[-x] * xser_shr^(1/(length(mat)-length(x)))
     
   }
   
-  return(mat)
+  return(Diagonal(x = mat))
   
 }
 
@@ -227,11 +322,15 @@ define_lambda <- function(x = NULL, nser_shr = 0, xser_shr = 1){
 
 
 
-get_prior_mean <- function(x, h, wndw = 10, fmethod){
+get_prior_mean <- function(x, h, fmethod){
   
+  # Choose the starting date such that the seasonality pattern of the forecast is the same
   end_date <- as.numeric(tail(time(x$bts),1))
+  wndw <- ceiling(h/frequency(x$bts))*5
   
-  Reduce('+',lapply(seq(from = end_date-h-wndw+1, to = end_date-h), function(dx){
+  Reduce('+',lapply(seq(from = end_date-wndw,
+                        to = end_date),
+                    function(dx){
     
     test_wndw <- window(x, end = dx)
     
@@ -249,10 +348,9 @@ get_prior_mean <- function(x, h, wndw = 10, fmethod){
     fcast_recon <- aggts(forecast(test_wndw, h = h, method = "comb", 
                                   weights = "wls", fmethod = fmethod))
     
-    out <- t(as.matrix(as.data.frame(fcast_unrecon - fcast_recon)))
-    rownames(out) <- colnames(fcast_recon)
-    return(out)
     
+    return(t(fcast_unrecon) - t(fcast_recon))
+
   }))/wndw
   
 }
@@ -289,8 +387,8 @@ get_values <- function(recon,fmethod,fdate,horizon, measure = "MASE"){
 
 
 get_table <- function(recon,fmethod,fdate,horizon,measure = "MASE",levels = c("Total")){
-  grid <- expand.grid(list("Reconciliation" = recon,
-                           "Forecast" = fmethod,
+  grid <- expand.grid(list("recon_key" = recon,
+                           "fcast_key" = fmethod,
                            "Date" = as.character(fdate),
                            "Horizon" = as.character(horizon)),
                       stringsAsFactors = F)
@@ -298,88 +396,129 @@ get_table <- function(recon,fmethod,fdate,horizon,measure = "MASE",levels = c("T
                                                          [[grid[ix,3]]][[grid[ix,4]]])[levels,measure])))
   if(length(levels) == 1) out <- t(out)
   colnames(out) <- levels
-  cbind(grid,out)
+  out <- as_tibble(cbind(grid,out))
+  out$Date <- as.character(as.numeric(out$Date)+as.numeric(out$Horizon)-1)
+  out %>% 
+    add_column(.before = 1,
+               "Category" = recode(out$recon_key,
+                                   "bu" = "Basic Methods",
+                                   "mo_cat" = "Basic Methods",
+                                   "mo_reg" = "Basic Methods",
+                                   "tdgsa_cat" = "Basic Methods",
+                                   "tdgsa_reg" = "Basic Methods",
+                                   "tdgsf_reg" = "Basic Methods",
+                                   "tdgsf_cat" = "Basic Methods",
+                                   "tdfp_reg" = "Basic Methods",
+                                   "tdfp_cat" = "Basic Methods",
+                                   "ols" = "Optimal Methods",
+                                   "wls_cat" = "Optimal Methods",
+                                   "wls_reg" = "Optimal Methods",
+                                   "nseries" = "Optimal Methods",
+                                   "unrecon" = "Basic Methods")) %>% 
+    add_column(.before = 1,
+               "Reconciliation" = recode(out$recon_key,
+                                         "bu" = "Bottom-Up",
+                                         "mo_cat" = "Middle-Out (Categories)",
+                                         "mo_reg" = "Middle-Out (Regions)",
+                                         "tdgsa_cat" = "Top-Down A (Categories)",
+                                         "tdgsa_reg" = "Top-Down A (Regions)",
+                                         "tdgsf_cat" = "Top-Down F (Categories)",
+                                         "tdgsf_reg" = "Top-Down F (Regions)",
+                                         "tdfp_reg" = "Top-Down P (Regions)",
+                                         "tdfp_cat" = "Top-Down P (Categories)",
+                                         "ols" = "OLS",
+                                         "wls_cat" = "WLS (Categories)",
+                                         "wls_reg" = "WLS (Regions)",
+                                         "nseries" = "nSeries",
+                                         "unrecon" = "Unreconciled")) %>% 
+    add_column(.before = 2,
+               "Forecast" = recode(out$fcast_key,
+                                   "arima" = "ARIMA",
+                                   "ets" = "ETS",
+                                   "rw" = "RW")) %>% 
+    select(-one_of("recon_key","fcast_key"))
+  
 }
 
 
-
-run_gibbs <- function(Y,length_max,length_min,length_sample){
-  
-  # Preallocation
-  chain = matrix(NA, nrow = length_max, ncol = q+2*m)
-  alpha_save = matrix(NA,length_max,m)
-  beta_save = matrix(NA,length_max,q)
-  Sigma_save = array(NA,c(m,m,length_max))
-  A1_save = array(NA,c(m,m,length_max))
-  A0_save = array(NA,c(m,m,length_max))
-  X_save = matrix(NA,length_max,m)
-  
-  # Starting values
-  Sigma = diag(100*n,m)
-  alpha = matrix(0,m)
-  beta = solve(t(S) %*% S) %*% t(S) %*% rowMeans(Y) 
-  
-  for(jx in 1:length_max){
-    
-    if(jx %% 1000 == 0){print(sprintf('Gibbs Sampler at %d out of a maximum of %d Draws.',jx,length_max))}
-    
-    A0 <- riwish(v = n, S = lambda^0.5 %*%  Sigma %*% lambda^0.5)
-    
-    # 1. Compute Alpha
-    A1 <- solve(n*solve(Sigma) + solve(A0))
-    a1 <- A1 %*% (rowSums(diag(m) %*% solve(Sigma) %*% (Y - matrix(rep(S %*% beta,n),ncol = n,nrow = m))) + solve(A0) %*% a0)
-    alpha <- a1 + t(rnorm(m,0,1) %*% chol(A1))
-    
-    
-    # 2. Compute Beta
-    B1  <- solve(n*(t(S) %*% solve(Sigma) %*% S) + solve(B0))
-    b1 <- B1 %*% (rowSums(t(S) %*% solve(Sigma) %*% (Y - matrix(rep(alpha,n),ncol = n,nrow = m))) + solve(B0) %*% b0)
-    beta <- b1 + t(rnorm(q,0,1) %*% chol(B1))
-    
-    
-    # 3. Compute Sigma
-    E <- (Y - matrix(rep(alpha,n),ncol = n,nrow = m)) - matrix(1,1,n) %x% (S %*% beta)
-    Sigma <- riwish(v = n, S = E %*% t(E))
-    
-    
-    # X.1 Save draws
-    alpha_save[jx,] = alpha
-    beta_save[jx,] = beta
-    Sigma_save[,,jx] = Sigma
-    A1_save[,,jx] = A1
-    A0_save[,,jx] = A0
-    X_save[jx,] = S %*% beta + t(rnorm(m,0,1) %*% chol(Sigma)) 
-    
-    # X.2 Convergence check
-    if(jx == 1){
-      chain[jx,] = c(alpha,beta,diag(Sigma))
-    } else {
-      chain[jx,] = (chain[jx-1,]*(jx-1) + c(alpha,beta,diag(Sigma)))/jx
-    }
-    
-    # Trace Plot
-    if(jx %% 1000 == 0) plot(mcmc(chain[c(1:jx),c(1,m+1,m+q+1)]))
-    
-    # Check for Convergence
-    if(jx == length_min){
-      
-      # Compute discrete statistics of posterior distribution
-      results <- list(
-        "beta" = colMeans(beta_save[c((jx-length_sample):(jx-1)),]),
-        "beta_var" = var(beta_save[c((jx-length_sample):(jx-1)),]),
-        "alpha" = colMeans(alpha_save[c((jx-length_sample):(jx-1)),]),
-        "alpha_var" = var(alpha_save[c((jx-length_sample):(jx-1)),]),
-        "Sigma_mean" = apply(Sigma_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
-        "A1" = apply(A1_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
-        "A0" = apply(A0_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
-        "X" = colMeans(X_save[c((jx-length_sample):(jx-1)),]),
-        "X_var" = var(X_save[c((jx-length_sample):(jx-1)),]))
-      
-      return(results)
-      
-    }
-  }
-}
+# 
+# run_gibbs <- function(Y,length_max,length_min,length_sample){
+# 
+#   # Preallocation
+#   chain = matrix(NA, nrow = length_max, ncol = q+2*m)
+#   alpha_save = matrix(NA,length_max,m)
+#   beta_save = matrix(NA,length_max,q)
+#   Sigma_save = array(NA,c(m,m,length_max))
+#   A1_save = array(NA,c(m,m,length_max))
+#   A0_save = array(NA,c(m,m,length_max))
+#   X_save = matrix(NA,length_max,m)
+# 
+#   # Starting values
+#   Sigma = diag(100*n,m)
+#   alpha = matrix(0,m)
+#   beta = solve(t(S) %*% S) %*% t(S) %*% rowMeans(Y)
+# 
+#   for(jx in 1:length_max){
+# 
+#     if(jx %% 1000 == 0){print(sprintf('Gibbs Sampler at %d out of a maximum of %d Draws.',jx,length_max))}
+# 
+#     A0 <- riwish(v = n, S = lambda %*%  Sigma %*% lambda)
+# 
+#     # 1. Compute Alpha
+#     A1 <- solve(n*solve(Sigma) + solve(A0))
+#     a1 <- A1 %*% (rowSums(diag(m) %*% solve(Sigma) %*% (Y - matrix(rep(S %*% beta,n),ncol = n,nrow = m))) + solve(A0) %*% a0)
+#     alpha <- a1 + t(rnorm(m,0,1) %*% chol(A1))
+# 
+# 
+#     # 2. Compute Beta
+#     B1  <- solve(n*(t(S) %*% solve(Sigma) %*% S) + solve(B0))
+#     b1 <- B1 %*% (rowSums(t(S) %*% solve(Sigma) %*% (Y - matrix(rep(alpha,n),ncol = n,nrow = m))) + solve(B0) %*% b0)
+#     beta <- b1 + t(rnorm(q,0,1) %*% chol(B1))
+# 
+# 
+#     # 3. Compute Sigma
+#     E <- (Y - matrix(rep(alpha,n),ncol = n,nrow = m)) - matrix(1,1,n) %x% (S %*% beta)
+#     Sigma <- riwish(v = n, S = E %*% t(E))
+# 
+# 
+#     # X.1 Save draws
+#     alpha_save[jx,] = alpha
+#     beta_save[jx,] = beta
+#     Sigma_save[,,jx] = Sigma
+#     A1_save[,,jx] = A1
+#     A0_save[,,jx] = A0
+#     X_save[jx,] = S %*% beta + t(rnorm(m,0,1) %*% chol(Sigma))
+# 
+#     # X.2 Convergence check
+#     if(jx == 1){
+#       chain[jx,] = c(alpha,beta,diag(Sigma))
+#     } else {
+#       chain[jx,] = (chain[jx-1,]*(jx-1) + c(alpha,beta,diag(Sigma)))/jx
+#     }
+# 
+#     # Trace Plot
+#     if(jx %% 1000 == 0) plot(mcmc(chain[c(1:jx),c(1,m+1,m+q+1)]))
+# 
+#     # Check for Convergence
+#     if(jx == length_min){
+# 
+#       # Compute discrete statistics of posterior distribution
+#       results <- list(
+#         "beta" = colMeans(beta_save[c((jx-length_sample):(jx-1)),]),
+#         "beta_var" = var(beta_save[c((jx-length_sample):(jx-1)),]),
+#         "alpha" = colMeans(alpha_save[c((jx-length_sample):(jx-1)),]),
+#         "alpha_var" = var(alpha_save[c((jx-length_sample):(jx-1)),]),
+#         "Sigma_mean" = apply(Sigma_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
+#         "A1" = apply(A1_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
+#         "A0" = apply(A0_save[,,c((jx-length_sample):(jx-1))], 1:2, mean),
+#         "X" = colMeans(X_save[c((jx-length_sample):(jx-1)),]),
+#         "X_var" = var(X_save[c((jx-length_sample):(jx-1)),]))
+# 
+#       return(results)
+# 
+#     }
+#   }
+# }
 
 
 # # This function returns a sparse matrix supported by Matrix pkg
