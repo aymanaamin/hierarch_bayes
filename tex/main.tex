@@ -74,13 +74,19 @@ where $Y_t(h)$ is an ($m \times 1$) vector containing the h-periods-ahead foreca
 \end{align}
 Intuitively, $\beta_h$ minimizes the reconciliation error, which is the squared distance between the actual and reconciled forecasts. As a result of the weighting matrix, forecasts with a higher prediction error receive less weight in the regression.\\
 
-%There are several other fields, where identification is achieved by means of informative priors. In structural vector auto-regressions, the structural coefficient matrices can be identified through prior assumptions about the sign of shocks \citep{Baumeister2015}. In dynamic factor models, different rotations of latent factors and loadings are observationally equivalent. The factors can be identified through prior restrictions on the factor loadings \citep{Bai2015}.  The consistent bottom-level forecasts $\beta$ follow a normal distribution with mean $b$ and covariance $B$. The reconciliation errors $\alpha$ are also distributed normally with mean $a$ and covariance $A$. The prediction errors follow a normal distribution with mean zero and variance $\Sigma$. The aggregation matrix $S$ and the sample of unreconciled forecasts $Y$ are believed to be fixed.
- %We have little prior knowledge about the reconciled bottom-level forecasts $\beta$ and the predictive distribution $\Sigma$. However, we may have some prior belief about the reconciliation errors because we trust some forecasting models more than others. This could be due to better data availability, better forecasting performance in the past or subjective judgment of the forecaster. A sufficiently narrow prior for $\alpha$ allows the identification of the model parameters. Furthermore, there is no common intercept by design. When all predictors are zero, no bottom-level forecasts are aggregated and the expected response should therefore be zero as well. Because the slope line passes through the origin, the reconciliation errors also do not necessarily sum to zero. 
 
+Contributions to literature:
+\begin{itemize}
+	\item Bayesian framework: Clear definition of beta as parameter, allows for probabilistic reconciliation
+	\item Shrinkage of reconciliation errors
+	\item Comparison of methods using comprehensive dataset
+\end{itemize}
+
+\clearpage
 
 \section{Bayesian Forecast Reconciliation}
 \subsection{Model}
-It is assumed that we have $n$ samples from the predictive distributions of each of the $m$ predictions.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} Therefore, $\hat{y}_{i}$ denotes a vector of length $m$ that contains a draw $i$ from the predictive distribution of all forecasts. The unobservable error term consists of two components, a prediction error $e_{i}$ and a reconciliation error $\alpha$. The latter can be interpreted as a fixed effect that is specific to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
+It is assumed that we have $n$ samples from the predictive distributions of each of the $m$ predictions.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} Therefore, $\hat{y}_{i}$ denotes a vector of length $m$ that contains a draw $i$ from the predictive distribution of all forecasts. The unobservable error term consists of two components, a prediction error $e_{i}$ and a reconciliation error $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
 \begin{align}
 \label{eq:main}
 \begin{tabular}{ccccccccc}
@@ -92,14 +98,14 @@ where $e$ follows a normal distribution with mean zero and covariance matrix $\S
 \begin{align}
 \hat{y}\ |\ \alpha,\beta,\Sigma &\sim N(\alpha + S\beta,\Sigma)
 \end{align}
-We are however interested in the reconciled forecasts $\tilde{y} \sim N(S\beta,\Sigma)$, which is the conditional expectation of $\hat{y}_{i}$ given $\alpha = 0$.
+We are however interested in the reconciled forecasts $\tilde{y} \sim N(S\beta,\Sigma)$, which can be obtained by conditioning on $\alpha = 0$. An estimate for the reconciled forecasts is therefore given by the conditional expectation function.
 \begin{align}
-	\tilde{y} &= E(\hat{y}|\alpha = 0,\beta,\Sigma) = \int \hat{y} f_{\hat{y}|\alpha,\beta,\Sigma}(0,\beta,\Sigma) d\hat{y} 
+	E(\tilde{y}) &= E(\hat{y}|\alpha = 0,\beta,\Sigma) = \int \hat{y} f_{\hat{y}|\alpha,\beta,\Sigma}(0,\beta,\Sigma) d\hat{y} 
 \end{align}
-This has the advantage that parameter uncertainty surrounding $\alpha$, $\beta$ and $\Sigma$ is also taken into account.\\
+The reconciled conditional distribution and the corresponding moments can be retrieved from the Gibbs sampling algorithm described in the following subsection.\\
 
 \subsection{Estimation}
-Equation (\ref{eq:main}) is essentially an error-components model where $\alpha$ is the unobserved reconciliation error. It cannot be eliminated through demeaning or differencing of the draws because there is no variation in the regressor $S$. However, the reconciliation errors are uncorrelated with the explanatory variables in the fixed aggregation matrix $S$. It is therefore possible to treat the reconciliation errors as random effects and omit them from the above regression. The estimate for $\beta$ is then still consistent and unbiased. In a second step, $\alpha$ can be obtained from $\hat{y_i} - \tilde{y}$. Another approach would be to include a dummy for each variable to account directly for the fixed effects. However, this is unfeasible because it leads to perfect multicollinearity in the explanatory variables. A convenient solution to this identification problem can be found in Bayesian shrinkage.\\
+The reconciliation equation is essentially an error-components model. Because there is no unique solution, it represents an ill-posed problem. The reconciliation errors cannot be eliminated through demeaning or differencing because there is no variation in the regressor $S$. However, they are uncorrelated with the explanatory variables in the fixed aggregation matrix $S$. It is therefore possible to treat the reconciliation errors as random effects and omit them from the above regression. The estimate for $\beta$ is then still consistent and unbiased. Another approach would be to include a dummy for each variable to account directly for the fixed effects. However, this is unfeasible because it leads to perfect multicollinearity in the explanatory variables. A convenient solution to this identification problem is given by Bayesian regularization methods.\\
 
 In Bayesian statistics, data is considered to be fixed and parameters are treated as random variables. The researcher has a prior belief about the distribution of the parameters in a model. After observing the data, this prior belief is combined with the likelihood according to Bayes' theorem in order to obtain the posterior distribution of the parameters. This principle can be applied to $\alpha$, $\beta$ and $\Sigma$ in the reconciliation regression.
 \begin{align}
@@ -120,7 +126,7 @@ Following \cite{Percy1992}, we get the marginal distributions of $\alpha$, $\bet
 
 \begin{enumerate}
 \item \textbf{Draw $\alpha$ conditional on $\beta,\Sigma,\hat{y},S$}\\
-The fixed effects $\alpha$ can be obtained from a regression of $Y_i - S\beta$ on an identity matrix. The conditional posterior distribution for $\alpha$ is given by
+The conditional posterior distribution for $\alpha$ is given by
 \begin{align}
 	\label{eq:alpha}
 \alpha\ |\ \beta,\Sigma,\hat{y} &\sim N(a_1,A_1)
@@ -133,7 +139,7 @@ a_1 &= A_1 \left(\sum_i \Sigma^{-1} (\hat{y}_i - S\beta) + A_0^{-1}a_0\right)
 We need to impose an informative prior on $\alpha$ in order to achieve identification. Possible prior specifications are discussed in section \ref{subsec:prior}.\\
 
 \item \textbf{Draw $\beta$ conditional on $\alpha,\Sigma,\hat{y},S$}\\
-The slope coefficients $\beta$ can be obtained from a regression of $Y_i - \alpha$ on $S$. The conditional posterior distribution for $\beta$ is given by
+The conditional posterior distribution for $\beta$ is given by
 \begin{align}
 \beta\ |\ \alpha,\Sigma,\hat{y} &\sim N(b_1,B_1)
 \end{align}
@@ -154,41 +160,28 @@ where
 v_1 &= v_0 + n\\
 R_1 &=  \left( R_0^{-1} + \sum_i (\hat{y}_i - \alpha - S \beta)'(\hat{y}_i - \alpha - S \beta) \right)^{-1}
 \end{align*}
+It is useful to set an almost uninformative prior with $v_0$ and $R_0$ very close to zero. This has negligible impact on the posterior distribution, but ensures that $\Sigma$ is nonsingular in the case where a base forecast has no variation. If there is no correlation between the base forecast distributions, for instance if they originate all from univariate models, it might be faster for large hierarchies to draw the variances equation-by-equation from an inverse gamma distribution. 
 
 \end{enumerate}
 
-\noindent Convergence of the Gibbs sampler can be checked using the recursive mean of the chains. After convergence is achieved, a sufficiently large number of these draws are saved. The mean of the hierarchically consistent forecasts can then be computed using discrete statistics on the saved draws from the posterior.\\
+\noindent This approach has the advantage that parameter uncertainty surrounding $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde y$. Convergence of the Gibbs sampler can be checked using the recursive mean of the Markov chains. After convergence is achieved, a sufficiently large sample of draws from the joint posterior is saved and evaluated.\\
 
 \subsection{Prior Selection}
 \label{subsec:prior}
-As noted before, the priors for the parameters should be as diffuse as possible with the exception of $A_0$, the prior variance of the reconciliation errors $\alpha$. $A_0$ can also reflect prior knowledge about the reconciliation errors. A high value on the diagonal of $A_0$ implies a belief that the reconciliation errors are larger, whereas a small value implies a belief that the reconciliation error should be small. There are several outcomes, depending on the information content of the prior.
-\begin{itemize}
-    \item\textbf{Diffuse prior}. Setting the diagonal entries on the prior variance $A_0$ close to infinity assumes that we have no knowledge about the reconciliation errors. As a result, the parameters cannot be uniquely identified and the Gibbs sampler does not converge.
-    \item \textbf{Strong prior}. Setting the diagonal entries on the prior variance $A_0$ very close to zero assumes that the reconciliation errors are distributed very tight around the prior mean, which is zero. In this case, the information in the prior dominates the informational content of the data entirely and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}. 
-    \item \textbf{Informed prior}. Parameter shrinkage has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. Well known examples include the Lasso and the Horseshoe penalty functions.\footnote{See for instance \cite{Piironen2017} for a comprehensive overview.}
-    
-    However, our prior knowledge about the reconciliation errors requires not only certain parameters to be shrunk towards zero, but others to be less restricted. A suitable framework is given by the global-local scale mixtures of normal distributions by \cite{Polson2010}. They assume that the prior variance of the coefficient $\alpha_j$ consists of a global variance component $\tau^2$ and a local variance component $\lambda_j^2$. A commonly used technique in this framework is the adaptive ridge estimator developed by \cite{Brown1980}, which has been shown by \cite{Firinguetti1997} and \cite{Haitovsky1987} to take an equivalent form to equation (\ref{eq:alpha}) in a seemingly unrelated regression framework. This implies that $A_0$ can be interpreted as a ridge matrix. Following \cite{Polson2010}, an appropriate form of the adaptive ridge matrix in a global-local shrinkage framework is given by
-    \begin{align*}
-	A_0 &= \tau^{2}(\lambda \Sigma \lambda')
-    \end{align*}
-    Using $\tau^2 = 1/n$ as the global variance component and $\lambda_j^2 = 1$ for each local variance component shrinks the posterior variance of $\alpha$ towards the squared standard errors in an intercept only regression. This leads to the familiar GLS result in a hierarchical reconciliation.
-    
-    Deviations from this global shrinkage can be controlled by letting the local components deviate from unity. However, if we want to shrink some of the reconciliation errors to zero, we want at the same time to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased aggregation error at their level of the hierarchy. One way to do this is to keep the total dispersion of the reconciliation errors constant. A convenient measure for total variability in a multivariate normal distribution is the generalized variance described in \cite{Mustonen1997}. It is defined as the determinant of a covariance matrix. Since our baseline local variance component $\lambda^2$ is an identity matrix, its diagonal elements can be changed in any way as long as the determinant of $\lambda^2$ remains constant at 1. A simple approach is the following scaling function:
-    \begin{align*}
-   	|\lambda^2| &= \lambda_1^2 \lambda_2^2 \hdots \lambda_m^2 
-   	= \prod_{s^- = 1}^{x} \lambda_{s^-}\ \eta^{-\frac{1}{x}}   \prod_{s^+ = x+1}^{m} \lambda_{s^+}\ \eta^{\frac{1}{m-x}} = 1
-    \end{align*}
-    The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\eta^{\frac{1}{x}}$ and the remaining $(m-x)$ components $\lambda_{s^+}$ are correspondingly scaled up by a factor $\eta^{\frac{1}{m-x}}$. The generalized variance remains at unity irrespective of the scaling factor $\eta$. Treating $A_0$ as a random parameter, we draw it from an inverse Wishart distribution conditional on the local variance hyperparameters $\lambda^2$. 
-    \begin{align}
-    	A_0\ |\ \alpha,\beta,Y,S,\lambda^2 \sim W^{-1}\left(n,\lambda \Sigma \lambda'\right)
-    \end{align}  
-    This setup has several advantages: The prior variance for the reconciliation errors is informed by the data and depends on the other model parameters. This allows us to place very few restrictions on the model and at the same time selectively shrink certain reconciled forecast towards their base forecasts.\footnote{The adaptive ridge estimator is therefore given by $\hat{\alpha} = \Bigl(n \Sigma^{-1} + n (\lambda \Sigma \lambda')^{-1}\Bigr)^{-1} \Bigl(\sum_i \Sigma^{-1} (Y_i - S\beta)\Bigr)$}
-   
-   The prior mean $a_0$ should be set to zero and the prior covariance $A_0$ should be a diagonal matrix. The entries on the diagonal should be lower for forecasts that the researcher is more confident in. Entries that correspond to uncertain forecasts can be set higher. Perhaps a reasonable prior can be derived from the level of aggregation that the forecast is in. Different weighting schemes might be tested and conclusions can be drawn from the forecast combination literature, such as \cite{Cesur2016} or \cite{Brooks2001}.\\
-   
-   
-\end{itemize}
+An informative prior on $\alpha$ reflects knowledge about the reconciliation errors and allows for parameter identification through regularization. The prior mean $a_0$ of the reconciliation errors is a zero vector, assuming that the base forecasts are unbiased. The prior covariance matrix $A_0$ determines how strongly the reconciliation errors are allowed to deviate from zero. As a result, there are infinitely many choices for $A_0$. Setting the diagonal entries very high leads to a diffuse prior. This implies that there is no prior knowledge about the reconciliation errors and the parameters cannot be uniquely identified. Setting the diagonal entries very close to zero leads to a strong prior. This implies that the reconciliation errors are distributed tightly around zero. In this case, the prior information dominates the informational content of the data and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}.\\
 
+A reasonable informative prior covariance matrix is given by the squared standard errors of the base forecast means. This is $\Omega/(n-m)$, where $\Omega$ is a diagonal matrix containing the base forecast variances. This shrinks the reconciliation error of series with a lower prediction error closer to zero. In addition, there may exist prior information that certain models provide more reliable forecasts than others. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster. In this case, it is of interest to selectively shrink the reconciliation errors of those forecasts towards zero. At the same time, it is necessary to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased reconciliation errors at their level of the hierarchy.
+
+A framework for this is given by \cite{Polson2010}, who suggest a global-local shrinkage approach using scale mixtures of normal distributions. $A_0$ consists therefore of a global variance component that shrinks all reconciliation errors towards zero. A local variance component allows for deviations from this point, given that the total dispersion It is therefore required that the total dispersion of the reconciliation errors remains constant.  A measure for total variability of a multivariate normal distribution is the generalized variance described in \cite{Mustonen1997} and defined as the determinant of a covariance matrix. The local variance component $\lambda$ can then be constructed as a diagonal matrix whose elements can be scaled in any way as long as the determinant remains constant at 1.
+\begin{align*}
+|\lambda| &= \lambda_1 \lambda_2 \hdots \lambda_m
+   	= \prod_{s^- = 1}^{x} \lambda_{s^-}\ \eta^{-\frac{1}{x}}   \prod_{s^+ = x+1}^{m} \lambda_{s^+}\ \eta^{\frac{1}{m-x}} = m-q-1
+\end{align*}
+The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\eta^{\frac{1}{x}}$ and the remaining $(m-x)$ components $\lambda_{s^+}$ are correspondingly scaled up by a factor $\eta^{\frac{1}{m-x}}$. The generalized variance remains at unity irrespective of the scaling factor $\eta$ and the number of series to be scaled down $x$. Another possible approach is the scaling of each local variance component according to the number of subaggregates at the corresponding node in the hierarchy. $A_0$ is defined ahead of the sampling algorithm using the base forecast variances, but it could also be treated as a hierarchical prior using $\Sigma$ instead of $\Omega$.
+\begin{align}
+    	A_0 =  \frac{\lambda\Omega \lambda'}{n-m}
+\end{align}
+Is is noteworthy that $A_0$ can be interpreted as the regularization term in the adaptive ridge estimator developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}. Ridge regressions are particularly useful in the presence of multicollinearity. Parameter shrinkage of this form has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. Well known examples include the Lasso and the Horseshoe penalty functions.\\
 \clearpage
 
 \section{Simulation Exercise}

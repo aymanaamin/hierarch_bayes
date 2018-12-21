@@ -5,42 +5,42 @@ rm(list = ls())
 
 library(MCMCpack)
 library(hts)
+library(Matrix)
 
-source("lib/functions.R")
+source("lib/functions_model.R")
 
 
 
 # 1. GET DATA --------------------------------------------------------------
 
-load("dat/swisstrade.Rdata")
+# load("dat/tradehts.Rdata")
+load("dat/tradegts_reduced.Rdata")
 
-swisstrade <- hts(y = aggts(swisstrade, levels = 1))  # Reduced to regions lvl 1
 
-n <- 1000 # draws
-h <-  12 # forecast horizon
+# swisstrade <- hts(y = aggts(tradegts_reduced, levels = 1))  # Reduced to regions lvl 1
+swisstrade <- tradegts_reduced
+
+h <-  1 # forecast horizon
 
 # define training sample
-test_date = 2000-1/12
+test_date = 2002-1/12
 swisstrade_training <- window(swisstrade, end = test_date)
 swisstrade_test <- window(swisstrade, start = test_date+1/12, end = test_date+h/12)
 
 
 
+# 2. RECONCILIATION --------------------------------------------------------
+
+results <- RunBSR(object = swisstrade_training, 
+                  fmethod = "arima",
+                  h = h,
+                  series_to_be_shrunk = c(1,5,19), 
+                  nser_shr = 0, 
+                  xser_shr = 96000)
 
 
-# 3. RECONCILIATION --------------------------------------------------------
 
-series_to_be_shrunk = c(1)
-
-results <- run_recon(object = swisstrade_training, fmethod = "arima", h = h,
-                     series_to_be_shrunk, nser_shr = 1, xser_shr = 1e+5)
-
-
-
-
-# 5. RESULTS ---------------------------------------------------------------
-
-
+# 3. RESULTS ---------------------------------------------------------------
 
 # Compare different reconciliation methods
 swisstrade_forecast_mint <- forecast(swisstrade_training, h = h, method = "comb", weights = "mint", fmethod = "arima")
@@ -59,11 +59,11 @@ comparison
 
 # Compare base forecast and reconciled forecasts
 hor = 1
-data.frame("Shrinkage" = 1*(1:results$pars$m %in% series_to_be_shrunk),
+data.frame("Shrinkage" = 1*(1:results$pars$m %in% results$pars$series_to_be_shrunk),
            "BSR" = round(rowMeans(do.call(rbind, lapply(as.list(aggts(results$forecast)), function(fx) fx[hor])))/1e+6,1),
            "MinT" = round(rowMeans(do.call(rbind, lapply(as.list(aggts(swisstrade_forecast_mint)), function(fx) fx[hor])))/1e+6,1),
            "WLS" = round(rowMeans(do.call(rbind, lapply(as.list(aggts(swisstrade_forecast_wls)), function(fx) fx[hor])))/1e+6,1),
            "OLS" = round(rowMeans(do.call(rbind, lapply(as.list(aggts(swisstrade_forecast_ols)), function(fx) fx[hor])))/1e+6,1),
-           "Base Forecast Mean" = round(do.call(rbind, lapply(results$base, function(fx) mean(fx[,hor])))/1e+6,1),
-           "Base Forecast SD" = round(do.call(rbind, lapply(results$base, function(fx) sd(fx[,hor])))/1e+6,1))
+           "Base Forecast Mean" = round(do.call(rbind, lapply(results$base.forecasts, function(fx) mean(fx[,hor])))/1e+6,1),
+           "Base Forecast SD" = round(do.call(rbind, lapply(results$base.forecasts, function(fx) sd(fx[,hor])))/1e+6,1))
 
