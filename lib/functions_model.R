@@ -13,7 +13,7 @@
 #' @export
 RunBSR <- function(object, h, fmethod = "arima", 
                    series_to_be_shrunk = NULL,
-                   nser_shr = 0, xser_shr = 1e+6){
+                   nser_shr = 0){
   
   start.time = Sys.time() # Tic
   
@@ -29,7 +29,7 @@ RunBSR <- function(object, h, fmethod = "arima",
                "m" = nrow(S),
                "q" = ncol(S),
                "nser_shr" = nser_shr,
-               "xser_shr" = xser_shr,
+               "xser_shr" = nrow(S)*1000, # n*m
                "series_to_be_shrunk" = series_to_be_shrunk) 
   
   # Step 2: Run Forecasting Model

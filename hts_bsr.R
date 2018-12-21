@@ -34,9 +34,7 @@ swisstrade_test <- window(swisstrade, start = test_date+1/12, end = test_date+h/
 results <- RunBSR(object = swisstrade_training, 
                   fmethod = "arima",
                   h = h,
-                  series_to_be_shrunk = c(1,5,19), 
-                  nser_shr = 0, 
-                  xser_shr = 96000)
+                  series_to_be_shrunk = c(1,5,19))
 
 
 
