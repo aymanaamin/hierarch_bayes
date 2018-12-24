@@ -17,6 +17,10 @@ RunBSR <- function(object, h, fmethod = "arima",
   
   start.time = Sys.time() # Tic
   
+  if(!is.null(series_to_be_shrunk)) if(max(series_to_be_shrunk) > length(unlist(object$labels))){
+    stop("Series to be shrunk doesn't exist.", 
+         call. = FALSE)
+  }
   
   
   # Step 1: Define Summation Matrix & Parameters
