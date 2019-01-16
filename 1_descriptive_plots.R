@@ -19,7 +19,7 @@ source("lib/functions_evaluation.R")
 load("dat/countries.rda")
 load("dat/tradegts.Rdata")
 load("dat/tradehts.Rdata")
-load("dat/tradegts_reduced.Rdata")
+load("dat/tradegts_reduced2.Rdata")
 
 # Options
 options(scipen=10)
@@ -133,7 +133,14 @@ regfeatures <- tsfeatures(aggts(tradehts$reg)) %>%
              Level = c(rep(1:length(rlvl), rlvl),rep(3,245)),
              Exports = reg_exports) %>% 
   arrange(sample(x = length(reglist),size = length(reglist),replace = F)) %>% 
-  mutate(Region = factor(Region, levels = c(regions,"World"))) %>% 
+  mutate(Region = factor(Region, levels = c("Europe",
+                                            "North America",
+                                            "East Asia",
+                                            "Africa and Middle East",
+                                            "Latin America",
+                                            "Central Asia","South Asia",
+                                            "Australia and Oceania",
+                                            "World"))) %>% 
   filter(Exports > 1)
 
 regfeatures$PC1 <- -regfeatures$PC1 
@@ -153,7 +160,38 @@ ggplot(regfeatures, aes(x=Exports, y=PC1)) +
   guides(color=guide_legend(nrow=3), size=guide_legend(nrow=3))
 
 ggsave("tex/fig/fig_confetti.pdf", device = "pdf",
-       width = 16, height = 10, units = "cm")
+       width = 18, height = 10, units = "cm")
+
+
+
+# 4. SEASONALITIES --------------------------------------------------------
+
+tot <- matrix(window(tsl$`Goods Total Lvl 2/011`, start = 2012),nrow =12)*1e+3
+aus <- matrix(window(tsl$`Goods Lvl 2 per Country/AOAU011`, start = 2012),nrow =12)*1e+3
+
+data <- rbind(tibble(series = factor("World"),
+                     avg = apply(tot,1,FUN=mean),
+                     min = apply(tot,1,FUN=min),
+                     max = apply(tot,1,FUN=max),
+                     mon = as_factor(month.abb,ordered = T)),
+              tibble(series = "Australia",
+                     avg = apply(aus,1,FUN=mean),
+                     min = apply(aus,1,FUN=min),
+                     max = apply(aus,1,FUN=max),
+                     mon = as_factor(month.abb,ordered = T)))
+
+
+ggplot(data, aes(x = mon, group = series)) +
+  geom_ribbon(aes(ymin = min, ymax = max), fill = "grey70", alpha = 0.5) +
+  geom_line(aes(y = avg)) +
+  facet_grid(series ~ ., scales = "free_y") +
+  ylab("Volume (in Mio. CHF)") +
+  xlab(NULL) +
+  theme_bw()
+
+ggsave("tex/fig/fig_season.pdf", device = "pdf",
+       width = 18, height = 5, units = "cm")
+
 
 
 

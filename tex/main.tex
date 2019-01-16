@@ -15,54 +15,71 @@
 % 2. Model	
 \section{Introduction}
 \label{sec:model}
-
-Example of a hierarchy with $k = 3$ levels, $m = 13$ series in total and $q = 9$ series at the bottom of the hierarchy.\\
-
+Data in business and economics often occurs naturally in hierarchical structures. For instance, sales of a car dealer can be disaggregated by brand and then further by car type. In most cases, the hierarchical data can be aggregated in more than one way, which is referred to as a grouped time series by \cite{Hyndman2016}. Retail sales for example can be added up by product type or by store location. Employment data can be aggregated by age group, gender, profession or region. Nominal gross domestic product can be added up from production, income or expenditures accounts. All these hierarchies are subject to strict aggregation constraints. Figure \ref{fig:tree} gives an example of a simple grouped hierarchy with $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the bottom. The series at the top and the bottom are the same for different groupings.
 \begin{figure}[H]
 	\centering
 	\begin{forest}
-	before packing={
-		forked edges,
-	}
+		before packing={
+			forked edges,
+		}
 		[{$Y_0$}
-			 [{$Y_{01}$}
-		 		[{$Y_{011}$}]
-				[{$Y_{012}$}]
-		 		[{$Y_{012}$}]
-		 	]
-			 [{$Y_{02}$}
-		 		[{$Y_{021}$}]
-				[{$Y_{022}$}]
-		 		[{$Y_{023}$}]
-		 	]
-			 [{$Y_{03}$}
-				[{$Y_{031}$}]
-				[{$Y_{032}$}]
-				[{$Y_{033}$}]
-			]
+		[{$Y_{A}$}
+		[{$Y_{A1}$}]
+		[{$Y_{A2}$}]
+		]
+		[{$Y_{B}$}
+		[{$Y_{B1}$}]
+		[{$Y_{B2}$}]
+		]
+		]
+	\end{forest}\hspace{1cm}
+	\begin{forest}
+		before packing={
+			forked edges,
+		}
+		[{$Y_0$}
+		[{$Y_{1}$}
+		[{$Y_{A1}$}]
+		[{$Y_{B1}$}]
+		]
+		[{$Y_{2}$}
+		[{$Y_{A2}$}]
+		[{$Y_{B2}$}]
+		]
 		]
 	\end{forest}
-\vspace{0.5cm}
-	\caption{Simple Example Hierarchy}
+	\vspace{0.5cm}
+	\caption{Simple Example of a Grouped Time Series}
+	\label{fig:tree}
 \end{figure}
-
-If we define $Y_t = [Y_0, Y_{01}, Y_{02}, \hdots, Y_{033}]'$ to be an ($m \times 1$) vector of top-down stacked observations from all levels, it must hold at each point in time $t$ that
+$Y_t$ is defined to be a vector containing the top-down stacked observations from all levels and $S$ is a corresponding aggregation matrix.
+\begin{align*}\underset{(m\times 1)}{Y_t} = \begin{bmatrix}
+\ Y_0\ \ \\
+\ Y_A\ \ \\
+\ Y_B\ \ \\
+\ Y_1\ \ \\
+\ Y_2\ \ \\
+\ Y_{A1}\ \ \\
+\ Y_{A2}\ \ \\
+\ Y_{A3}\ \ \\
+\ Y_{A4}\ \ 
+\end{bmatrix} \quad \underset{(m\times q)}{S} &=
+\begin{bmatrix}
+\ 1 & 1 & 1 & 1 \ \ \\
+\ 1 & 1 & 0 & 0 \ \ \\
+\ 0 & 0  & 1 & 1\ \ \\
+\ 1 & 0 & 1 & 0 \ \ \\
+\ 0 & 1 & 0 & 1\ \ \\
+\ 1 & 0 & 0 & 0 \ \ \\
+\ 0 & 1 & 0 & 0 \ \ \\
+\ 0 & 0 & 1 & 0 \ \ \\
+\ 0 & 0 & 0 & 1\ \ 
+\end{bmatrix}
+\end{align*}
+The observations at level $k$, the bottom of the hierarchy, are stacked into a ($q \times 1$) vector $Y_{k,t} = [Y_{A1},Y_{A2},Y_{B1},Y_{B2}]'$. It must hold at each point in time that
 \begin{align}
 Y_t &= S Y_{k,t}
 \end{align}
-where $Y_{k,t}$ is a ($q \times 1$) vector containing the observations at level $k$, the bottom of the hierarchy, and $S$ is an ($m \times q$) aggregation matrix. For the above example, $S$ has to be constructed in the following way.
-\begin{align*} S &=
-\begin{bmatrix}
-\ 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1\ \ \\
-\ 1 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0\ \ \\
-\ 0 & 0 & 0 & 1 & 1 & 1 & 0 & 0 & 0\ \ \\
-\ 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 1\ \ \\
-\ 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\ \ \\
-\ 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0\ \ \\
-  &   &   &   & \vdots &   &   &   &   \\
-\ 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1\ \ 
-\end{bmatrix}
-\end{align*}
 For the forecasts to be consistent and additive, they usually have to be estimated either top-down or bottom-up. However, there are benefits to forecasting all series in the hierarchy. It might be that different models provide better fits, varying information sets are available, or judgment predictions have to be used. As a result of this, the different levels of the forecasted hierarchy usually cannot be aggregated consistently. In order to reconcile forecasts at each level of the hierarchy, \cite{Hyndman2011} show that optimal predictions at the bottom level can be obtained using the following regression approach.
 \begin{align}
 Y_t(h) &= S\beta_{h} + e_t(h)
@@ -86,7 +103,7 @@ Contributions to literature:
 
 \section{Bayesian Forecast Reconciliation}
 \subsection{Model}
-It is assumed that we have $n$ samples from the predictive distributions of each of the $m$ predictions.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} Therefore, $\hat{y}_{i}$ denotes a vector of length $m$ that contains a draw $i$ from the predictive distribution of all forecasts. The unobservable error term consists of two components, a prediction error $e_{i}$ and a reconciliation error $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
+It is assumed that we have $n$ samples from the predictive distributions of each of the $m$ predictions. Therefore, $\hat{y}_{i}$ denotes a vector of length $m$ that contains a draw $i$ from the predictive distribution of all forecasts.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} The unobservable error term consists of two components, a prediction error $e_{i}$ and a reconciliation error $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
 \begin{align}
 \label{eq:main}
 \begin{tabular}{ccccccccc}
@@ -168,44 +185,28 @@ It is useful to set an almost uninformative prior with $v_0$ and $R_0$ very clos
 
 \subsection{Prior Selection}
 \label{subsec:prior}
-An informative prior on $\alpha$ reflects knowledge about the reconciliation errors and allows for parameter identification through regularization. The prior mean $a_0$ of the reconciliation errors is a zero vector, assuming that the base forecasts are unbiased. The prior covariance matrix $A_0$ determines how strongly the reconciliation errors are allowed to deviate from zero. As a result, there are infinitely many choices for $A_0$. Setting the diagonal entries very high leads to a diffuse prior. This implies that there is no prior knowledge about the reconciliation errors and the parameters cannot be uniquely identified. Setting the diagonal entries very close to zero leads to a strong prior. This implies that the reconciliation errors are distributed tightly around zero. In this case, the prior information dominates the informational content of the data and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}.\\
+An informative prior on $\alpha$ reflects knowledge about the reconciliation errors and allows for parameter identification through regularization. The prior mean $a_0$ of the reconciliation errors is a zero vector, assuming that the base forecasts are unbiased. The prior covariance matrix $A_0$ determines how strongly the reconciliation errors are allowed to deviate from zero. As a result, there are infinitely many choices for $A_0$. Setting the diagonal entries very high leads to a diffuse prior. This implies that there is no prior knowledge about the reconciliation errors and the parameters cannot be uniquely identified. Setting the diagonal entries very close to zero leads to a strong prior. This implies that the reconciliation errors are distributed tightly around zero. In this case, the prior information dominates the informational content of the data and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}. A reasonable informative prior covariance matrix is given by the mean squared error $\Sigma/n$, treating $A_0$ as a hierarchical prior. This shrinks the reconciliation error of series with a lower prediction error closer to zero. It depends on the size of the hierarchy how strongly the shrinkage towards the mean squared error needs to be. Larger hierarchies require less shrinkage, which can be accounted for by multiplying a factor $q$ such that $A_0 = q\Sigma/n$. As a result, the variance of the reconciliation errors has the desirable property that it converges towards the mean squared error as $q$ gets larger.
+\begin{align*}
+A_1 &= \left(n\Sigma^{-1} + n(q\Sigma)^{-1}\right)^{-1} =  \frac{q}{1+q} \frac{\Sigma}{n}
+\end{align*}
+In addition, there may exist prior information on the reliability of certain models. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster. In this case, it is of interest to selectively shrink the reconciliation errors of those forecasts towards zero. At the same time, it is necessary to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased reconciliation errors at their level of the hierarchy.
 
-A reasonable informative prior covariance matrix is given by the squared standard errors of the base forecast means. This is $\Omega/(n-m)$, where $\Omega$ is a diagonal matrix containing the base forecast variances. This shrinks the reconciliation error of series with a lower prediction error closer to zero. In addition, there may exist prior information that certain models provide more reliable forecasts than others. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster. In this case, it is of interest to selectively shrink the reconciliation errors of those forecasts towards zero. At the same time, it is necessary to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased reconciliation errors at their level of the hierarchy.
-
-A framework for this is given by \cite{Polson2010}, who suggest a global-local shrinkage approach using scale mixtures of normal distributions. $A_0$ consists therefore of a global variance component that shrinks all reconciliation errors towards zero. A local variance component allows for deviations from this point, given that the total dispersion It is therefore required that the total dispersion of the reconciliation errors remains constant.  A measure for total variability of a multivariate normal distribution is the generalized variance described in \cite{Mustonen1997} and defined as the determinant of a covariance matrix. The local variance component $\lambda$ can then be constructed as a diagonal matrix whose elements can be scaled in any way as long as the determinant remains constant at 1.
+A framework for this is given by \cite{Polson2010}, who suggest a global-local shrinkage approach using scale mixtures of normal distributions. $A_0$ consists therefore of a global variance component that shrinks all reconciliation errors towards zero. A local variance component allows for deviations from this point, given that the total dispersion It is therefore required that the total dispersion of the reconciliation errors remains constant.  A measure for total variability of a multivariate normal distribution is the generalized variance described in \cite{Mustonen1997} and defined as the determinant of a covariance matrix. The local variance component $\lambda$ can then be constructed as a diagonal matrix whose elements can be scaled in any way as long as the determinant remains constant at $1$. This ensures that the total dispersion of the prior covariance matrix remains constant.
 \begin{align*}
 |\lambda| &= \lambda_1 \lambda_2 \hdots \lambda_m
    	= \prod_{s^- = 1}^{x} \lambda_{s^-}\ \eta^{-\frac{1}{x}}   \prod_{s^+ = x+1}^{m} \lambda_{s^+}\ \eta^{\frac{1}{m-x}} = 1
 \end{align*}
-The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\eta^{\frac{1}{x}}$ and the remaining $(m-x)$ components $\lambda_{s^+}$ are correspondingly scaled up by a factor $\eta^{\frac{1}{m-x}}$. The generalized variance remains at unity irrespective of the scaling factor $\eta$ and the number of series to be scaled down $x$. Another possible approach is the scaling of each local variance component according to the number of subaggregates at the corresponding node in the hierarchy. $A_0$ is defined ahead of the sampling algorithm using the base forecast variances, but it could also be treated as a hierarchical prior using $\Sigma$ instead of $\Omega$.
+The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\eta^{\frac{1}{x}}$ and the remaining $(m-x)$ components $\lambda_{s^+}$ are correspondingly scaled up by a factor $\eta^{\frac{1}{m-x}}$. The generalized variance remains at unity irrespective of the scaling factor $\eta$ and the number of series to be scaled down $x$. Another possible approach is the scaling of each local variance component according to the number of subaggregates at the corresponding node in the hierarchy.
 \begin{align}
-    	A_0 =  \frac{\lambda\Omega \lambda'}{n-m}
+    	A_0 =  \frac{q\lambda\Sigma\lambda'}{n}
 \end{align}
 Is is noteworthy that $A_0$ can be interpreted as the regularization term in the adaptive ridge estimator developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}. Ridge regressions are particularly useful in the presence of multicollinearity. Parameter shrinkage of this form has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. Well known examples include the Lasso and the Horseshoe penalty functions.\\
 \clearpage
 
-\section{Simulation Exercise}
-
-Simulate hierarchies of various sizes, levels and time series properties and compare benchmark performance / forecasting accuracy with other methods such as
-\begin{itemize}
-    \item Top-Down Approach
-    \item Bottom-Up Approach
-    \item Middle-Out Approach
-    \item GLS Reconciliation \cite{Hyndman2011}
-    \item Minimum Trace Reconciliation \cite{Wickramasuriya2015}
-    \item Alternative Weighting Matrices
-    \item No Reconciliation\\
-\end{itemize}
-
-What happens if we have forecasts that do not follow a normal distribution? An example from my own experience: Swiss imports are driven quite heavily by imports of airplanes and it is uncertain when they arrive, e.g. forecasts are bimodal.
-
-Another advantage of the bayesian approach: we can discard draws where a bottom level forecast is negative.
-
-\clearpage
 
 \section{Empirical Application}
 \subsection{Data}
-We use a comprehensive dataset of Swiss foreign trade in goods. For both exports and imports, it contains the nominal value in Swiss francs of goods traded with 245 countries and dependent territories. They are aggreg The goods are categorized according to the economic sector, following a national nomenclature covering 14 main groups and 272 subgroups. The hierarchy is unbalanced, meaning that certain goods categories are available more disaggregated than others. This results in a hierarchy with up to 5 levels.
+We use a comprehensive dataset of Swiss foreign trade in goods. For both exports and imports, it contains the nominal value in Swiss francs of goods traded with 245 countries and dependent territories. The goods are categorized according to the economic sector, following a national nomenclature covering 14 main groups and 272 subgroups. The hierarchy is unbalanced, meaning that certain goods categories are available more disaggregated than others. This results in a hierarchy with up to 5 levels. Because of the geographical and the categorical dimension, there is no unique hierarchical structure. Following \cite{Hyndman2016}, these time series can therefore be thought of as a grouped time series. There are 63'516 time series with non-zero entries in total, 35'602 for the export hierarchy and 27'914 for the import hierarchy. The time series are available in monthly frequency from 1989 on and are not adjusted for working days or seasonality. The data is collected by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}} and made available in a machine-friendly data format only on basis of a subscription.\\
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_area_reg}
 	\caption{Swiss Exports in Goods by Region}
@@ -235,95 +236,121 @@ We use a comprehensive dataset of Swiss foreign trade in goods. For both exports
     \item Precious metals, precious and semi-precious stones
     \item Works of art and antiques
 \end{enumerate}
-Because of the geographical and the categorical dimension, there is no unique hierarchical structure. Following \cite{Hyndman2016}, these time series can therefore be thought of as a grouped time series. There are 63'516 time series with non-zero entries in total, 35'602 for the export hierarchy and 27'914 for the import hierarchy. The time series are available in monthly frequency from 1989 on and are not adjusted for working days or seasonality. The data is collected by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}} and made available in a machine-friendly data format only on basis of a subscription.\\
+
+Series at the top level tend to be more predictable than those at the bottom.
+
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_season}
+	\caption{Exports of Food, Beverages and Tobacco to the World and Australia}
+	\footnotesize{Plot demonstrates different seasonalities at different levels in a hierarchy. Line indicates average of 2012 - 2017, bands indicate minimum and maximum.}
+\end{figure}
+
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_confetti}
+	\caption{Predictability of Different Levels in a Hierarchy}
+	\footnotesize{Predictability given by the first component of time series features such as trend, strength of seasonality, spectral entropy, autocorrelation.}
+\end{figure}
 
 
 \subsection{Results}
 Repeat comparison from simulation exercise, construct export and import hierarchies by geographical region, countries and product categories. As a by-product, there could a visualization in the spirit of the MIT Trade Atlas\footnote{\url{https://atlas.media.mit.edu/en/visualize/tree_map/hs92/export/ltu/all/show/2016/ }} be developed.\\
 
-Results from running hts on the data, using the average across the root mean squared errors and mean absolute percentage errors of all series.\\
-\begin{table}[H]
-\centering
-\caption{Forecast Accuracy by Standard Aggregation Methods}
-\small
-\begin{tabularx}{\textwidth}{Xcclcclcclcc}
-\toprule
-& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
-\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
-& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
-\midrule
-Bottom-up &  &  &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\addlinespace
-Middle-out &  &  &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\addlinespace
-\multicolumn{3}{l}{Top-down (Gross-Sohl A)} &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\addlinespace
-\multicolumn{3}{l}{Top-down (Gross-Sohl F)} &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\addlinespace
-\multicolumn{3}{l}{Top-down (Forecast Proportions)} &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\bottomrule
-\end{tabularx}
-\end{table}
+This graph is going to include also subcategories and countries:
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_levels}
+	\caption{Accuracy of Reconciliation Methods at Different Levels}
+	\footnotesize{Average of all time periods, forecasting horizons and methods. Lower level forecast errors are weighted by their respective export share.}
+\end{figure}
 
-Using optimal forecast combination with different weighting schemes:\\
-\begin{table}[H]
-\centering
-\caption{Forecast Accuracy by Optimal Forecast Combination Weights}
-\small
-\begin{tabularx}{\textwidth}{Xcclcclcclcc}
-\toprule
-& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
-\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
-& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
-\midrule
-\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\addlinespace
-\multicolumn{3}{l}{WLS (forecast variance weights) } &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\addlinespace
-\multicolumn{3}{l}{MinT (full covariance weights) } &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\addlinespace
-\multicolumn{3}{l}{nseries (numer of series at each node)} &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\ \\
-
-Results from Bayesian estimation.. In addition, it might be interesting to look at forecast errors for different regional/categorical aggregates:
-\begin{table}[H]
-\centering
-\caption{Forecast Accuracy by Regional and Categorical Aggregates}
-\small
-\begin{tabularx}{\textwidth}{Xcclcclcclcc}
-\toprule
-& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
-\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
-& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
-\midrule
-\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
-\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-\bottomrule
-\end{tabularx}
-\end{table}
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_methods}
+	\caption{Accuracy of Forecasting Methods}
+	\footnotesize{Average over all reconciliation methods.}
+\end{figure}
+%
+%Results from running hts on the data, using the average across the root mean squared errors and mean absolute percentage errors of all series.\\
+%\begin{table}[H]
+%\centering
+%\caption{Forecast Accuracy by Standard Aggregation Methods}
+%\small
+%\begin{tabularx}{\textwidth}{Xcclcclcclcc}
+%\toprule
+%& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
+%\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
+%& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
+%\midrule
+%Bottom-up &  &  &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\addlinespace
+%Middle-out &  &  &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\addlinespace
+%\multicolumn{3}{l}{Top-down (Gross-Sohl A)} &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\addlinespace
+%\multicolumn{3}{l}{Top-down (Gross-Sohl F)} &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\addlinespace
+%\multicolumn{3}{l}{Top-down (Forecast Proportions)} &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\bottomrule
+%\end{tabularx}
+%\end{table}
+%
+%Using optimal forecast combination with different weighting schemes:\\
+%\begin{table}[H]
+%\centering
+%\caption{Forecast Accuracy by Optimal Forecast Combination Weights}
+%\small
+%\begin{tabularx}{\textwidth}{Xcclcclcclcc}
+%\toprule
+%& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
+%\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
+%& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
+%\midrule
+%\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\addlinespace
+%\multicolumn{3}{l}{WLS (forecast variance weights) } &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\addlinespace
+%\multicolumn{3}{l}{MinT (full covariance weights) } &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\addlinespace
+%\multicolumn{3}{l}{nseries (numer of series at each node)} &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
+%\bottomrule
+%\end{tabularx}
+%\end{table}
+%
+%\ \\
+%
+%Results from Bayesian estimation.. In addition, it might be interesting to look at forecast errors for different regional/categorical aggregates:
+%\begin{table}[H]
+%\centering
+%\caption{Forecast Accuracy by Regional and Categorical Aggregates}
+%\small
+%\begin{tabularx}{\textwidth}{Xcclcclcclcc}
+%\toprule
+%& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
+%\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
+%& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
+%\midrule
+%\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
+%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
+%\bottomrule
+%\end{tabularx}
+%\end{table}
 
 
 

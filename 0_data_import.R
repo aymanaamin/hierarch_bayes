@@ -48,25 +48,35 @@ tradegts <- gts(y = dat_exp,
 tradehts <- list(cat = hts(y = dat_exp_cat, characters = c(2,1,1,2,2)),
                  reg = hts(y = dat_exp_reg, characters = c(2,2)))
 
-# define reduced hierarchies, only until level 2
-agggts_red <- aggts(tradegts, levels = 8) # Reduced to regions lvl 2
-colnames(agggts_red) <- substr(colnames(agggts_red), 24,40)
-tradegts_reduced <- gts(y = agggts_red,
+# define reduced hierarchies, only until level 1
+agggts_red1 <- aggts(tradegts, levels = 8)
+colnames(agggts_red1) <- substr(colnames(agggts_red1), 24,40)
+tradegts_reduced1 <- gts(y = agggts_red1,
                         gnames = c("Regions Total", "Goods Total Lvl 1"),
                         characters = list(2, 2))
+
+# define reduced hierarchies, only until level 2
+agggts_red2 <- aggts(tradegts, levels = 14)
+colnames(agggts_red2) <- substr(colnames(agggts_red2), 25,40)
+tradegts_reduced2 <- gts(y = agggts_red2,
+                         gnames = c("Regions Total", "Countries Total",
+                                    "Goods Total Lvl 1","Goods Total Lvl 2","Goods Lvl 1 per Region",
+                                    "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
+                         characters = list(c(2,2), c(2,1)))
 
 tradehts_reduced <- list(cat = hts(y = aggts(tradehts$cat, levels = 2), characters = c(2,1)),
                          reg = hts(y = aggts(tradehts$reg, levels = 2), characters = c(2,2)))
 
 rm(dat_exp,dat_exp_reg,dat_exp_cat,total_exp,total_exp_reg,
-   total_exp_cat,agggts_red,total)
+   total_exp_cat,agggts_red1,agggts_red2,total)
 
 
 # 3. INSPECT DATA ----------------------------------------------------------
 
 # aggregate
 agg_gts <- as.list(aggts(tradegts))
-agg_gts_red <- as.list(aggts(tradegts_reduced))
+agg_gts_red1 <- as.list(aggts(tradegts_reduced1))
+agg_gts_red2 <- as.list(aggts(tradegts_reduced2))
 agg_hts_reg <- as.list(aggts(tradehts$reg))
 agg_hts_cat <- as.list(aggts(tradehts$cat))
 
@@ -79,13 +89,13 @@ plot(agg_gts$'Goods Lvl 1 per Region/AF10') # Vehicles to Region 'Africa and Mid
 
 # crosscheck to ensure the different hierarchies are aggregated correctly
 all.equal(agg_hts_reg$Total,agg_gts$Total)
-all.equal(agg_gts$Total,agg_gts_red$Total)
+all.equal(agg_gts$Total,agg_gts_red2$Total)
 all.equal(agg_hts_reg$AOAU,agg_gts$`Countries Total/AOAU`)
-all.equal(agg_hts_cat$`06`,agg_gts_red$`Goods Total Lvl 1/06`)
-all.equal(agg_hts_reg$EU,agg_gts_red$`Regions Total/EU`)
+all.equal(agg_hts_cat$`06`,agg_gts_red1$`Goods Total Lvl 1/06`)
+all.equal(agg_hts_reg$EU,agg_gts_red2$`Regions Total/EU`)
 all.equal(agg_hts_cat$`061101`,agg_gts$`Goods Total Lvl 4/061101`)
 
-rm(agg_hts_reg,agg_hts_cat,agg_gts_red)
+rm(agg_hts_reg,agg_hts_cat,agg_gts_red1,agg_gts_red2)
 
 
 
@@ -93,7 +103,8 @@ rm(agg_hts_reg,agg_hts_cat,agg_gts_red)
 
 save(tradegts, file = "dat/tradegts.Rdata")
 save(tradehts, file = "dat/tradehts.Rdata")
-save(tradegts_reduced, file = "dat/tradegts_reduced.Rdata")
+save(tradegts_reduced1, file = "dat/tradegts_reduced1.Rdata")
+save(tradegts_reduced2, file = "dat/tradegts_reduced2.Rdata")
 save(tradehts_reduced, file = "dat/tradehts_reduced.Rdata")
 
 

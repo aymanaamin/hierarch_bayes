@@ -13,15 +13,10 @@
 #' @export
 RunBSR <- function(object, h, fmethod = "arima", 
                    series_to_be_shrunk = NULL,
+                   xser_shr = ncol(S)^3,
                    nser_shr = 0){
   
   start.time = Sys.time() # Tic
-  
-  if(!is.null(series_to_be_shrunk)) if(max(series_to_be_shrunk) > length(unlist(object$labels))){
-    stop("Series to be shrunk doesn't exist.", 
-         call. = FALSE)
-  }
-  
   
   # Step 1: Define Summation Matrix & Parameters
   S <- Matrix(smatrix(object))
@@ -33,20 +28,23 @@ RunBSR <- function(object, h, fmethod = "arima",
                "m" = nrow(S),
                "q" = ncol(S),
                "nser_shr" = nser_shr,
-               "xser_shr" = nrow(S)*1000, # n*m
-               "series_to_be_shrunk" = series_to_be_shrunk) 
+               "xser_shr" = xser_shr,
+               "series_to_be_shrunk" = series_to_be_shrunk)
+  
+  if(!is.null(series_to_be_shrunk)) if(max(series_to_be_shrunk) > pars$m){
+    stop("Series to be shrunk doesn't exist.", 
+         call. = FALSE)
+  }
+  
   
   # Step 2: Run Forecasting Model
-  forecasts.list <- CreatePredictions(object,fmethod,pars)
+  forecasts.list <- CreatePredictions(object, fmethod, pars)
   
-  # Step 3: Set Priors
-  priors.list <- DefinePriors(S, forecasts.list, pars)
+  # Step 3: Run Reconciliation
+  results.list <- RunReconciliation(S, forecasts.list, pars)
   
-  # Step 4: Run Reconciliation
-  results.list <- RunReconciliation(S, forecasts.list,priors.list,pars)
-  
-  # Step 5: Collect Output and Parameters
-  out.list <- CollectOutput(object, forecasts.list, priors.list, results.list, pars)
+  # Step 4: Collect Output and Parameters
+  out.list <- CollectOutput(object, forecasts.list, results.list, pars)
   
   print(Sys.time() - start.time) # Toc
   
@@ -77,52 +75,30 @@ CreatePredictions <- function(object, fmethod, pars){
 
 
 
-DefinePriors <- function(S, forecasts.list, pars){
+RunReconciliation <- function(S, forecasts.list, pars){
   
-  print("Defining Priors..")
+  print("Running Reconciliation..")
   
   # Define Prior Variance
   nser <- (1/rowSums(S))^pars$nser_shr
-  mat <- nser/prod(nser)^(1/pars$m)
+  lambda <- nser/prod(nser)^(1/pars$m)
   
   x <- pars$series_to_be_shrunk
   
   if(!is.null(x)){
-    
-    mat[x] <- mat[x]/pars$xser_shr^(1/length(x))
-    mat[-x] <-  mat[-x] * pars$xser_shr^(1/(length(mat)-length(x)))
-    
+    lambda[x] <- lambda[x]/pars$xser_shr^(1/length(x))
+    lambda[-x] <-  lambda[-x] * pars$xser_shr^(1/(length(lambda)-length(x)))
   }
   
-  lambda <- mat
+  lambda <- Diagonal(x = lambda)
   
-  out <- lapply(1:pars$h, function(hx){
-    
-    Omega <- apply(do.call(rbind, lapply(forecasts.list, function(fx) fx[,hx])), 1, var) + 1e-16
-    
-    Diagonal(x = (lambda * (pars$m*Omega/pars$n) * lambda))
-    
-  })
-  
-  return(list("A0" = out,
-              "lambda" = lambda))
-}
-
-
-
-RunReconciliation <- function(S, forecasts.list, priors.list, pars){
-  
-  print("Running Reconciliation..")
-  
+  # Loop over each forecasting horizon and run reconciliation
   lapply(1:pars$h, function(hx){
     
     # Get matrix with forecasts and prior mean
     Y <- Matrix(do.call(rbind, lapply(forecasts.list, function(fx) fx[,hx])))
     Y_mean <- rowMeans(Y)
     a0 <- Matrix(0,pars$m,1)
-    A0 <- priors.list$A0[[hx]]
-    b0 = Matrix(0,pars$q,1)
-    B0 = Diagonal(n = pars$q, x = 1e+16)
     
     # Preallocation
     chain <- matrix(NA, nrow = pars$length_max, ncol = 3)
@@ -136,7 +112,7 @@ RunReconciliation <- function(S, forecasts.list, priors.list, pars){
     # Starting values
     Sigma = Diagonal(x = apply(Y, 1, var) + 1e-16)
     alpha = Matrix(0,pars$m,1)
-    beta = solve(t(S) %*% solve(Sigma) %*% S) %*% (t(S) %*% solve(Sigma) %*% rowMeans(Y))
+    beta = solve(t(S) %*% solve(Sigma) %*% S) %*% (t(S) %*% solve(Sigma) %*% Y_mean)
     
     checks <- list("convergence" = F,
                    "sampling" = F,
@@ -147,14 +123,17 @@ RunReconciliation <- function(S, forecasts.list, priors.list, pars){
       
       checks$jx <- checks$jx+1
       
+      # 0. Compute A0
+      A0 <- lambda * (pars$q/pars$n) * Sigma * lambda
+      
       # 1. Compute Alpha
       A1 <- solve(pars$n*solve(Sigma) + solve(A0))
-      a1 <- A1 %*% (rowSums(solve(Sigma) %*% (Y - kronecker(S %*% beta, Matrix(1,1,pars$n)))) + solve(A0) %*% a0)
+      a1 <- A1 %*% (pars$n*(solve(Sigma) %*% (Y_mean - S %*% beta)) + solve(A0) %*% a0)
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta
       B1  <- solve(pars$n*(t(S) %*% solve(Sigma) %*% S))
-      b1 <- B1 %*% (rowSums(t(S) %*% solve(Sigma) %*% (Y - kronecker(alpha, Matrix(1,1,pars$n)))))
+      b1 <- B1 %*% (pars$n*(t(S) %*% solve(Sigma) %*% (Y_mean - alpha)))
       beta <- b1 + t(rnorm(pars$q,0,1) %*% chol(B1))
       
       
@@ -211,7 +190,8 @@ RunReconciliation <- function(S, forecasts.list, priors.list, pars){
           "Sigma_mean" = apply(draw_save$Sigma, 1:2, mean),
           "A1" = apply(draw_save$A1, 1:2, mean),
           "A0" = apply(draw_save$A0, 1:2, mean),
-          "a0" = a0)
+          "a0" = a0,
+          "lambda" = lambda)
         
         break
         
@@ -225,7 +205,7 @@ RunReconciliation <- function(S, forecasts.list, priors.list, pars){
 
 
 
-CollectOutput <- function(object, forecasts.list, priors.list, results.list, pars){
+CollectOutput <- function(object, forecasts.list, results.list, pars){
   
   # clean up results and return them in an appropriate manner
   out <- results.list
@@ -251,7 +231,6 @@ CollectOutput <- function(object, forecasts.list, priors.list, results.list, par
   out$forecast$histy <- object$bts
   out$pars <- pars 
   out$base.forecasts <- forecasts.list
-  out$priors <- priors.list
   
   return(out)
   

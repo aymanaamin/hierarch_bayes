@@ -16,8 +16,9 @@ library(foreach)
 # Data
 load("dat/countries.rda")
 load("dat/tradehts_reduced.Rdata")
-load("dat/tradegts_reduced.Rdata")
-agg_gts <- as.list(aggts(tradegts_reduced))
+load("dat/tradegts_reduced1.Rdata")
+load("dat/tradegts_reduced2.Rdata")
+agg_gts <- as.list(aggts(tradegts_reduced2))
 
 
 # 1. FORECAST BACKTESTS ----------------------------------------------------
@@ -75,7 +76,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
     lapply(horizons, function(hx){
       
       # Run forecasting and aggregation methods
-      fcast <- forecast(window(tradegts_reduced, end = dx-hx+11/12),
+      fcast <- forecast(window(tradegts_reduced2, end = dx-hx+11/12),
                         h = tail(horizons,1)*12,
                         # parallel = T,
                         # num.cores = ncores,
@@ -83,7 +84,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
                         fmethod = fx)
       
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts_reduced, start = dx, end = dx+11/12)
+      test_wndw <- window(tradegts_reduced2, start = dx, end = dx+11/12)
       fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
@@ -101,7 +102,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
     lapply(horizons, function(hx){
       
       # Run forecasting and aggregation methods
-      fcast <- forecast(window(tradegts_reduced, end = dx-hx+11/12),
+      fcast <- forecast(window(tradegts_reduced2, end = dx-hx+11/12),
                         h = tail(horizons,1)*12,
                         # parallel = T,
                         # num.cores = ncores,
@@ -110,7 +111,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
                         fmethod = fx)
       
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts_reduced, start = dx, end = dx+11/12)
+      test_wndw <- window(tradegts_reduced2, start = dx, end = dx+11/12)
       fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
@@ -123,7 +124,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
     lapply(horizons, function(hx){
       
       # Run forecasting and aggregation methods
-      fcast <- forecast(window(tradegts_reduced, end = dx-hx+11/12),
+      fcast <- forecast(window(tradegts_reduced1, end = dx-hx+11/12),
                         h = tail(horizons,1)*12,
                         # parallel = T,
                         # num.cores = ncores,
@@ -132,7 +133,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
                         fmethod = fx)
       
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts_reduced, start = dx, end = dx+11/12)
+      test_wndw <- window(tradegts_reduced1, start = dx, end = dx+11/12)
       fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
@@ -148,7 +149,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
     lapply(horizons, function(hx){
       
       # Run forecasting and aggregation methods
-      fcast <- forecast(window(tradegts_reduced, end = dx-hx+11/12),
+      fcast <- forecast(window(tradegts_reduced1, end = dx-hx+11/12),
                         h = tail(horizons,1)*12, 
                         # parallel = T,
                         # num.cores = ncores,
@@ -157,7 +158,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
                         fmethod = fx)
       
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts_reduced, start = dx, end = dx+11/12)
+      test_wndw <- window(tradegts_reduced1, start = dx, end = dx+11/12)
       fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
@@ -170,7 +171,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
     lapply(horizons, function(hx){
       
       # Run forecasting and aggregation methods
-      fcast <- forecast(window(tradegts_reduced, end = dx-hx+11/12),
+      fcast <- forecast(window(tradegts_reduced2, end = dx-hx+11/12),
                         h = tail(horizons,1)*12, 
                         # parallel = T,
                         # num.cores = ncores,
@@ -179,7 +180,7 @@ results <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar%
                         fmethod = fx)
       
       # Analyze forecast accuracy at different horizons and return summary
-      test_wndw <- window(tradegts_reduced, start = dx, end = dx+11/12)
+      test_wndw <- window(tradegts_reduced2, start = dx, end = dx+11/12)
       fcast_wndw = window(fcast, start = dx, end = dx+11/12)
       accuracy.gts(fcast_wndw, test_wndw)
       
@@ -276,7 +277,7 @@ levels[grepl("/",levels)] <- sapply(strsplit(levels[grepl("/",levels)],"/"),`[`,
 grid <- CJ(fdates,rmethod,fmethod,horizons)
 
 # MASE
-tab_mase = foreach(n = 1:nrow(grid), .combine = rbind) %dopar% {
+tab_mase = foreach(n = 1:nrow(grid), .combine = rbind) %do% {
 
   mase = results[[grid[[n,1]]]][[grid[[n,2]]]][[grid[[n,3]]]][[grid[[n,4]]]]["MASE",]
   names(mase)[grepl("/",names(mase))] <- sapply(strsplit(names(mase)[grepl("/",names(mase))],"/"),`[`,2)
@@ -292,18 +293,18 @@ save(tab_mase, file = "out/tab_mase.Rdata")
 
 
 # RMSE
-tab_mase = foreach(n = 1:nrow(grid), .combine = rbind) %dopar% {
+tab_rmse = foreach(n = 1:nrow(grid), .combine = rbind) %do% {
   
-  mase = results[[grid[[n,1]]]][[grid[[n,2]]]][[grid[[n,3]]]][[grid[[n,4]]]]["RMSE",]
-  names(mase)[grepl("/",names(mase))] <- sapply(strsplit(names(mase)[grepl("/",names(mase))],"/"),`[`,2)
-  vapply(1:length(levels), function(cx) mase[levels[cx]], 1)
+  rmse = results[[grid[[n,1]]]][[grid[[n,2]]]][[grid[[n,3]]]][[grid[[n,4]]]]["RMSE",]
+  names(rmse)[grepl("/",names(rmse))] <- sapply(strsplit(names(rmse)[grepl("/",names(rmse))],"/"),`[`,2)
+  vapply(1:length(levels), function(cx) rmse[levels[cx]], 1)
   
 }
 
-tab_mase <- cbind(grid,tab_mase)
-colnames(tab_mase) <- c("date","recon","fmethod","horizon",levels)
+tab_rmse <- cbind(grid,tab_rmse)
+colnames(tab_rmse) <- c("date","recon","fmethod","horizon",levels)
 
-save(tab_mase, file = "out/tab_rmse.Rdata")
+save(tab_rmse, file = "out/tab_rmse.Rdata")
 
 
 stopCluster(cl)
