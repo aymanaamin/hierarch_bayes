@@ -13,22 +13,20 @@
 #' @export
 RunBSR <- function(object, h, fmethod = "arima", 
                    series_to_be_shrunk = NULL,
-                   xser_shr = ncol(S)^3,
-                   nser_shr = 0){
-  
-  start.time = Sys.time() # Tic
+                   shrinkage = "none", sparse = TRUE){
   
   # Step 1: Define Summation Matrix & Parameters
   S <- Matrix(smatrix(object))
-  pars <- list("sparse" = T,
+  pars <- list("sparse" = sparse,
                "length_sample" = 1000,
                "length_max" = 1e+5,
+               "fmethod" = fmethod,
                "h" = h,
                "n" = 1000,
                "m" = nrow(S),
                "q" = ncol(S),
-               "nser_shr" = nser_shr,
-               "xser_shr" = xser_shr,
+               "shrinkage" = shrinkage,
+               "xser_shr" = 1e+2,
                "series_to_be_shrunk" = series_to_be_shrunk)
   
   if(!is.null(series_to_be_shrunk)) if(max(series_to_be_shrunk) > pars$m){
@@ -40,15 +38,16 @@ RunBSR <- function(object, h, fmethod = "arima",
   # Step 2: Run Forecasting Model
   forecasts.list <- CreatePredictions(object, fmethod, pars)
   
-  # Step 3: Run Reconciliation
+  # Step 3: Create Weighting Matrix
+  pars$lambda <- DefineWeights(S,pars)
+  
+  # Step 4: Run Reconciliation
   results.list <- RunReconciliation(S, forecasts.list, pars)
   
-  # Step 4: Collect Output and Parameters
-  out.list <- CollectOutput(object, forecasts.list, results.list, pars)
+  # Step 5: Collect Output and Parameters
+  out <- CollectOutput(object, forecasts.list, results.list, pars)
   
-  print(Sys.time() - start.time) # Toc
-  
-  return(out.list)
+  return(out)
   
 }
 
@@ -75,22 +74,54 @@ CreatePredictions <- function(object, fmethod, pars){
 
 
 
-RunReconciliation <- function(S, forecasts.list, pars){
+DefineWeights <- function(S, pars){
   
-  print("Running Reconciliation..")
+  # define global shrinkages
+  if(pars$shrinkage == "nseries"){
+    
+    lvec <- (1/rowSums(S))
+    lambda <- lvec/prod(lvec)^(1/pars$m)
+    
+  } else if(pars$shrinkage == "td"){
+    
+    lvec <- rep(1,pars$m)
+    lvec[1] <- lvec[1]/pars$xser_shr
+    lambda <- lvec/prod(lvec)^(1/pars$m)
+    
+  } else if(pars$shrinkage == "mo"){
+    
+    lvec <- rep(1,pars$m)
+    lvec[-c(1,seq(pars$m-pars$q+1,pars$m))] <- lvec[-c(1,seq(pars$m-pars$q+1,pars$m))]/(pars$xser_shr*(1+pars$q))
+    lambda <- lvec/prod(lvec)^(1/pars$m)
+    
+  } else if(pars$shrinkage == "bu"){
+    
+    lvec <- rep(1,pars$m)
+    lvec[seq(pars$m-pars$q+1,pars$m)] <- lvec[seq(pars$m-pars$q+1,pars$m)]/(pars$xser_shr*pars$q)
+    lambda <- lvec/prod(lvec)^(1/pars$m)
+    
+  } else {
+    
+    lvec <- rep(1,pars$m)
+    
+  }
   
-  # Define Prior Variance
-  nser <- (1/rowSums(S))^pars$nser_shr
-  lambda <- nser/prod(nser)^(1/pars$m)
-  
+  # Define local shrinkage
   x <- pars$series_to_be_shrunk
   
   if(!is.null(x)){
-    lambda[x] <- lambda[x]/pars$xser_shr^(1/length(x))
-    lambda[-x] <-  lambda[-x] * pars$xser_shr^(1/(length(lambda)-length(x)))
+    lambda[x] <- lambda[x]/(pars$xser_shr*(1/length(x)))
+    lambda <- lambda/prod(lambda)^(1/pars$m)
   }
   
-  lambda <- Diagonal(x = lambda)
+  return(Diagonal(x = lambda))
+  
+}
+
+
+RunReconciliation <- function(S, forecasts.list, pars){
+  
+  print("Running Reconciliation..")
   
   # Loop over each forecasting horizon and run reconciliation
   lapply(1:pars$h, function(hx){
@@ -107,7 +138,7 @@ RunReconciliation <- function(S, forecasts.list, pars){
                       "beta" = matrix(NA,pars$length_sample,pars$q),
                       "Sigma" = array(NA,c(pars$m,pars$m,pars$length_sample)),
                       "A1" = array(NA,c(pars$m,pars$m,pars$length_sample)),
-                      "A0" = array(NA,c(pars$m,pars$m,pars$length_sample)))
+                      "M" = array(NA,c(pars$m,pars$m,pars$length_sample)))
     
     # Starting values
     Sigma = Diagonal(x = apply(Y, 1, var) + 1e-16)
@@ -123,12 +154,11 @@ RunReconciliation <- function(S, forecasts.list, pars){
       
       checks$jx <- checks$jx+1
       
-      # 0. Compute A0
-      A0 <- lambda * (pars$q/pars$n) * Sigma * lambda
-      
       # 1. Compute Alpha
-      A1 <- solve(pars$n*solve(Sigma) + solve(A0))
-      a1 <- A1 %*% (pars$n*(solve(Sigma) %*% (Y_mean - S %*% beta)) + solve(A0) %*% a0)
+      W <- pars$lambda %*% Sigma %*% t(pars$lambda)
+      M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(W) %*% S) %*% t(S)%*% solve(W))
+      A1 <- Diagonal(n = pars$m)
+      a1 <- A1 %*% (M %*% Y_mean)
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta
@@ -155,12 +185,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
       } else {
         chain[checks$jx,] <- (chain[checks$jx-1,]*(checks$jx-1) + 
                                 c(mean(alpha),mean(beta),mean(diag(Sigma))))/checks$jx
-        if(checks$jx > 100) if(all(abs(chain[checks$jx,]/chain[checks$jx-100,]-1) < 1e-4)) checks$convergence <- T
+        if(checks$jx > 200) if(all(abs(chain[checks$jx,2]/chain[checks$jx-100,2]-1) < 1e-6)) checks$convergence <- T
       }
-      
-      
-      # recursive mean trace plot
-      if(checks$jx %% 250 == 0) plot(mcmc(chain[c(1:checks$jx),]))
       
       # X2. start sampling upon convergence
       if(checks$convergence & !checks$sampling){
@@ -170,7 +196,7 @@ RunReconciliation <- function(S, forecasts.list, pars){
         draw_save$alpha[checks$ix,] = as.matrix(alpha)
         draw_save$beta[checks$ix,] = as.matrix(beta)
         draw_save$A1[,,checks$ix] = as.matrix(A1)
-        draw_save$A0[,,checks$ix] = as.matrix(A0)
+        draw_save$M[,,checks$ix] = as.matrix(M)
         draw_save$Sigma[,,checks$ix] = as.matrix(Sigma)
         
         if(checks$ix == pars$length_sample) checks$sampling <- T
@@ -189,9 +215,10 @@ RunReconciliation <- function(S, forecasts.list, pars){
           "alpha_var" = var(draw_save$alpha),
           "Sigma_mean" = apply(draw_save$Sigma, 1:2, mean),
           "A1" = apply(draw_save$A1, 1:2, mean),
-          "A0" = apply(draw_save$A0, 1:2, mean),
+          "M" = apply(draw_save$M, 1:2, mean),
           "a0" = a0,
-          "lambda" = lambda)
+          "M" = M,
+          "S" = S)
         
         break
         
@@ -207,68 +234,20 @@ RunReconciliation <- function(S, forecasts.list, pars){
 
 CollectOutput <- function(object, forecasts.list, results.list, pars){
   
-  # clean up results and return them in an appropriate manner
-  out <- results.list
-  names(out) <- paste("h = ",1:h)
-  bottom_forecasts <- t(do.call(cbind, lapply(out,function(x) x$beta)))
-  colnames(bottom_forecasts) <- colnames(object$bts)
-  if("hts" %in% class(object)){
-    
-    out$forecast <- hts(y = ts(bottom_forecasts, 
-                               start = test_date+1,
-                               frequency = frequency(object$bts)),
-                        nodes = object$nodes)
-    
+  bfcasts <- t(do.call(cbind, lapply(results.list,function(x) x$beta)))
+  bfcasts <- ts(bfcasts, 
+                start = as.numeric(tail(time(object$bts),1)) + 1/frequency(object$bts),
+                frequency = frequency(object$bts))
+  colnames(bfcasts) <- colnames(object$bts)
+  class(bfcasts) <- class(object$bts)
+  attr(bfcasts, "msts") <- attr(object$bts, "msts")
+  out <- list(bts = bfcasts, histy = object$bts, labels = object$labels, fmethod = pars$fmethod)
+  if (is.hts(object)) {
+    out$nodes <- object$nodes
   } else {
-    
-    out$forecast <- gts(y = ts(bottom_forecasts, 
-                               start = test_date+1,
-                               frequency = frequency(object$bts)), 
-                        groups = object$groups)
-    
+    out$groups <- object$groups
   }
   
-  out$forecast$histy <- object$bts
-  out$pars <- pars 
-  out$base.forecasts <- forecasts.list
-  
-  return(out)
+  return(structure(out, class = class(object)))
   
 }
-
-
-
-
-# get_prior_mean <- function(x, h, fmethod){
-#   
-#   # Choose the starting date such that the seasonality pattern of the forecast is the same
-#   end_date <- as.numeric(tail(time(x$bts),1))
-#   wndw <- ceiling(h/frequency(x$bts))*5
-#   
-#   Reduce('+',lapply(seq(from = end_date-wndw,
-#                         to = end_date),
-#                     function(dx){
-#     
-#     test_wndw <- window(x, end = dx)
-#     
-#     fcast_unrecon <- do.call(cbind, lapply(as.list(aggts(test_wndw)), 
-#                                            function(xs){
-#                                              if(fmethod == "rw"){
-#                                                rwf(xs, h = h)$mean
-#                                              } else if(fmethod == "ets"){
-#                                                forecast(ets(xs), h = h, PI = FALSE)$mean
-#                                              } else if(fmethod == "arima"){
-#                                                forecast(auto.arima(xs),h = h)$mean
-#                                              }
-#                                            }))
-#     
-#     fcast_recon <- aggts(forecast(test_wndw, h = h, method = "comb", 
-#                                   weights = "wls", fmethod = fmethod))
-#     
-#     
-#     return(t(fcast_unrecon) - t(fcast_recon))
-# 
-#   }))/wndw
-#   
-# }
-# 
