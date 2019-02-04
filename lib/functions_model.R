@@ -15,9 +15,11 @@ RunBSR <- function(object, h, fmethod = "arima",
                    series_to_be_shrunk = NULL,
                    shrinkage = "none", sparse = TRUE){
   
+  start.time = Sys.time() # Tic
+  
   # Step 1: Define Summation Matrix & Parameters
   S <- Matrix(smatrix(object))
-  pars <- list("sparse" = sparse,
+  pars <- list("sparse" = T,
                "length_sample" = 1000,
                "length_max" = 1e+5,
                "fmethod" = fmethod,
@@ -46,6 +48,8 @@ RunBSR <- function(object, h, fmethod = "arima",
   
   # Step 5: Collect Output and Parameters
   out <- CollectOutput(object, forecasts.list, results.list, pars)
+  
+  print(Sys.time() - start.time) # Toc
   
   return(out)
   
@@ -102,7 +106,7 @@ DefineWeights <- function(S, pars){
     
   } else {
     
-    lvec <- rep(1,pars$m)
+    lambda <- rep(1,pars$m)
     
   }
   
@@ -157,8 +161,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
       # 1. Compute Alpha
       W <- pars$lambda %*% Sigma %*% t(pars$lambda)
       M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(W) %*% S) %*% t(S)%*% solve(W))
-      A1 <- Diagonal(n = pars$m)
-      a1 <- A1 %*% (M %*% Y_mean)
+      a1 <- M %*% Y_mean
+      A1 <- forceSymmetric(M %*% (Sigma/pars$n) %*% t(M)) + Diagonal(n = pars$m, x = 1e-9)
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta

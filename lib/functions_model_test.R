@@ -11,7 +11,7 @@
 #' @param xser_shr numerical, shrinks selected forecasts towards base forecasts.
 #' @return A list containing parameters for each horizon and gts output
 #' @export
-RunBSR <- function(object, h, fmethod = "arima", 
+RunBSR_test <- function(object, h, fmethod = "arima", 
                    series_to_be_shrunk = NULL,
                    shrinkage = "none", sparse = TRUE){
   
@@ -47,11 +47,14 @@ RunBSR <- function(object, h, fmethod = "arima",
   results.list <- RunReconciliation(S, forecasts.list, pars)
   
   # Step 5: Collect Output and Parameters
-  out <- list(CollectOutput(object, forecasts.list, results.list, pars),
-              forecasts.list,
-              results.list,
-              pars)
-  names(out) <- c("forecast","forecasts.list","results.list","pars")
+  out <- list("forecast" = CollectOutput(object, forecasts.list, results.list, pars),
+              "variance" = ts(data = t(do.call(cbind, lapply(results.list,function(x) diag(x$Sigma_mean)))), 
+                               start = head(time(object$bts),1),
+                               frequency = frequency(object$bts)),
+              "forecasts.list" = forecasts.list,
+              "results.list" = results.list,
+              "pars" =  pars)
+  colnames(out$variance) <- colnames(aggts(object))
   
   print(Sys.time() - start.time) # Toc
   
@@ -165,8 +168,12 @@ RunReconciliation <- function(S, forecasts.list, pars){
       # 1. Compute Alpha
       W <- pars$lambda %*% Sigma %*% t(pars$lambda)
       M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(W) %*% S) %*% t(S)%*% solve(W))
-      A1 <- forceSymmetric(M %*% (Sigma/pars$n) %*% t(M)) + Diagonal(n = pars$m, x = 1e-9)
+      # A <- forceSymmetric(M %*% (Sigma/pars$n) %*% t(M))
+      # a <- M %*% Y_mean
+      # A1 <- solve(solve(A) + solve(A0))
+      # a1 <- A1 %*% (solve(A) %*% a + solve(A0) %*% a0)
       a1 <- M %*% Y_mean
+      A1 <- forceSymmetric(M %*% (Sigma/pars$n) %*% t(M)) + Diagonal(n = pars$m, x = 1e-9)
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta

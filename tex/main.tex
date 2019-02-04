@@ -2,19 +2,19 @@
 \documentclass[a4paper,fleqn,11pt]{article}
 
 % header
-\include{header}
+\include{preamble}
 
 \begin{document}
 
 % title page
-%\include{title}			
+\include{title}			
 
 
 
 
 % 2. Model	
 \section{Introduction}
-\label{sec:model}
+\label{sec:intro}
 Data in business analytics and economics often occurs naturally in additive hierarchical structures. For instance, sales of a car dealership can be disaggregated by brands and then further by car model of each brand. In most cases, the series at the bottom of a hierarchy can be added up in more than one unique hierarchical way to the main aggregate. This is referred to as a grouped time series by \cite{Hyndman2016}. Retail sales for example can be added up by product type or by store location. Employment data can be aggregated by age group, gender, profession or location. Figure \ref{fig:tree} gives an example of a simple grouped hierarchy with $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the bottom.
 \begin{figure}[H]
 	\centering
@@ -82,7 +82,7 @@ All hierarchies are subject to strict aggregation constraints. In order to expre
 	\ Y_{B2}\ \ 
 \end{bmatrix} 
 \end{align*}
-For realized data, it must hold at each point in time that $Y_t = S Y_{k,t}$. Forecasts of the individual series however usually do not fulfill these aggregation constraints. Incoherences may arise due to model bias, varying information sets or different models used when predicting the individual series in a hierarchy. Following \cite{Gross1990}, a simple way to ensure consistency is the «bottom-up» approach. This means that only the bottom level series are forecasted and then added up according to the hierarchical structure. It implies that forecasts from higher levels are not taken into account, even though they are usually better to predict than the noisier series at the bottom of a hierarchy. Another possibility is the «top-down» approach described in \cite{Athanasopoulos2009}, where the forecast of the top level series is disaggregated according to the historical or forecasted proportions at lower levels. This approach relies on the characteristics of the top series and does not take into account the predictions at lower levels. A compromise is given by the «middle-out» approach, where the forecasts at an intermediate level of the hierarchy are summed up to get the higher levels and disaggregated to obtain lower level predictions.
+For realized data, it must hold at each point in time that $Y_t = S Y_{k,t}$. Forecasts of the individual series however usually do not fulfill these aggregation constraints. Incoherences may arise due to model bias, varying information sets or different models used when predicting the individual series in a hierarchy. Following \cite{Gross1990}, a simple way to ensure consistency is the «bottom-up» approach. This means that only the bottom level series are forecasted and then summed up according to the hierarchical structure. It implies that forecasts from higher levels are not taken into account, even though they are usually better to predict than the noisier series at the bottom of a hierarchy. Another possibility is the «top-down» approach described in \cite{Athanasopoulos2009}, where the forecast of the top level series is disaggregated according to the historical or forecasted proportions at lower levels. This approach does not take into account the time series characteristics at lower levels. A compromise is given by the «middle-out» approach, where the forecasts at an intermediate level of the hierarchy are summed up to get the higher levels and disaggregated to obtain lower level predictions.
 
 Many empirical studies have shown that forecast combinations improve accuracy because of information pooling and the averaging over misspecification biases and measurement errors.\footnote{See for instance \cite{Timmermann2006} or \cite{Watson2004} for a comprehensive overview.} Similarly, it is beneficial to combine information from all forecasts in a hierarchy. \cite{Hyndman2011} have shown that optimal, reconciled predictions can be obtained using the following regression approach.
 \begin{align}
@@ -95,7 +95,7 @@ where $Y_t(h)$ is an ($m \times 1$) vector containing the h-periods-ahead foreca
 \end{align}
 Intuitively, $\beta_h$ minimizes the reconciliation error, which is the distance between actual and reconciled forecasts across the entire hierarchy. \cite{Hyndman2016} use the covariance matrix $\Sigma_h$ of the $h$-step-ahead base forecast errors as the weighting matrix $W_h$. This «GLS» approach decreases the weight of forecasts with a high prediction error in the regression. In the «MinT» approach, \cite{Wickramasuriya2015} use the covariance matrix of the $h$-step-ahead reconciled forecast errors, which they show results in the best linear unbiased reconciled forecasts. Lastly, the «nseries» approach, proposed by \cite{Athanasopoulos2017}, uses weights based on the number of series aggregated at each node.\\
 
-This paper contributes to the literature on optimal hierarchical forecasting by constructing a Bayesian reconciliation framework. It introduces an explicit definition of the coherency errors as model parameters in section \ref{sec:model}. Probabilistic reconciliation takes the uncertainty surrounding these parameters into account and leads to reconciled density forecasts. Furthermore, flexible shrinkage priors enable the model to shrink selected reconciled forecasts towards their base forecast. In section \ref{sec:appl}, the method is compared with existing optimal and basic reconciliation techniques using a comprehensive hierarchical dataset of Swiss goods exports, grouped geographically and categorically.
+This paper contributes to the literature on optimal hierarchical forecasting by constructing a Bayesian reconciliation framework that generalizes previous approaches. In section \ref{sec:model}, it introduces an explicit definition of the coherency errors as model parameters. Probabilistic reconciliation takes the uncertainty surrounding these parameters into account and leads to reconciled density forecasts. Furthermore, flexible shrinkage priors enable the model to shrink selected reconciled forecasts towards their base forecast. In section \ref{sec:appl}, the method is compared with existing reconciliation techniques using a comprehensive hierarchical dataset of Swiss goods exports.
 
 \clearpage
 
@@ -114,11 +114,12 @@ where $e$ follows a normal distribution with mean zero and covariance matrix $\S
 \begin{align}
 \hat{y}\ |\ \alpha,\beta,\Sigma \sim N(\alpha + S\beta,\Sigma)
 \end{align}
-We are however interested in the reconciled forecasts $\tilde{y} \sim N(S\beta,\Sigma)$, which can be obtained by conditioning on $\alpha = 0$. An estimate for the reconciled means is therefore given by the conditional expectation function.
-\begin{align}
-	E(\tilde{y}) = E(\hat{y}|\alpha = 0,\beta,\Sigma) = \int \hat{y} f_{\hat{y}|\alpha,\beta,\Sigma}(0,\beta,\Sigma) d\hat{y} 
-\end{align}
-The reconciled conditional distribution and the corresponding moments can be retrieved from the Gibbs sampling algorithm described in the following subsection.\\
+We are however interested in the reconciled forecasts $\tilde{y} \sim N(S\beta,\Sigma)$, which can be obtained by conditioning on $\alpha = 0$. An estimate for the reconciled means is therefore given by the conditional mean and variance functions.
+\begin{align*}
+E(\tilde{y}) &= E(\hat{y}|\alpha = 0,\beta,\Sigma) = \int \hat{y} f_{\hat{y}|\alpha,\beta,\Sigma}(0,\beta,\Sigma)\ d\hat{y} \\
+Var(\tilde{y}) &= Var(\hat{y}|\alpha = 0,\beta,\Sigma) =  \int (\hat{y} - E(\tilde{y}))^2 f_{\hat{y}|\alpha,\beta,\Sigma}(0,\beta,\Sigma)\ d\hat{y}
+\end{align*}
+The reconciled conditional distribution and the corresponding moments can be retrieved conveniently from the Gibbs sampling algorithm described in the following subsection.\\
 
 \clearpage
 
@@ -170,43 +171,44 @@ R_1 &=  \left( R_0^{-1} + \sum_i (\hat{y}_i - \alpha - S \beta)'(\hat{y}_i - \al
 It is useful to set an almost uninformative prior with $v_0$ and $R_0$ very close to zero, which introduces a tiny bit of noise into the reconciled forecasts. This has negligible impact on the posterior distribution, but ensures that $\Sigma$ is nonsingular in the case where a base forecast has no variation. If there is no correlation between the base forecast distributions, for instance if they originate from independent univariate models, it might be faster for large hierarchies to draw the variances equation-by-equation from an inverse gamma distribution.\\
 
 \item \textbf{Draw $\alpha$ conditional on $\beta,\Sigma,\hat{y},S$}\\
-It is necessary to impose an informative prior on the reconciliation errors $\alpha$ in order to achieve identification. This process of adding information to solve an ill-posed problem is referred to as regularization\footnote{Parameter shrinkage  has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. See for instance \cite{Polson2010} for an overview. A closely related technique to overcome multicollinearity is the adaptive ridge estimator developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}.}. Furthermore, an informative prior on $\alpha$ reflects knowledge or preferences about the reconciliation errors. The prior mean $a_0$ is a vector of zeros. This assumes that the base forecasts are unbiased and therefore do not deviate systematically from the reconciled forecasts. The prior covariance matrix $A_0$ determines how strongly the reconciliation errors are allowed to deviate from zero. Setting the diagonal entries very high leads to a diffuse prior. This implies that there is no prior knowledge about the reconciliation errors and as a result, the model parameters cannot be uniquely identified. Setting the diagonal entries very close to zero leads to a strong prior. This implies that the reconciliation errors are distributed tightly around zero. In this case, the prior information dominates the informational content of the data and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}. There exists an optimal solution, which can be obtained by taking into account the dependency of $\alpha$ on $\beta$ in the partitioned regression model. Equation (\ref{eq:prior1}) shows the basic reconciliation identity.
+It is necessary to impose an informative prior on the reconciliation errors $\alpha$ in order to achieve identification. This process of adding information to solve an ill-posed problem is referred to as regularization\footnote{Parameter shrinkage  has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. See for instance \cite{Polson2010} for an overview.}. Furthermore, an informative prior on $\alpha$ reflects knowledge or preferences about the reconciliation errors. The prior mean $a_0$ is a vector of zeros. This assumes that the base forecasts are unbiased and therefore do not deviate systematically from the reconciled forecasts. The prior covariance matrix $A_0$ determines how strongly the reconciliation errors are allowed to deviate from zero. Setting the diagonal entries very high leads to a diffuse prior. This implies that there is no prior knowledge about the reconciliation errors and as a result, the model parameters cannot be uniquely identified. Setting the diagonal entries very close to zero leads to a strong prior. This implies that the reconciliation errors are distributed tightly around zero. In this case, the prior information dominates the informational content of the data and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}. There exists an optimal solution, which can be obtained by taking into account the dependency of $\alpha$ on $\beta$ in the partitioned regression model. Equation (\ref{eq:prior1}) shows the basic reconciliation identity.
 \begin{align}
 	\label{eq:prior1}
 	a &= \frac{1}{n}\sum_i \hat{y}_i - Sb
 \end{align}
-In order to eliminate $b$ from equation (\ref{eq:prior1}), both sides of the equation are multiplied by the projection matrix $S(S'W^{-1}S)^{-1}S'W^{-1}$. The resulting term is then subtracted from equation (\ref{eq:prior1}), which leaves the reconciliation errors as a function of the data and the summation matrix $S$.
+In order to eliminate $b$ from equation (\ref{eq:prior1}), both sides of the equation are multiplied by the projection matrix $S(S'W^{-1}S)^{-1}S'W^{-1}$. The resulting term is then subtracted from equation (\ref{eq:prior1}).
 \begin{align}
 	\label{eq:prior2}
 	(I_m - S(S'W^{-1}S)^{-1}S'W^{-1})\ a &= (I_m - S(S'W^{-1}S)^{-1}S'W^{-1})\ \frac{1}{n}\sum_i \hat{y}_i  
 \end{align}
-It is useful to define the idempotent residual maker $I_m - S(S'W^{-1}S)^{-1}S'W^{-1}$ as $M$. Using $\Sigma$ as the weighting matrix $W$, the residual maker generates the generalized least squares residuals that result from a regression of the reconciliation errors on the reconciled hierarchy. Because the resulting residuals are by definition the reconciliation errors, it is possible to set $Ma = a$. This simplifies equation (\ref{eq:prior2}) and disposes of the need to invert $M$.
+It is useful to define the idempotent residual maker $I_m - S(S'W^{-1}S)^{-1}S'W^{-1}$ as $M$. Using $\Sigma$ as the weighting matrix $W$, the residual maker generates the generalized least squares residuals that result from a regression of the reconciliation errors on the aggregation matrix $S$. Because the generated residuals are by definition the reconciliation errors, it follows that $Ma = a$. These simplifications leave the reconciliation errors as a function of the data, the weighting matrix $W$ and the summation matrix $S$. This result is again intuitive since the reconciliation errors are the residuals from a regression of the base forecasts on the aggregation matrix.
 \begin{align}
-	a &= \frac{1}{n}\sum_i M\hat{y}_i 
+a &= M\left(\frac{1}{n}\sum_i \hat{y}_i\right)
 \end{align}
-Having enforced mean zero of the reconciliation errors, the prior variance $A_0$ can be chosen very diffuse. The conditional posterior distribution for $\alpha$ is therefore given by
+As a result, the reconciliation errors follow a normal distribution with mean $a = M(\frac{1}{n}\sum_i \hat{y}_i)$ and covariance $A = M\Sigma M'/n$. Due to the presence of multicollinearity, an inverse of the covariance matrix does not always exist. This issue can be resolved by introducing a tiny amount of uncertainty to the diagonal entries of $A$. This leads to a negligible bias, but significantly less variation in the parameter estimates. The covariance matrix is therefore given by $A = M\Sigma M'/n + \gamma I_m$, with $\gamma$ being very small. This is referred to as a ridge estimator, developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}. Having enforced the orthogonality of reconciliation errors and summation matrix $S$, the prior variance $A_0$ is allowed to be uninformative. The prior mean $a_0$ is a zero vector. A numerically stable conditional posterior for $\alpha$ is therefore given by
 \begin{align}
 	\label{eq:alpha}
 	\alpha\ |\ \beta,\Sigma,\hat{y} &\sim N(a_1,A_1)
 \end{align}
 where
 \begin{align*}
-	A_1 &= M (\Sigma/n) M' + A_0^{-1} \\
-	a_1 &= \frac{1}{n}\sum_i M\hat{y}_i  + A_0^{-1}a_0
+	A_1 &= \left(A^{-1} + A_0^{-1}\right)^{-1}\\
+	a_1 &= A_1 \left(A^{-1}a + A_0^{-1}a_0\right)
 \end{align*}
-The precision of this approach can be checked easily by comparing the estimate of $\alpha$ and the reconciliation errors from the fitted values. \\
+The precision of this approach can be verified easily by comparing the estimate of $\alpha$ and the reconciliation errors from the fitted values. \\
 
-Even though it is intuitive to weigh the reconciliation errors based on the predictive accuracy of the corresponding base forecast, the weighting matrix $W$ in the residual maker does not necessarily have to correspond to $\Sigma$. A low value results in a lower reconciliation error. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster. In this case, it is of interest to selectively shrink some reconciliation errors towards zero. At the same time, it is necessary to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased reconciliation errors at their level of the hierarchy. This can be achieved by keeping constant the total dispersion of a multivariate normal distribution. A common measure is the generalized variance described in \cite{Mustonen1997} and defined as the determinant of a covariance matrix. Using a diagonal scaling matrix $\lambda$, it is therefore possible to construct any weighting matrix $W =  \lambda\Sigma\lambda'$ as long as the product of the diagonal elements in $\lambda$ remain constant at 1. This in turn ensures that the total dispersion of the weighting matrix $W$ remains the same as the total dispersion of $\Sigma$. An example of how to shrink selected reconciliation errors is given by equation (\ref{eq:scale}).
-\begin{align}
-	\label{eq:scale}
-	|\lambda| &= \lambda_1 \lambda_2 \hdots \lambda_m
-	= \prod_{s^- = 1}^{x} \lambda_{s^-}\ \eta^{-\frac{1}{x}}   \prod_{s^+ = x+1}^{m} \lambda_{s^+}\ \eta^{\frac{1}{m-x}} = 1
-\end{align}
-The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\eta^{\frac{1}{x}}$ and the remaining $(m-x)$ components $\lambda_{s^+}$ are correspondingly scaled up by a factor $\eta^{\frac{1}{m-x}}$. The generalized variance remains at unity irrespective of the scaling factor $\eta$ and the number of series to be scaled down $x$. Other possible approaches include the weighting of each reconciliation error by the level in the hierarchy or by to the number of series at each node in the hierarchy. This allows for the replication of the «bottom-up», «middle-out» and «top-down» results.
+\textbf{Weighting Matrix $W$}\\
+Even though it is intuitive to weigh the reconciliation errors based on the predictive accuracy of the corresponding base forecasts, the weighting matrix $W$ in the residual maker does not necessarily have to correspond to $\Sigma$. A low value results in a lower reconciliation error. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster.  In this case, it is of interest to selectively shrink some reconciliation errors towards zero. At the same time, it is necessary to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased reconciliation errors at their level of the hierarchy.
+
+This can be achieved by keeping constant the total dispersion of a multivariate normal distribution. A common measure is the generalized variance described in \cite{Mustonen1997} and defined as the determinant of a covariance matrix. Using a diagonal scaling matrix $\lambda$ as a hyperprior on $W$, it is therefore possible to construct any weighting matrix as long as the product of the diagonal elements in $\lambda$ remain constant at 1. This in turn ensures that the total dispersion of the weighting matrix $W$ remains equal to the total dispersion of $\Sigma$. In the basic case, $\lambda$ is simply an identity matrix, which reduces $W$ to $\Sigma$. Other prior beliefs reduce some elements in $\lambda$ and increase the remaining ones.
+\begin{align*}
+W =  \lambda\Sigma\lambda'
+\end{align*}
+There are several reasonable scaling methods available. A useful feature is to select certain series and shrink them towards their base forecasts. Other ossible approaches include the weighting of each reconciliation error by its level in the hierarchy or by to the number of series at each node in the hierarchy. This allows for the emulation of the «nseries», «bottom-up», «middle-out» and «top-down» results. Various examples of how to shrink selected reconciliation errors are given in appendix \ref{subsec:scaling}.
 
 \end{enumerate}
 
-\noindent The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde{y}$. Convergence of the Gibbs sampler happens usually within the first hundred draws, irrespective of the starting values. It can checked by testing for stability in the recursive means of the Markov chains. After convergence is achieved, a sufficiently large sample of draws from the joint posterior is saved and evaluated.\\
+\noindent The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde{y}$. Convergence of the Gibbs sampler is usually achieved very quickly, irrespective of the starting values. It can verified by testing for stability in the recursive means of the Markov chains. After convergence is achieved, a sufficiently large sample of draws from the joint posterior is saved and evaluated.\\
 
 \clearpage
 
@@ -214,162 +216,71 @@ The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\
 \section{Empirical Application}
 \label{sec:appl}
 \subsection{Data}
-We use a comprehensive dataset of Swiss foreign trade in goods. For both exports and imports, it contains the nominal value in Swiss francs of goods traded with 245 countries and dependent territories. The goods are categorized according to the economic sector, following a national nomenclature covering 14 main groups and 272 subgroups. The hierarchy is unbalanced, meaning that certain goods categories are available more disaggregated than others. This results in a hierarchy with up to 5 levels. Because of the geographical and the categorical dimension, there is no unique hierarchical structure. Following \cite{Hyndman2016}, these time series can therefore be thought of as a grouped time series. There are 63'516 time series with non-zero entries in total, 35'602 for the export hierarchy and 27'914 for the import hierarchy. The time series are available in monthly frequency from 1989 on and are not adjusted for working days or seasonality. The data is collected by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}} and made available in a machine-friendly data format only on basis of a subscription.\\
+We use a comprehensive dataset of exports and imports of goods in Switzerland, provided by the Swiss Federal Customs Administration. It contains the nominal value in Swiss francs of goods traded with 8 geographical regions, aggregated from 245 countries and dependent territories. In addition, the goods can be classified into economic sectors, following a national nomenclature covering 12 main groups and 48 subgroups\footnote{Precious metals, precious and semi-precious stones, works of art and antiques are generally omitted in business cycle research due to volatility and structural breaks.}. This leads to a grouped hierarchy with 13'084 time series containing nonzero entries in total. The data covers a period from 1988 to 2018 in monthly frequency and is not adjusted for seasonalities or working days. Figure \ref{fig:area} shows the composition of the regional and categorical hierarchies and their historical developments.
 \begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_area_reg}
-	\caption{Swiss Exports in Goods by Region}
-	\footnotesize{Period from 1988-2017 in monthly frequency. Average export shares during 2017 in parentheses. Precious metals, precious and semi-precious stones, works of art and antiques are omitted due to their volatility.}
+	\includegraphics[width=\textwidth]{fig/fig_area}
+	\caption{Regional and Categorical Contribution to Swiss Exports of Goods}\label{fig:area}
+	\footnotesize{Nominal values, not seasonally adjusted. Time series range from 1988 to 2018 in monthly frequency. Average export shares of the year 2018 in parentheses.}
 \end{figure}
+As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia with around 17\% each. Exports to Africa and the Middle East, Latin America, Central and South Asia and Australia account only for a bit more than 10\% combined.
 
+The hierarchical grouping by categories is more evenly distributed. The most important categories are «chemicals and pharmaceuticals», «precision instruments» and «machines and electronics». Figure \ref{fig:treemap} shows the changes in composition between 1988 and 2018.
 \begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_area_cat}
-	\caption{Swiss Exports in Goods by Category}
-	\footnotesize{Period from 1988-2017 in monthly frequency. Average export shares during 2017 in parentheses. Precious metals, precious and semi-precious stones, works of art and antiques are omitted due to their volatility.}
+	\includegraphics[width=\textwidth]{fig/fig_treemap}
+	\caption{Swiss Exports in Goods}\label{fig:treemap}
 \end{figure}
+The two hierarchical groupings are quite different. The geographic hierarchy with 8 groups and 245 subgroups is very wide.  With a majority of the export volume going to European countries, it is nevertheless highly concentrated. In the past 30 years, the relative share of exports to the rest of the world, but especially to North America and East Asia, has increased substantially. The categorical hierarchy on the other hand is rather narrow with 12 groups and 48 subgroups. Compared to the regional hierarchy, the export volume is however more evenly distributed, even though an increasing concentration can be noted.\\
 
- The 14 main groups are the following:
-\begin{enumerate}[itemsep=-1ex,partopsep=1ex,parsep=1ex]
-    \item Forestry and agricultural products, fisheries
-    \item Energy source
-    \item Textiles, clothing, shoes
-    \item Paper, stationery and graphical products
-    \item Leather, rubber, plastics 
-    \item Products of the chemical and pharmaceutical industry
-    \item Stones and earth
-    \item Metals
-    \item Machines, appliances, electronics
-    \item Vehicles
-    \item Precision instruments, clocks and watches and jewellery  
-    \item Various goods such as music instruments, home furnishings, toys, sports equipment
-    \item Precious metals, precious and semi-precious stones
-    \item Works of art and antiques
-\end{enumerate}
-
-Series at the top level tend to be more predictable than those at the bottom.
-
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_season}
-	\caption{Exports of Food, Beverages and Tobacco to the World and Australia}
-	\footnotesize{Plot demonstrates different seasonalities at different levels in a hierarchy. Line indicates average of 2012 - 2017, bands indicate minimum and maximum.}
-\end{figure}
-
+Time series at the bottom of a hierarchy are usually harder to predict than the ones at the top. Due to the aggregation involved, top level series have less observational noise and exhibit more predictable characteristics such as seasonality or trend. Following \cite{Kang2017}, it is possible to construct a measure of predictability for each time series. They estimate principal components from a number of time series features that are commonly associated with better predictability. This includes measures such as the strength of seasonality, trend, spectral entropy and serial correlation. Figure \ref{fig:feature} shows the first principal component, which accounts for a large share of the variation in these predictability features.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_confetti}
-	\caption{Predictability of Different Levels in a Hierarchy}
-	\footnotesize{Predictability given by the first component of time series features such as trend, strength of seasonality, spectral entropy, autocorrelation.}
+	\caption{Predictability of Different Levels in a Hierarchy} \label{fig:feature}
+	\footnotesize{Predictability is calculated as the first principal component of extracted time series features such as trend, strength of seasonality, spectral entropy and first order autocorrelation.}
 \end{figure}
+It is evident that there exists a strong correlation between predictability and export volume. This implies that larger series and consequently the series at the top of a hierarchy will be easier to forecast. This finding affirms the claim, that the reconciliation errors for top level series should be relatively smaller than those at the bottom level.
 
+\clearpage
 
-\subsection{Results}
- Part 1: Obvious results 
+\subsection{Preliminary Results}
+This section will answer questions w.r.t to the benefits of reconciliation/combination over unreconciled forecasting, which reconciliation methods work particularly well and which series and time periods benefit more from reconciliation.\\
  
- Part 2: Is it beneficial to use hierarchies instead of unreconciled forecasts? Which reconciliation procedures produce the best forecasts?
+ Is it beneficial to use hierarchies instead of unreconciled forecasts?
  \begin{figure}[H]
  	\includegraphics[width=\textwidth]{fig/fig_eval_mase}
  	\caption{Accuracy of Reconciliation Methods at Different Levels}
  	\footnotesize{Average of all time periods, forecasting horizons and methods. Lower level forecast errors are weighted by their respective export share.}
  \end{figure}
 
+Which reconciliation procedures produce the best forecasts?
  \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_relative}
 	\caption{Accuracy of Reconciliation Methods at Different Levels}
 	\footnotesize{Average of all time periods, forecasting horizons and methods. Lower level forecast errors are weighted by their respective export share.}
 \end{figure}
-
+In which periods of time was reconciliation particularly useful?
  \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_time}
 	\caption{Accuracy of Reconciliation Methods at Different Levels}
 	\footnotesize{Average of all time periods, forecasting horizons and methods. Lower level forecast errors are weighted by their respective export share.}
 \end{figure}
+For which series in a hierarchy is reconciliation particularly useful?
+ \begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_regions}
+	\caption{Accuracy of Reconciliation Methods at Different Levels}
+	\footnotesize{Average of all time periods, forecasting horizons and methods. Lower level forecast errors are weighted by their respective export share.}
+\end{figure}
+
+ \begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_categories}
+	\caption{Accuracy of Reconciliation Methods at Different Levels}
+	\footnotesize{Average of all time periods, forecasting horizons and methods. Lower level forecast errors are weighted by their respective export share.}
+\end{figure}
  
-Part 3: How are different subcategories affected by the reconciliation? (Correlation between share of the series and improvement of forecasts)
-
-
-%
-%Results from running hts on the data, using the average across the root mean squared errors and mean absolute percentage errors of all series.\\
-%\begin{table}[H]
-%\centering
-%\caption{Forecast Accuracy by Standard Aggregation Methods}
-%\small
-%\begin{tabularx}{\textwidth}{Xcclcclcclcc}
-%\toprule
-%& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
-%\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
-%& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
-%\midrule
-%Bottom-up &  &  &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\addlinespace
-%Middle-out &  &  &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\addlinespace
-%\multicolumn{3}{l}{Top-down (Gross-Sohl A)} &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\addlinespace
-%\multicolumn{3}{l}{Top-down (Gross-Sohl F)} &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\addlinespace
-%\multicolumn{3}{l}{Top-down (Forecast Proportions)} &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\bottomrule
-%\end{tabularx}
-%\end{table}
-%
-%Using optimal forecast combination with different weighting schemes:\\
-%\begin{table}[H]
-%\centering
-%\caption{Forecast Accuracy by Optimal Forecast Combination Weights}
-%\small
-%\begin{tabularx}{\textwidth}{Xcclcclcclcc}
-%\toprule
-%& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
-%\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
-%& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
-%\midrule
-%\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\addlinespace
-%\multicolumn{3}{l}{WLS (forecast variance weights) } &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\addlinespace
-%\multicolumn{3}{l}{MinT (full covariance weights) } &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\addlinespace
-%\multicolumn{3}{l}{nseries (numer of series at each node)} &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\
-%\bottomrule
-%\end{tabularx}
-%\end{table}
-%
-%\ \\
-%
-%Results from Bayesian estimation.. In addition, it might be interesting to look at forecast errors for different regional/categorical aggregates:
-%\begin{table}[H]
-%\centering
-%\caption{Forecast Accuracy by Regional and Categorical Aggregates}
-%\small
-%\begin{tabularx}{\textwidth}{Xcclcclcclcc}
-%\toprule
-%& \multicolumn{2}{c}{Overall} & & \multicolumn{2}{c}{2003-2007} & & \multicolumn{2}{c}{2008-2012} & & \multicolumn{2}{c}{2013-2018}\\
-%\cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9} \cmidrule{11-12}
-%& \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE} & & \scriptsize{MAPE} & \scriptsize{RMSE}\\ 
-%\midrule
-%\multicolumn{3}{l}{OLS (unweighted combination) } &&  & && & && & \\ 
-%\quad \scriptsize{ETS} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\quad \scriptsize{ARIMA} & 2.3 & 2.3  && 2.3 & 2.3 && 2.3 & 2.3 && 2.3 & 2.3\\ 
-%\bottomrule
-%\end{tabularx}
-%\end{table}
-
+ Todo:
+ \begin{itemize}
+ 	\item  Plot with density forecast for main category (e.g.World) and subcategory (e.g. Australia)
+ 	\item Forecast experiment with downweighted euro area forecasts during the Swiss franc shock 2015
+ \end{itemize}
 
 
 \clearpage

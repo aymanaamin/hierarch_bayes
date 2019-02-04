@@ -12,7 +12,7 @@ library(foreach)
 library(tidyverse)
 
 # Data
-recon <- c("bu","mo_cat","mo_reg","tdfp_cat","tdfp_reg","ols","wls","mint","nseries","unrecon")
+recon <- c("bsr","bu","mo_cat","mo_reg","tdfp_cat","tdfp_reg","ols","wls","mint","nseries","unrecon")
 for(ix in recon) load(sprintf("out/results_%s.Rdata",ix))
 results <- lapply(recon, function(ix) eval(parse(text=ix)))
 names(results) <- recon

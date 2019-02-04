@@ -2,22 +2,22 @@
 \appendix
 \section{Appendix}
 
+
 \subsection{Robustness}
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_methods_top}
 	\caption{Accuracy of Forecasting Methods at the Top Level}
-	\footnotesize{Unreconciled forecasts.}
 \end{figure}
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_methods_bottom}
-	\caption{Accuracy of Forecasting Methods at the Top Level}
-	\footnotesize{Unreconciled forecasts.}
+	\caption{Accuracy of Forecasting Methods at the Bottom Level}
 \end{figure}
 
-\subsection{Data}
 
+\subsection{Data}
+The data is compiled by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}} and made available in a machine-friendly format on basis of a subscription.\\
 % table with goods categories
 \begin{small}
 \begin{longtable}{p{2.5cm}p{11.5cm}}
@@ -405,3 +405,13 @@ Tonga	&	TO	&	AO	&	01/1988	&	-	\\
 Countries not specified	&	QX	&	EU	&	01/2002	&	-	\\
 \end{longtable}
 \end{small}
+
+\subsection{Scaling Methods}
+\label{subsec:scaling}
+by equation (\ref{eq:scale}).
+\begin{align}
+	\label{eq:scale}
+	|\lambda| &= \lambda_1 \lambda_2 \hdots \lambda_m
+	= \prod_{s^- = 1}^{x} \lambda_{s^-}\ \eta^{-\frac{1}{x}}   \prod_{s^+ = x+1}^{m} \lambda_{s^+}\ \eta^{\frac{1}{m-x}} = 1
+\end{align}
+The $x$ local variance components $\lambda_{s^-}$ are scaled down by a factor $\eta^{\frac{1}{x}}$ and the remaining $(m-x)$ components $\lambda_{s^+}$ are correspondingly scaled up by a factor $\eta^{\frac{1}{m-x}}$. The generalized variance remains at unity irrespective of the scaling factor $\eta$ and the number of series to be scaled down $x$. 

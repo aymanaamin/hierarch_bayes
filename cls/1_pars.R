@@ -15,11 +15,9 @@ library(Matrix)
 source("lib/functions_model.R")
 
 # Data
-load("dat/countries.rda")
 load("dat/tradehts_reduced.Rdata")
 load("dat/tradegts_reduced1.Rdata")
 load("dat/tradegts_reduced2.Rdata")
-agg_gts <- as.list(aggts(tradegts_reduced2))
 
 
 # Define aggregation and forecasting methods over which to loop

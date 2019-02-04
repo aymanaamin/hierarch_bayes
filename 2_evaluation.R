@@ -17,7 +17,7 @@ options(scipen=10)
 # Data & Metadata
 load("out/tabs.Rdata")
 
-# Weights
+# Weights & Volumes
 load("dat/tradegts_reduced2.Rdata")
 tsl <- as.list(aggts(tradegts_reduced2)/1e+9)
 weights <- sapply(tsl, function(x) mean(x)/mean(tsl$Total))
@@ -25,11 +25,8 @@ names(weights)[grepl("/",names(weights))] <- sapply(strsplit(names(weights)[grep
 rm(tsl)
 
 
-
-
-# PREDICTABILITY FOR DIFFERENT REGIONS/CATEGORIES?
 # CHECK ACCURACY FOR 2015 WHEN SETTING EURO AREA COUNTRIES LOWER
-
+# CHECK ACCURACY^2
 
 
 
@@ -39,7 +36,7 @@ rm(tsl)
 # x = reconciliation methods, y = accuracy
 tab <- tabs$MASE %>% 
   gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
-  filter(fmethod == "arima" & recon != "bsr" & horizon == "1") %>% 
+  filter(fmethod == "arima" & horizon == "1") %>% 
   group_by(recon,level) %>%
   summarise(accuracy = mean(accuracy)) %>% 
   mutate(reg_lvl = factor(case_when(
@@ -60,10 +57,10 @@ tab <- tabs$MASE %>%
       levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
   mutate(Reconciliation = factor(recon,
                                  levels = c("unrecon","bu","mo_cat","mo_reg","tdfp_cat","tdfp_reg",
-                                            "mint","wls","ols","nseries"),
+                                            "mint","wls","ols","nseries","bsr"),
                                  labels = c("Unreconciled","Bottom-Up","Middle-Out (Categories)  ","Middle-Out (Regions)",
                                             "Top-Down (Categories)  ","Top-Down (Regions)",
-                                            "MinT  ","WLS","OLS","nSeries"),
+                                            "MinT  ","WLS","OLS","nseries","BSR"),
                                  ordered = T),
          Grouping = recode(recon,
                            "bu" = "Basic",
@@ -79,6 +76,7 @@ tab <- tabs$MASE %>%
                            "wls" = "Optimal",
                            "nseries" = "Optimal",
                            "mint" = "Optimal",
+                           "bsr" = "Optimal",
                            "unrecon" = "Basic"))
 tab$accuracy[which(tab$accuracy > 5)] <- 5
 
@@ -104,7 +102,7 @@ ggplot() +
   theme_bw() +
   coord_cartesian(ylim = c(1,1.6)) +
   theme(legend.position="bottom", legend.title = element_blank())  +
-  guides(fill=guide_legend(nrow=3))
+  guides(fill=guide_legend(nrow=2))
 
 ggsave("tex/fig/fig_eval_mase.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
@@ -116,7 +114,7 @@ ggsave("tex/fig/fig_eval_mase.pdf", device = "pdf",
 # x = reconciliation methods, y = accuracy
 tab <- tabs$RMSE %>% 
   gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
-  filter(fmethod == "arima" & recon != "bsr" & horizon == "1") %>% 
+  filter(fmethod == "arima" & horizon == "1") %>% 
   mutate(accuracy = accuracy^2) %>% 
   group_by(recon,level) %>%
   summarise(accuracy = mean(accuracy)) %>% 
@@ -157,13 +155,14 @@ tab4 <- tab3 %>%
          `MinT` = 100*(unrecon/mint-1),
          `WLS` = 100*(unrecon/wls-1),
          `OLS` = 100*(unrecon/ols-1),
+         `BSR` = 100*(unrecon/bsr-1),
          `nSeries` = 100*(unrecon/nseries-1)) %>% 
-  select(-c(unrecon,bu,mint,mo_cat,mo_reg,nseries,ols,tdfp_cat,tdfp_reg,wls)) %>% 
+  select(-c(unrecon,bu,mint,mo_cat,mo_reg,nseries,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
   gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
   mutate(Reconciliation = factor(Reconciliation,
                                  levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
                                             "Top-Down (Categories)","Top-Down (Regions)",
-                                            "MinT","WLS","OLS","nSeries"), ordered = T),
+                                            "MinT","WLS","OLS","nSeries","BSR"), ordered = T),
          Grouping = recode(Reconciliation,
                            "Bottom-Up" = "Basic",
                            "Middle-Out (Categories)" = "Basic",
@@ -172,6 +171,7 @@ tab4 <- tab3 %>%
                            "Top-Down (Regions)" = "Basic",
                            "OLS" = "Optimal",
                            "WLS" = "Optimal",
+                           "BSR" = "Optimal",
                            "nSeries" = "Optimal",
                            "MinT" = "Optimal"))
 
@@ -187,7 +187,7 @@ ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +
   # coord_cartesian(ylim = c(-10,10)) +
   theme_bw() +
   theme(legend.position="bottom", legend.title = element_blank())  +
-  guides(fill=guide_legend(nrow=3))
+  guides(fill=guide_legend(nrow=2))
 
 ggsave("tex/fig/fig_eval_rmse_relative.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
@@ -201,7 +201,7 @@ ggsave("tex/fig/fig_eval_rmse_relative.pdf", device = "pdf",
 # x = reconciliation methods, y = accuracy
 tab <- tabs$RMSE %>% 
   gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
-  filter(!(recon %in% c("bsr","ols","nseries"))) %>% 
+  filter(!(recon %in% c("ols","nseries"))) %>% 
   filter(fmethod == "arima") %>% 
   mutate(accuracy = accuracy^2) %>% 
   group_by(date,recon,level) %>%
@@ -229,7 +229,8 @@ tab3 <- tab2 %>%
       nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
       levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
   group_by(reg_lvl,cat_lvl,recon,date) %>%
-  summarise(accuracy = sum(acc_weighted)^0.5)
+  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  ungroup
 
 tab4 <- tab3 %>% 
   spread(key = recon, value = accuracy) %>% 
@@ -239,13 +240,14 @@ tab4 <- tab3 %>%
          `Top-Down (Categories)` = 100*(unrecon/tdfp_cat-1),
          `Top-Down (Regions)` = 100*(unrecon/tdfp_reg-1),
          `MinT` = 100*(unrecon/mint-1),
-         `WLS` = 100*(unrecon/wls-1)) %>% 
-  select(-c(unrecon,bu,mint,mo_cat,mo_reg,tdfp_cat,tdfp_reg,wls)) %>% 
+         `WLS` = 100*(unrecon/wls-1),
+         `BSR` = 100*(unrecon/bsr-1)) %>% 
+  select(-c(unrecon,bu,mint,mo_cat,mo_reg,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
   gather(key = Reconciliation, value = Accuracy, -c(date,reg_lvl,cat_lvl)) %>% 
   mutate(Reconciliation = factor(Reconciliation,
                                  levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
                                             "Top-Down (Categories)","Top-Down (Regions)",
-                                            "MinT","WLS","OLS","nSeries"), ordered = T))
+                                            "MinT","WLS","BSR"), ordered = T))
 
 ggplot(tab4, aes(x=date, y=Accuracy, group = Reconciliation)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
@@ -373,4 +375,111 @@ ggplot(tab4, aes(x=date, y=accuracy, group = Method)) +
 
 ggsave("tex/fig/fig_eval_methods_bottom.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
+
+
+
+
+# SCATTERPLOTS BY REGION AND CATEGORY -------------------------------------
+
+# Region
+tab1 <- tabs$RMSE %>% 
+  gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
+  filter(recon %in% c("wls","unrecon") & horizon == "1" & fmethod == "arima") %>% 
+  filter((nchar(level) == 4 & grepl("^[A-Za-z]+$", level) == T) | 
+           (nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == T)) %>% 
+  group_by(recon,level) %>%
+  summarise(accuracy = mean(accuracy^2,na.rm=T)) %>% 
+  ungroup %>% 
+  spread(key = recon, value = accuracy) %>% 
+  mutate(relacc = 100*(unrecon^0.5/wls^0.5-1)) %>% 
+  select(-c(unrecon,wls))
+
+tab2 <- tab1 %>% 
+  mutate(Regions = factor(case_when(
+    substr(level,1,2) == "AF" ~ "Africa\nand\nMiddle\nEast",
+    substr(level,1,2) == "AO" ~ "Australia\nand\nOceania",
+    substr(level,1,2) == "EA" ~ "East\nAsia",
+    substr(level,1,2) == "EU" ~ "Europe",
+    substr(level,1,2) == "CA" ~ "Central\nAsia",
+    substr(level,1,2) == "LA" ~ "Latin\nAmerica",
+    substr(level,1,2) == "NA" ~ "North\nAmerica",
+    substr(level,1,2) == "SA" ~ "South\nAsia"),
+    levels = c("Europe","North\nAmerica","East\nAsia",
+               "Africa\nand\nMiddle\nEast","Latin\nAmerica",
+               "Central\nAsia","South\nAsia","Australia\nand\nOceania"), ordered = T)) %>%
+  mutate(Level = factor(case_when(
+    nchar(level) == 2 ~ "Region", 
+    nchar(level) == 4 ~ "Country"),
+    levels = c("Region","Country"), ordered = T)) %>%
+  add_column(Share = sapply(tab1$level, function(x) weights[which(names(weights) == x)])*100)
+
+ggplot(tab2, aes(Regions, relacc)) +
+  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  geom_jitter(aes(color = Regions, size = Share, shape = Level), width = 0.1, height = 0) +
+  coord_cartesian(ylim = c(-10,15)) +
+  scale_shape_manual(name = "Level", values = c(1,20)) +
+  scale_size_continuous(name = "Export Shares (in %)", breaks = c(1,10,20,40)) +
+  scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +
+  ylab("Relative Forecast Accuracy") +
+  xlab(NULL) +
+  theme_bw() +
+  guides(shape = guide_legend(order = 1),  size = guide_legend(order = 2)) +
+  theme(legend.position="bottom")
+
+ggsave("tex/fig/fig_eval_regions.pdf", device = "pdf",
+       width = 18, height = 12, units = "cm")  
+
+
+# Category
+tab1 <- tabs$RMSE %>% 
+  gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
+  filter(recon %in% c("wls","unrecon") & horizon == "1" & fmethod == "arima") %>% 
+  filter((nchar(level) == 3) | (nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == F)) %>% 
+  group_by(recon,level) %>%
+  summarise(accuracy = mean(accuracy^2,na.rm=T)) %>% 
+  ungroup %>% 
+  spread(key = recon, value = accuracy) %>% 
+  mutate(relacc = 100*(unrecon^0.5/wls^0.5-1)) %>% 
+  select(-c(unrecon,wls))
+
+tab2 <- tab1 %>% 
+  mutate(Categories = factor(case_when(
+    substr(level,1,2) == "01" ~ "Agricult.\nProducts",
+    substr(level,1,2) == "02" ~ "Energy\nSource",
+    substr(level,1,2) == "03" ~ "Textiles",
+    substr(level,1,2) == "04" ~ "Graphical\nProducts",
+    substr(level,1,2) == "05" ~ "Leather,\nRubber,\nPlastics",
+    substr(level,1,2) == "06" ~ "Chem.\nand\nPharma.",
+    substr(level,1,2) == "07" ~ "Stones\nand\nEarth",
+    substr(level,1,2) == "08" ~ "Metals",
+    substr(level,1,2) == "09" ~ "Machines\nand\nElectronics",
+    substr(level,1,2) == "10" ~ "Vehicles",
+    substr(level,1,2) == "11" ~ "Prec.\nInstr.",
+    substr(level,1,2) == "12" ~ "Various\nGoods"),
+    levels = c("Chem.\nand\nPharma.","Prec.\nInstr.",
+               "Machines\nand\nElectronics","Metals","Agricult.\nProducts",
+               "Vehicles","Textiles","Leather,\nRubber,\nPlastics",
+               "Energy\nSource","Graphical\nProducts",
+               "Various\nGoods","Stones\nand\nEarth"), ordered = T)) %>%
+  mutate(Level = factor(case_when(
+    nchar(level) == 2 ~ "Category",
+    nchar(level) == 3 ~ "Subcategory"),
+    levels = c("Category","Subcategory"), ordered = T)) %>%
+  add_column(Share = sapply(tab1$level, function(x) weights[which(names(weights) == x)])*100)
+
+ggplot(tab2, aes(Categories, relacc)) +
+  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  geom_jitter(aes(color = Categories, size = Share, shape = Level), width = 0.1, height = 0) +
+  coord_cartesian(ylim = c(-10,15)) +
+  scale_shape_manual(name = "Level", values = c(1,20)) +
+  scale_size_continuous(name = "Export Shares (in %)", breaks = c(1,10,20,40)) +
+  scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +
+  ylab("Relative Forecast Accuracy") +
+  xlab(NULL) +
+  theme_bw() +
+  guides(shape = guide_legend(order = 1),  size = guide_legend(order = 2)) +
+  theme(legend.position="bottom")
+
+ggsave("tex/fig/fig_eval_categories.pdf", device = "pdf",
+       width = 18, height = 12, units = "cm")  
 

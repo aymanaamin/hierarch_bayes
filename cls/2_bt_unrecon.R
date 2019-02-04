@@ -3,6 +3,8 @@ rm(list = ls())
 
 source("cls/1_pars.R")
 
+agg_gts <- as.list(aggts(tradegts_reduced2))
+
 # create cluster for parallel processing
 cl <- makeCluster(length(fdate))
 registerDoParallel(cl)
