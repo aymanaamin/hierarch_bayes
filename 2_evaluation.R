@@ -25,11 +25,6 @@ names(weights)[grepl("/",names(weights))] <- sapply(strsplit(names(weights)[grep
 rm(tsl)
 
 
-# CHECK ACCURACY FOR 2015 WHEN SETTING EURO AREA COUNTRIES LOWER
-# CHECK ACCURACY^2
-
-
-
 
 # MASE BY RECONCILIATION METHOD AND LEVEL ---------------------------------
 
@@ -256,7 +251,7 @@ ggplot(tab4, aes(x=date, y=Accuracy, group = Reconciliation)) +
   scale_linetype_manual(values=c(4,2,2,3,3,1,1,1)) +
   scale_y_continuous(position = "right") +
   scale_x_continuous(breaks = seq(1998, 2018, by = 4), labels = c("98","02","06","10","14","18")) +
-  scale_color_manual(values = c(bpy.colors(9)[-c(8,9)])) +
+  scale_color_manual(values = c(bpy.colors(10)[-c(9,10)])) +
   ylab("Relative Forecast Accuracy") +
   xlab("Reconciliation Methods") +
   theme_bw() +
@@ -416,7 +411,7 @@ tab2 <- tab1 %>%
 ggplot(tab2, aes(Regions, relacc)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
   geom_jitter(aes(color = Regions, size = Share, shape = Level), width = 0.1, height = 0) +
-  coord_cartesian(ylim = c(-10,15)) +
+  coord_cartesian(ylim = c(-10,20)) +
   scale_shape_manual(name = "Level", values = c(1,20)) +
   scale_size_continuous(name = "Export Shares (in %)", breaks = c(1,10,20,40)) +
   scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +
@@ -470,7 +465,7 @@ tab2 <- tab1 %>%
 ggplot(tab2, aes(Categories, relacc)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
   geom_jitter(aes(color = Categories, size = Share, shape = Level), width = 0.1, height = 0) +
-  coord_cartesian(ylim = c(-10,15)) +
+  coord_cartesian(ylim = c(-10,20)) +
   scale_shape_manual(name = "Level", values = c(1,20)) +
   scale_size_continuous(name = "Export Shares (in %)", breaks = c(1,10,20,40)) +
   scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +

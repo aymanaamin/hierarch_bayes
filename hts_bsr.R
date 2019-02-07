@@ -15,16 +15,16 @@ load("dat/tradehts_reduced.Rdata")
 
 
 # 1. GET DATA --------------------------------------------------------------
-xgts <- hts(y = aggts(infantgts, levels = 1)) # smallest hts
+# xgts <- hts(y = aggts(infantgts, levels = 1)) # smallest hts
 # xgts <- hts(y = aggts(tradegts_reduced1, levels = 1)/1e+6)  # small hts
 # xgts <- tradehts_reduced$cat;xgts$bts <- xgts$bts/1e+6 # deep hts
 # xgts <- tradehts_reduced$reg;xgts$bts <- xgts$bts/1e+6 # wide hts
 # xgts <- tradegts_reduced1;xgts$bts <- xgts$bts/1e+6 # large gts
-# xgts <- infantgts # small gts
+xgts <- infantgts # small gts
 
 # define training sample
 h <-  2 # forecast horizon
-test_date = 2002
+test_date = 2000
 xgts_training <- window(xgts, end = test_date)
 xgts_test <- window(xgts, start = test_date+1/frequency(xgts$bts), end = test_date+h/frequency(xgts$bts))
 
@@ -34,9 +34,15 @@ xgts_test <- window(xgts, start = test_date+1/frequency(xgts$bts), end = test_da
 results <- RunBSR_test(object = xgts_training, 
                        fmethod = "arima",
                        h = h,
-                       shrinkage = "none",
-                       series_to_be_shrunk = c())
+                       shrinkage = "td",
+                       series_to_be_shrunk = c(2))
 
+
+object = xgts_training
+fmethod = "arima"
+hx = 1
+shrinkage = "td"
+series_to_be_shrunk = c()
 
 # 3. RESULTS ---------------------------------------------------------------
 
@@ -68,6 +74,6 @@ aux <- data.frame("Selective Shrinkage" = 1:results$pars$m %in% results$pars$ser
                   "Base Forecast SD" = round(do.call(rbind, lapply(results$forecasts.list, function(fx) sd(fx[,h]))),1))
 aux
 
-# cbind(round(results$results.list$alpha,1),aux$Base.Forecast.Mean-aux$BSR)
-# round(cbind(results$results.list[[1]]$alpha,results$results.list[[1]]$M %*% results$results.list[[1]]$alpha),3)
-
+# cbind(round(results$results.list[[h]]$alpha,1),aux$Base.Forecast.Mean-aux$BSR)
+# round(cbind(results$results.list[[h]]$alpha,results$results.list[[h]]$M %*% results$results.list[[h]]$alpha),3)
+# cbind(round(do.call(rbind, lapply(results$forecasts.list, function(fx) var(fx[,h]))),1),diag(results$results.list[[h]]$Sigma_mean))

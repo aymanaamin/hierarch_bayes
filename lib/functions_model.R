@@ -138,16 +138,13 @@ RunReconciliation <- function(S, forecasts.list, pars){
     # Preallocation
     chain <- matrix(NA, nrow = pars$length_max, ncol = 3)
     
-    draw_save <- list("alpha" = matrix(NA,pars$length_sample,pars$m),
-                      "beta" = matrix(NA,pars$length_sample,pars$q),
-                      "Sigma" = array(NA,c(pars$m,pars$m,pars$length_sample)),
-                      "A1" = array(NA,c(pars$m,pars$m,pars$length_sample)),
-                      "M" = array(NA,c(pars$m,pars$m,pars$length_sample)))
+    draw_save <- matrix(NA,pars$length_sample,pars$q)
     
     # Starting values
     Sigma = Diagonal(x = apply(Y, 1, var) + 1e-16)
     alpha = Matrix(0,pars$m,1)
     beta = solve(t(S) %*% solve(Sigma) %*% S) %*% (t(S) %*% solve(Sigma) %*% Y_mean)
+    W = Sigma
     
     checks <- list("convergence" = F,
                    "sampling" = F,
@@ -157,30 +154,39 @@ RunReconciliation <- function(S, forecasts.list, pars){
     while(checks$jx < pars$length_max){
       
       checks$jx <- checks$jx+1
-      
+
       # 1. Compute Alpha
-      W <- pars$lambda %*% Sigma %*% t(pars$lambda)
       M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(W) %*% S) %*% t(S)%*% solve(W))
+      A0 <- Diagonal(n = pars$m, x = 1e-9)
+      A1 <- forceSymmetric(M %*% (W/pars$n) %*% t(M)) + A0
       a1 <- M %*% Y_mean
-      A1 <- forceSymmetric(M %*% (Sigma/pars$n) %*% t(M)) + Diagonal(n = pars$m, x = 1e-9)
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta
-      B1  <- solve(pars$n*(t(S) %*% solve(Sigma) %*% S))
-      b1 <- B1 %*% (pars$n*(t(S) %*% solve(Sigma) %*% (Y_mean - alpha)))
+      B1  <- solve(pars$n*(t(S) %*% solve(W) %*% S))
+      b1 <- B1 %*% (pars$n*(t(S) %*% solve(W) %*% (Y_mean - alpha)))
       beta <- b1 + t(rnorm(pars$q,0,1) %*% chol(B1))
-      
       
       # 3. Compute Sigma
       E <- Y - kronecker(alpha, Matrix(1,1,pars$n)) - kronecker(S %*% beta, Matrix(1,1,pars$n))
       
       if(pars$sparse==T){
         Sigma <- Diagonal(x = sapply(1:pars$m, function(sx){
-          1/rgamma(n = 1, shape = pars$n+ 1e-16, 
+          1/rgamma(n = 1, shape = pars$n + 1e-16, 
                    rate = t(E[sx,]) %*% E[sx,]) + 1e-16}))
       } else {
         Sigma <- Matrix(riwish(v = pars$n + 1e-16, 
                                S = E %*% t(E) + 1e-16))
+      }
+      
+      # 4. Compute W 
+      if(pars$sparse==T){
+        W <- pars$lambda %*% Diagonal(x = sapply(1:pars$m, function(sx){
+          1/rgamma(n = 1, shape = pars$n + 1e-16,
+                   rate = t(E[sx,]) %*% E[sx,]) + 1e-16})) %*% t(pars$lambda)
+      } else {
+        W <- pars$lambda %*% Matrix(riwish(v = pars$n + 1e-16,
+                                           S = E %*% t(E) + 1e-16)) %*% t(pars$lambda)
       }
       
       # X1. convergence check
@@ -196,12 +202,7 @@ RunReconciliation <- function(S, forecasts.list, pars){
       if(checks$convergence & !checks$sampling){
         
         checks$ix <- checks$ix + 1
-        
-        draw_save$alpha[checks$ix,] = as.matrix(alpha)
-        draw_save$beta[checks$ix,] = as.matrix(beta)
-        draw_save$A1[,,checks$ix] = as.matrix(A1)
-        draw_save$M[,,checks$ix] = as.matrix(M)
-        draw_save$Sigma[,,checks$ix] = as.matrix(Sigma)
+        draw_save[checks$ix,] = as.matrix(beta)
         
         if(checks$ix == pars$length_sample) checks$sampling <- T
         
@@ -212,17 +213,7 @@ RunReconciliation <- function(S, forecasts.list, pars){
         print(sprintf('h = %d: convergence achieved and sampling completed after %d draws.',hx,checks$jx+1))
         
         # Compute discrete statistics of posterior distribution
-        results <- list(
-          "beta" = colMeans(draw_save$beta),
-          "beta_var" = var(draw_save$beta),
-          "alpha" = colMeans(draw_save$alpha),
-          "alpha_var" = var(draw_save$alpha),
-          "Sigma_mean" = apply(draw_save$Sigma, 1:2, mean),
-          "A1" = apply(draw_save$A1, 1:2, mean),
-          "M" = apply(draw_save$M, 1:2, mean),
-          "a0" = a0,
-          "M" = M,
-          "S" = S)
+        results <- colMeans(draw_save)
         
         break
         
@@ -238,7 +229,7 @@ RunReconciliation <- function(S, forecasts.list, pars){
 
 CollectOutput <- function(object, forecasts.list, results.list, pars){
   
-  bfcasts <- t(do.call(cbind, lapply(results.list,function(x) x$beta)))
+  bfcasts <- do.call(rbind,results.list)
   bfcasts <- ts(bfcasts, 
                 start = as.numeric(tail(time(object$bts),1)) + 1/frequency(object$bts),
                 frequency = frequency(object$bts))

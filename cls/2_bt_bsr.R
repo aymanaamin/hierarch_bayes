@@ -14,31 +14,42 @@ bsr <- foreach(n = 1:length(fdate), .packages = c("hts","forecast","Matrix")) %d
   
   lapply(fmethods, function(fx){
     
-    tradegts_reduced2$bts <- tradegts_reduced2$bts/1e+6 
-    
-    # Run forecasting methods
-    fcast <- RunBSR(object = window(tradegts_reduced2, end = dx-1/12), 
-                    fmethod = fx,
-                    h = tail(horizons,1)*12,
-                    shrinkage = "none",
-                    series_to_be_shrunk = c())
-    
-    tradegts_reduced2$bts <- tradegts_reduced2$bts*1e+6 
-    fcast$bts <- fcast$bts*1e+6
-    fcast$histy <- fcast$histy*1e+6
-    
-    # Analyze forecast accuracy at different horizons
-    out <- lapply(1:min(tail(fdate,1)-dx+1,tail(horizons,1)), function(hx){
+    if(fx == "arima"){
       
-      test_wndw <- window(tradegts_reduced2, start = dx+hx-1, end = dx+hx-1/12)
-      fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
-      accuracy.gts(fcast_wndw, test_wndw)
+      tradegts_reduced2$bts <- tradegts_reduced2$bts/1e+6 
       
-    })
-    
-    names(out) <- 1:min(tail(fdate,1)-dx+1,tail(horizons,1))
-    return(out)
-    
+      # Run forecasting methods
+      fcast <- RunBSR(object = window(tradegts_reduced2, end = dx-1/12), 
+                      fmethod = fx,
+                      h = tail(horizons,1)*12,
+                      shrinkage = "none",
+                      series_to_be_shrunk = c())
+      
+      tradegts_reduced2$bts <- tradegts_reduced2$bts*1e+6 
+      fcast$bts <- fcast$bts*1e+6
+      fcast$histy <- fcast$histy*1e+6
+      
+      # Analyze forecast accuracy at different horizons
+      out <- lapply(1:min(tail(fdate,1)-dx+1,tail(horizons,1)), function(hx){
+        
+        test_wndw <- window(tradegts_reduced2, start = dx+hx-1, end = dx+hx-1/12)
+        fcast_wndw = window(fcast, start = dx+hx-1, end = dx+hx-1/12)
+        accuracy.gts(fcast_wndw, test_wndw)
+        
+      })
+      
+      names(out) <- 1:min(tail(fdate,1)-dx+1,tail(horizons,1))
+      return(out)
+      
+    } else {
+      
+      asdf <- matrix(NA,6,13084)
+      rownames(asdf) <- c("ME","RMSE","MAE","MAPE","MPE","MASE")
+      colnames(asdf) <- colnames(aggts(tradegts_reduced2))
+      out <- list(asdf,asdf,asdf)
+      names(out) <- 1:3
+      return(out) 
+    }
   })
 }
 

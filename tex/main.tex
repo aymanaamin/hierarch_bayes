@@ -89,12 +89,12 @@ Many empirical studies have shown that forecast combinations improve accuracy be
 \begin{align}
 Y_t(h) &= S\beta_{h} + e_t(h)
 \end{align}
-where $Y_t(h)$ is an ($m \times 1$) vector containing the h-periods-ahead forecasts at time $t$ for each level in the hierarchy. $\beta_{h}$ represents the optimal predictions at the bottom level that minimize the deviations between the base forecasts and the consistent hierarchy. The reconciliation error term $e_t(h)$ follows a normal distribution with mean zero and covariance matrix $\Sigma_h$. There is obviously a high level of heteroskedasticity in the error terms, which is why the simple ordinary least squares regression approach often leads to poor results. In order to account for this, $\beta_h$ can be estimated from a weighted least squares regression.
+where $Y_t(h)$ is an ($m \times 1$) vector containing the h-periods-ahead forecasts at time $t$ for each level in the hierarchy. $\beta_{h}$ represents the optimal predictions at the bottom level that minimize the deviations between the base forecasts and the consistent hierarchy. The error term $e_t(h)$ follows a normal distribution with mean zero and covariance matrix $\Sigma_h$. There is obviously a high level of heteroskedasticity in the error terms, which is why the simple ordinary least squares regression approach often leads to poor results. In order to account for this, $\beta_h$ can be estimated from a weighted least squares regression.
 \begin{align}
 \label{eq:reg}
 \beta_{h} &= \left(S'W_h^{-1}S \right)^{-1} S'W_h^{-1}Y_t(h)
 \end{align}
-Intuitively, $\beta_h$ minimizes the reconciliation error, which is the distance between actual and reconciled forecasts across the entire hierarchy. \cite{Hyndman2016} use the covariance matrix $\Sigma_h$ of the $h$-step-ahead base forecast errors as the weighting matrix $W_h$. This «GLS» approach decreases the weight of forecasts with a high prediction error in the regression. In the «MinT» approach, \cite{Wickramasuriya2015} use the covariance matrix of the $h$-step-ahead reconciled forecast errors, which they show results in the best linear unbiased reconciled forecasts. Lastly, the «nseries» approach, proposed by \cite{Athanasopoulos2017}, uses weights based on the number of series aggregated at each node.\\
+Intuitively, $\beta_h$ minimizes the reconciliation bias, which is the distance between actual and reconciled forecasts across the entire hierarchy. \cite{Hyndman2016} use the covariance matrix $\Sigma_h$ of the $h$-step-ahead base forecast errors as the weighting matrix $W_h$. This «GLS» approach decreases the weight of forecasts with a high prediction error in the regression. In the «MinT» approach, \cite{Wickramasuriya2015} use the covariance matrix of the $h$-step-ahead reconciled forecast errors, which they show results in the best linear unbiased reconciled forecasts. Lastly, the «nseries» approach, proposed by \cite{Athanasopoulos2017}, uses weights based on the number of series aggregated at each node.\\
 
 This paper contributes to the literature on optimal hierarchical forecasting by constructing a Bayesian reconciliation framework that generalizes previous approaches. In section \ref{sec:model}, it introduces an explicit definition of the coherency errors as model parameters. Probabilistic reconciliation takes the uncertainty surrounding these parameters into account and leads to reconciled density forecasts. Furthermore, flexible shrinkage priors enable the model to shrink selected reconciled forecasts towards their base forecast. In section \ref{sec:appl}, the method is compared with existing reconciliation techniques using a comprehensive hierarchical dataset of Swiss goods exports.
 
@@ -103,7 +103,7 @@ This paper contributes to the literature on optimal hierarchical forecasting by 
 \section{Bayesian Forecast Reconciliation}
 \label{sec:model}
 \subsection{Model}
-Density forecasts have the benefit of providing additional information about the uncertainty surrounding a measure of central tendency. Recent years have seen an increase in the use of model combinations for density forecasts, such as \cite{Kapetanios2015} and \cite{Cesur2016}. In their spirit, the predictive densities of the $m$ base forecast models are approximated by drawing samples of size $n$ from the respective distributions. There are $n$ vectors $\hat{y}_{i}$ each of length $m$ that contain a draw $i$ from each predictive distribution.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} The error term consists of two components, a prediction error $e_{i}$ and a reconciliation error $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
+Density forecasts have the benefit of providing additional information about the uncertainty surrounding a measure of central tendency. Recent years have seen an increase in the use of model combinations for density forecasts, such as \cite{Kapetanios2015} and \cite{Cesur2016}. In their spirit, the predictive densities of the $m$ base forecast models are approximated by drawing samples of size $n$ from the respective distributions. There are $n$ vectors $\hat{y}_{i}$ each of length $m$ that contain a draw $i$ from each predictive distribution.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} The error term consists of two components, a prediction error $e_{i}$ and a reconciliation bias $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
 \begin{align}
 \label{eq:main}
 \begin{tabular}{ccccccccc}
@@ -111,7 +111,11 @@ Density forecasts have the benefit of providing additional information about the
 	$\scriptscriptstyle (m\times 1)$ & & $\scriptscriptstyle (m\times 1)$  & & $ \scriptscriptstyle (m\times q) $ & & $\scriptscriptstyle (q\times 1)$ & & $\scriptscriptstyle (m\times 1)$
 \end{tabular}
 \end{align}
-where $e$ follows a normal distribution with mean zero and covariance matrix $\Sigma$. While $\Sigma$ is not singular by definition because the forecasts in $\hat{y}_{i}$ are not reconciled, it might be near-singular if the base forecasting models are estimated jointly. In the much more common case of independently estimated univariate models, $\Sigma$ is simply a diagonal matrix. It is however possible to order the draws from each predictive distribution before stacking them into $\hat{y}_{1},\hdots,\hat{y}_{n}$, which artificially introduces correlation into $\Sigma$. Irrespective of this, the unreconciled forecasts $\hat{y}_{i}$ follow a multivariate normal distribution.
+where $e$ follows a normal distribution with mean zero and covariance matrix $\Sigma$. While $\Sigma$ is not singular by definition because the forecasts in $\hat{y}_{i}$ are not reconciled, it might be near-singular if the base forecasting models are estimated jointly. In the much more common case of independently estimated univariate models, $\Sigma$ is simply a diagonal matrix. The regression equation can equivalently be written as
+\begin{align}
+	\hat{y}_i &=  S\beta + v_i, \quad v_i \sim (\alpha,\Sigma)
+\end{align}
+This clarifies that a draw from the predictive distribution of any base forecast deviates from the coherent subspace either due to a unique prediction error or due to the reconciliation bias that is common to all draws from a forecasted variable. The unreconciled forecasts $\hat{y}_{i}$ follow a multivariate normal distribution. [Maybe here Tas' favourite figure?]
 \begin{align}
 \hat{y}\ |\ \alpha,\beta,\Sigma \sim N(\alpha + S\beta,\Sigma)
 \end{align}
@@ -122,12 +126,10 @@ Var(\tilde{y}) &= Var(\hat{y}|\alpha = 0,\beta,\Sigma) =  \int (\hat{y} - E(\til
 \end{align*}
 The reconciled conditional distribution and the corresponding moments can be retrieved conveniently from the Gibbs sampling algorithm described in the following subsection.\\
 
-\clearpage
-
 \subsection{Estimation}
-To account for cross-equation correlations, the reconciliation problem in (\ref{eq:main}) can be expressed as a system of seemingly unrelated regressions. Since the explanatory variables are the same for each equation, it is a special case of the SUR model in \cite{Zellner1962}. However, the parameters are impossible to estimate directly because of perfect multicollinearity in the regressors $I_m$ and $S$. This represents an ill-posed problem because there is no unique solution. A convenient answer to this identification problem is given by Bayesian regularization methods. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity. By imposing prior shrinkage on the reconciliation errors $\alpha$, it will be possible to find a unique solution to the entire estimation problem.
+To account for cross-equation correlations, the reconciliation problem in (\ref{eq:main}) can be expressed as a system of seemingly unrelated regressions. Since the explanatory variables are the same for each equation, it is a special case of the SUR model in \cite{Zellner1962}. However, the parameters are impossible to estimate directly because of perfect multicollinearity in the regressors $I_m$ and $S$. This represents an ill-posed problem because there is no unique solution. A convenient answer to this identification problem is given by Bayesian regularization methods. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity. By imposing prior shrinkage on the reconciliation biases $\alpha$, it will be possible to find a unique solution to the entire estimation problem. Because of heteroskedasticity in the errors and weighting preferences introduced later, the minimization problem is given by the weighted mean squared error. The weighting matrix is given by $W = \Lambda'\Lambda$ and corresponds to $\Sigma$ in the generalized least squares case.
 \begin{align}
-	\sum_{i=1}^n \hat{y_i} &= \sum_{i=1}^n \left(I\alpha + S\beta + e_i\right),\quad e_i \sim N(0,\Sigma)
+	\frac{1}{n}\sum_{i=1}^n \Big( \Lambda^{-1}(\hat{y}_i - \alpha - S\beta)\Big)^2
 \end{align}
 In Bayesian statistics, data is considered to be fixed and parameters are treated as random variables. The researcher has a prior belief about the distribution of the parameters in a model. After observing the data, this prior belief is combined with the likelihood according to Bayes' theorem in order to obtain the posterior distribution of the parameters. This principle can be applied to $\alpha$, $\beta$ and $\Sigma$ in the reconciliation regression.
 \begin{align}
@@ -135,31 +137,32 @@ In Bayesian statistics, data is considered to be fixed and parameters are treate
 \end{align}
 In other words, the posterior distribution of the bottom-level forecasts is proportional to the likelihood of the hierarchy to be consistent times the prior distribution of the parameters. In order to approximate the distribution of $\hat{y}$, we draw $n$ $h$-periods-ahead-predictions $\hat{y}_i$ from their unreconciled predictive distributions. The likelihood function for the data is then given by 
 \begin{align*}
-f(\hat{y}\ |\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Sigma|}\exp\left[\frac{1}{2} \sum_i (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right]
+f(\hat{y}\ |\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Sigma|}\exp\left[\frac{1}{2} \sum_i \big( \Lambda^{-1}(\hat{y}_i - \alpha - S\beta)\big)'\Sigma^{-1}\big(\Lambda^{-1}(\hat{y}_i - \alpha - S\beta)\big)\right]
 \end{align*}
 and the posterior distribution is accordingly
 \begin{align*}
-f(\alpha,\beta,\Sigma\ |\ \hat{y}) & \propto \frac{1}{|\Sigma|^{n/2}}\exp\left[-\frac{1}{2} \sum_i (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right] \\
+f(\alpha,\beta,\Sigma,W\ |\ \hat{y}) & \propto \frac{1}{|\Sigma|^{n/2}}\exp\left[-\frac{1}{2} \sum_i \big(\Lambda^{-1}(\hat{y}_i - \alpha - S\beta)\big)'\Sigma^{-1}\big(\Lambda^{-1}(\hat{y}_i - \alpha - S\beta)\big)\right] \\
 &\times \exp \left[-\frac{1}{2}(\alpha - a_0)'A_0^{-1}(\alpha - a_0)\right] \\
 &\times \exp \left[-\frac{1}{2}(\beta - b_0)'B_0^{-1}(\beta - b_0)\right] \\
-&\times \frac{1}{|\Sigma|(v_0 - m - 1)} \exp \left[-\frac{1}{2} tr(R_0^{-1}\Sigma^{-1}) \right]
+&\times \frac{1}{|\Sigma|(v_0 - m - 1)} \exp \left[-\frac{1}{2} tr(R_0^{-1}\Sigma^{-1}) \right]\\
+&\times \frac{1}{|\Sigma|(w_0 - m - 1)} \exp \left[-\frac{1}{2} tr(Q_0^{-1}W^{-1}) \right]
 \end{align*}
-Following \cite{Percy1992}, we get the marginal distributions of $\alpha$, $\beta$ and $\Sigma$ by approximating the joint posterior distribution via Gibbs sampling from the conditional distributions. After choosing a set of arbitrary starting values, the following steps are repeated until convergence.
+The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde{y}$. Following \cite{Percy1992}, we get the marginal distributions by approximating the joint posterior distribution via Gibbs sampling from the conditional distributions. After choosing a set of arbitrary starting values, the following steps are repeated until convergence. This is usually achieved very quickly, irrespective of the starting values. It can be verified by testing for stability in the recursive means of the Markov chains. After convergence is achieved, a sufficiently large sample of draws from the joint posterior is saved and evaluated. \\
 
-\begin{enumerate}
-\item \textbf{Draw $\beta$ conditional on $\alpha,\Sigma,\hat{y},S$}\\
+
+\noindent\textbf{Step 1: Draw $\beta$ conditional on $\alpha,\Sigma,\hat{y},S,W$}\\
 The parameter $\beta$ is the mean of the bottom level forecasts, given an appropriate aggregation matrix $S$. The conditional posterior distribution is given by
 \begin{align}
 \beta\ |\ \alpha,\Sigma,\hat{y} &\sim N(b_1,B_1)
 \end{align}
 where
 \begin{align*}
-B_1 &= \left(\sum_i S'\Sigma^{-1}S + B_0^{-1}\right)^{-1} \\
-b_1 &= B_1 \left(\sum_i S'\Sigma^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)
+B_1 &= \left(\sum_i S'W^{-1}S + B_0^{-1}\right)^{-1} \\
+b_1 &= B_1 \left(\sum_i S'W^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)
 \end{align*}
 Unless there is reason to believe otherwise, the priors $b_0$ and $B_0$ should be chosen as uninformative as possible. In some cases, negative values in the reconciled forecasts are a concern. This issue can be resolved quite uncomplicated during the sampling process by discarding draws of $\beta$ that contain negative entries.\\
 
-\item \textbf{Draw $\Sigma$ conditional on $\alpha,\beta,\hat{y},S$}\\
+\noindent\textbf{Step 2: Draw $\Sigma$ conditional on $\alpha,\beta,\hat{y},S,W$}\\
 $\Sigma$ is the covariance matrix of the prediction errors. Depending on how the draws from each predictive distribution are ordered in $Y$, there is more or less structure in the off-diagonal elements. $\Sigma$ can be drawn from an inverse Wishart distribution.
 \begin{align}
 \Sigma\ |\ \alpha,\beta,\hat{y} \sim W^{-1}(v_1,R_1)
@@ -171,8 +174,8 @@ R_1 &=  \left( R_0^{-1} + \sum_i (\hat{y}_i - \alpha - S \beta)'(\hat{y}_i - \al
 \end{align*}
 It is useful to set an almost uninformative prior with $v_0$ and $R_0$ very close to zero, which introduces a tiny bit of noise into the reconciled forecasts. This has negligible impact on the posterior distribution, but ensures that $\Sigma$ is nonsingular in the case where a base forecast has no variation. If there is no correlation between the base forecast distributions, for instance if they originate from independent univariate models, it might be faster for large hierarchies to draw the variances equation-by-equation from an inverse gamma distribution.\\
 
-\item \textbf{Draw $\alpha$ conditional on $\beta,\Sigma,\hat{y},S$}\\
-It is necessary to impose an informative prior on the reconciliation errors $\alpha$ in order to achieve identification. This process of adding information to solve an ill-posed problem is referred to as regularization\footnote{Parameter shrinkage  has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. See for instance \cite{Polson2010} for an overview.}. Furthermore, an informative prior on $\alpha$ reflects knowledge or preferences about the reconciliation errors. The prior mean $a_0$ is a vector of zeros. This assumes that the base forecasts are unbiased and therefore do not deviate systematically from the reconciled forecasts. The prior covariance matrix $A_0$ determines how strongly the reconciliation errors are allowed to deviate from zero. Setting the diagonal entries very high leads to a diffuse prior. This implies that there is no prior knowledge about the reconciliation errors and as a result, the model parameters cannot be uniquely identified. Setting the diagonal entries very close to zero leads to a strong prior. This implies that the reconciliation errors are distributed tightly around zero. In this case, the prior information dominates the informational content of the data and $\beta$ reduces to the generalized least squares estimate in \cite{Hyndman2016}. There exists an optimal solution, which can be obtained by taking into account the dependency of $\alpha$ on $\beta$ in the partitioned regression model. Equation (\ref{eq:prior1}) shows the basic reconciliation identity.
+\noindent\textbf{Step 3: Draw $\alpha$ conditional on $\beta,\Sigma,\hat{y},S,W$}\\
+It is necessary to impose an informative prior on the reconciliation bias $\alpha$ in order to achieve identification. This process of adding information to solve an ill-posed problem is referred to as regularization\footnote{Parameter shrinkage  has been studied extensively in the literature on regularization techniques for high-dimensional data, where penalties lead to the selection of models with fewer predictors and less variance. See for instance \cite{Polson2010} for an overview.}. The conditional distribution of $\alpha$  can be obtained by concentrating out $\beta$ in the partitioned regression model. Equation (\ref{eq:prior1}) shows the basic reconciliation identity.
 \begin{align}
 	\label{eq:prior1}
 	a &= \frac{1}{n}\sum_i \hat{y}_i - Sb
@@ -182,34 +185,32 @@ In order to eliminate $b$ from equation (\ref{eq:prior1}), both sides of the equ
 	\label{eq:prior2}
 	(I_m - S(S'W^{-1}S)^{-1}S'W^{-1})\ a &= (I_m - S(S'W^{-1}S)^{-1}S'W^{-1})\ \frac{1}{n}\sum_i \hat{y}_i  
 \end{align}
-It is useful to define the idempotent residual maker $I_m - S(S'W^{-1}S)^{-1}S'W^{-1}$ as $M$. Using $\Sigma$ as the weighting matrix $W$, the residual maker generates the generalized least squares residuals that result from a regression of the reconciliation errors on the aggregation matrix $S$. Because the generated residuals are by definition the reconciliation errors, it follows that $Ma = a$. These simplifications leave the reconciliation errors as a function of the data, the weighting matrix $W$ and the summation matrix $S$. This result is again intuitive since the reconciliation errors are the residuals from a regression of the base forecasts on the aggregation matrix.
+It is useful to define the idempotent residual maker $I_m - S(S'W^{-1}S)^{-1}S'W^{-1}$ as $M$. Using $\Sigma$ as the weighting matrix $W$, the residual maker generates the generalized least squares residuals that result from a regression of the reconciliation biases on the aggregation matrix $S$. Because the generated residuals are by definition the reconciliation biases, it follows that $Ma = a$.
+
+These simplifications leave the reconciliation biases as a function of the data, the weighting matrix $W$ and the summation matrix $S$. This result is again intuitive since the reconciliation biases are the residuals from a regression of the base forecasts on the aggregation matrix.
 \begin{align}
 a &= M\left(\frac{1}{n}\sum_i \hat{y}_i\right)
 \end{align}
-As a result, the reconciliation errors follow a normal distribution with mean $a = M(\frac{1}{n}\sum_i \hat{y}_i)$ and covariance $A = M\Sigma M'/n$. Due to the presence of multicollinearity, an inverse of the covariance matrix does not always exist. This issue can be resolved by introducing a tiny amount of uncertainty to the diagonal entries of $A$. This leads to a negligible bias, but significantly less variation in the parameter estimates. The covariance matrix is therefore given by $A = M\Sigma M'/n + \gamma I_m$, with $\gamma$ being very small. This is referred to as a ridge estimator, developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}. Having enforced the orthogonality of reconciliation errors and summation matrix $S$, the prior variance $A_0$ is allowed to be uninformative. The prior mean $a_0$ is a zero vector. A numerically stable conditional posterior for $\alpha$ is therefore given by
+Due to the presence of multicollinearity, an inverse of the covariance matrix $A = M\Sigma M'/n$ does not exist. This issue can be resolved by introducing a tiny amount of uncertainty $A_0$  to the diagonal entries. This leads to a negligible bias, but significantly less variation in the parameter estimates. This is referred to as a ridge estimator, developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}. Having enforced the orthogonality of reconciliation biases and summation matrix $S$, the prior variance $A_0$ is allowed to be uninformative. The prior mean $a_0$ is a zero vector. A numerically stable conditional posterior for $\alpha$ is therefore given by
 \begin{align}
 	\label{eq:alpha}
 	\alpha\ |\ \beta,\Sigma,\hat{y} &\sim N(a_1,A_1)
 \end{align}
 where
 \begin{align*}
-	A_1 &= \left(A^{-1} + A_0^{-1}\right)^{-1}\\
-	a_1 &= A_1 \left(A^{-1}a + A_0^{-1}a_0\right)
+	A_1 &= M\Bigg(\frac{\Sigma}{n}\Bigg)M' + A_0\\
+	a_1 &= M\Bigg(\frac{1}{n}\sum_i \hat{y}_i\Bigg) + A_0^{-1}a_0
 \end{align*}
-The precision of this approach can be verified easily by comparing the estimate of $\alpha$ and the reconciliation errors from the fitted values. \\
+The precision of this approach can be verified easily by comparing the estimate of $\alpha$ and the reconciliation biases from the fitted values. \\
 
-\textbf{Weighting Matrix $W$}\\
-Even though it is intuitive to weigh the reconciliation errors based on the predictive accuracy of the corresponding base forecasts, the weighting matrix $W$ in the residual maker does not necessarily have to correspond to $\Sigma$. A low value results in a lower reconciliation error. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster.  In this case, it is of interest to selectively shrink some reconciliation errors towards zero. At the same time, it is necessary to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased reconciliation errors at their level of the hierarchy.
+\noindent\textbf{Step 4: Draw $W$ conditional on $\alpha,\beta,\Sigma,\hat{y},S$}\\
+Using $\Sigma$ for $W$ reduces the regression to the generalized least squares estimator. Even though it is intuitive to weigh the reconciliation biases based on the predictive accuracy of the corresponding base forecasts, this can be generalized to different weighting schemes. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster.  In this case, it is of interest to selectively shrink some reconciliation biases towards zero. At the same time, it is necessary to increase the variation of the remaining elements in $\alpha$ such that they are able to capture the increased reconciliation biases at their level of the hierarchy.
 
-This can be achieved by keeping constant the total dispersion of a multivariate normal distribution. A common measure is the generalized variance described in \cite{Mustonen1997} and defined as the determinant of a covariance matrix. Using a diagonal scaling matrix $\lambda$ as a hyperprior on $W$, it is therefore possible to construct any weighting matrix as long as the product of the diagonal elements in $\lambda$ remain constant at 1. This in turn ensures that the total dispersion of the weighting matrix $W$ remains equal to the total dispersion of $\Sigma$. In the basic case, $\lambda$ is simply an identity matrix, which reduces $W$ to $\Sigma$. Other prior beliefs reduce some elements in $\lambda$ and increase the remaining ones.
-\begin{align*}
-W =  \lambda\Sigma\lambda'
-\end{align*}
-There are several reasonable scaling methods available. A useful feature is to select certain series and shrink them towards their base forecasts. Other ossible approaches include the weighting of each reconciliation error by its level in the hierarchy or by to the number of series at each node in the hierarchy. This allows for the emulation of the «nseries», «bottom-up», «middle-out» and «top-down» results. Various examples of how to shrink selected reconciliation errors are given in appendix \ref{subsec:scaling}.
-
-\end{enumerate}
-
-\noindent The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde{y}$. Convergence of the Gibbs sampler is usually achieved very quickly, irrespective of the starting values. It can verified by testing for stability in the recursive means of the Markov chains. After convergence is achieved, a sufficiently large sample of draws from the joint posterior is saved and evaluated.\\
+This can be achieved by keeping constant the total dispersion of a multivariate normal distribution. A common measure is the generalized variance described in \cite{Mustonen1997} and defined as the determinant of a covariance matrix. Using a diagonal scaling matrix $\lambda$ as a hyperprior on $W$, it is therefore possible to construct any weighting matrix as long as the product of the diagonal elements in $\lambda$ remain constant at 1. This in turn ensures that the total dispersion of the weighting matrix $W$ remains equal to the total dispersion of $\Sigma$. In the basic case, $\lambda$ is simply an identity matrix, which reduces $W$ to $\Sigma$. Other prior beliefs reduce some elements in $\lambda$ and increase the remaining ones. 
+\begin{align}
+	W\ |\ \Sigma, \lambda  \sim W^{-1}(n, n\lambda\Sigma\lambda')
+\end{align}
+There are several reasonable scaling methods available. A useful feature is to select certain series and shrink them towards their base forecasts. Other ossible approaches include the weighting of each series by its level in the hierarchy or by to the number of series at each node in the hierarchy. This allows for the emulation of the «nseries», «bottom-up», «middle-out» and «top-down» results. Various examples of how to shrink selected reconciliation biases are given in appendix \ref{subsec:scaling}.
 
 \clearpage
 
@@ -238,7 +239,7 @@ Time series at the bottom of a hierarchy are usually harder to predict than the 
 	\caption{Predictability of Different Levels in a Hierarchy} \label{fig:feature}
 	\footnotesize{Predictability is calculated as the first principal component of extracted time series features such as trend, strength of seasonality, spectral entropy and first order autocorrelation.}
 \end{figure}
-It is evident that there exists a strong correlation between predictability and export volume. This implies that larger series and consequently the series at the top of a hierarchy will be easier to forecast. This finding affirms the claim, that the reconciliation errors for top level series should be relatively smaller than those at the bottom level.
+It is evident that there exists a strong correlation between predictability and export volume. This implies that larger series and consequently the series at the top of a hierarchy will be easier to forecast. This finding affirms the claim, that the reconciliation biases for top level series should be relatively smaller than those at the bottom level.
 
 \clearpage
 
