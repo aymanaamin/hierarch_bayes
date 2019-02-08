@@ -34,8 +34,8 @@ xgts_test <- window(xgts, start = test_date+1/frequency(xgts$bts), end = test_da
 results <- RunBSR_test(object = xgts_training, 
                        fmethod = "arima",
                        h = h,
-                       shrinkage = "td",
-                       series_to_be_shrunk = c(2))
+                       shrinkage = "none",
+                       series_to_be_shrunk = c(1,2,5,9))
 
 
 object = xgts_training

@@ -155,7 +155,6 @@ RunReconciliation <- function(S, forecasts.list, pars){
     Sigma = Diagonal(x = apply(Y, 1, var) + 1e-16)
     alpha = Matrix(0,pars$m,1)
     beta = solve(t(S) %*% solve(Sigma) %*% S) %*% (t(S) %*% solve(Sigma) %*% Y_mean)
-    W = Sigma
     
     checks <- list("convergence" = F,
                    "sampling" = F,
@@ -165,6 +164,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
     while(checks$jx < pars$length_max){
       
       checks$jx <- checks$jx+1
+      
+      W <- pars$lambda %*% Sigma %*% pars$lambda
       
       # 1. Compute Alpha
       M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(W) %*% S) %*% t(S)%*% solve(W))
@@ -189,17 +190,6 @@ RunReconciliation <- function(S, forecasts.list, pars){
         Sigma <- Matrix(riwish(v = pars$n + 1e-16, 
                                S = E %*% t(E) + 1e-16))
       }
-
-      # 4. Compute W 
-      if(pars$sparse==T){
-        W <- pars$lambda %*% Diagonal(x = sapply(1:pars$m, function(sx){
-          1/rgamma(n = 1, shape = pars$n + 1e-16,
-                   rate = t(E[sx,]) %*% E[sx,]) + 1e-16})) %*% t(pars$lambda)
-      } else {
-        W <- pars$lambda %*% Matrix(riwish(v = pars$n + 1e-16,
-                               S = E %*% t(E) + 1e-16)) %*% t(pars$lambda)
-      }
-      
       
       # X1. convergence check
       if(checks$jx == 1){
