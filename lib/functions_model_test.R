@@ -170,13 +170,13 @@ RunReconciliation <- function(S, forecasts.list, pars){
       # 1. Compute Alpha
       M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(W) %*% S) %*% t(S)%*% solve(W))
       A0 <- Diagonal(n = pars$m, x = 1e-9)
-      A1 <- forceSymmetric(M %*% (W/pars$n) %*% t(M)) + A0
+      A1 <- forceSymmetric(M %*% (Sigma/pars$n) %*% t(M)) + A0
       a1 <- M %*% Y_mean
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta
-      B1  <- solve(pars$n*(t(S) %*% solve(W) %*% S))
-      b1 <- B1 %*% (pars$n*(t(S) %*% solve(W) %*% (Y_mean - alpha)))
+      B1  <- solve(pars$n*(t(S) %*% solve(Sigma) %*% S))
+      b1 <- B1 %*% (pars$n*(t(S) %*% solve(Sigma) %*% (Y_mean - alpha)))
       beta <- b1 + t(rnorm(pars$q,0,1) %*% chol(B1))
       
       # 3. Compute Sigma

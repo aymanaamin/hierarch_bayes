@@ -127,41 +127,39 @@ Var(\tilde{y}) &= Var(\hat{y}|\alpha = 0,\beta,\Sigma) =  \int (\hat{y} - E(\til
 The reconciled conditional distribution and the corresponding moments can be retrieved conveniently from the Gibbs sampling algorithm described in the following subsection.\\
 
 \subsection{Estimation}
-To account for cross-equation correlations, the reconciliation problem in (\ref{eq:main}) can be expressed as a system of seemingly unrelated regressions. Since the explanatory variables are the same for each equation, it is a special case of the SUR model in \cite{Zellner1962}. However, the parameters are impossible to estimate directly because of perfect multicollinearity in the regressors $I_m$ and $S$. As a result, there is no unique solution available and equation \ref{eq:main} represents an ill-posed problem. A convenient answer to this identification issue is given by Bayesian regularization methods. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity. By imposing prior shrinkage on the reconciliation biases $\alpha$, it will be possible to find a unique solution to the entire estimation problem.
-
-To accomodate prior weighting preferences, a diagonal weighting matrix $W$ is introduced here and discussed in greater detail in subsection \ref{sec:weighting}.  Defining the reciprocals of the weights as $W^{-1} = \Lambda\Lambda'$, the minimization problem is given by the weighted mean squared error.
-\begin{align}
-\frac{1}{n}\sum_{i=1}^n \Big( \Lambda(\hat{y}_i - \alpha - S\beta)\Big)^2
-\end{align}
-In the case of no weighting, $W$ is an identity matrix and the minization problem will lead to a generalized least squares regression.\\
+To account for cross-equation correlations, the reconciliation problem in (\ref{eq:main}) can be expressed as a system of seemingly unrelated regressions. Since the explanatory variables are the same for each equation, it is a special case of the SUR model in \cite{Zellner1962}. However, the parameters are impossible to estimate directly because of perfect multicollinearity in the regressors $I_m$ and $S$. As a result, there is no unique solution available and equation \ref{eq:main} represents an ill-posed problem. A convenient answer to this identification issue is given by Bayesian regularization methods. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity. By imposing a small degree of prior shrinkage on the reconciliation biases $\alpha$, it will be possible to find a unique solution to the entire estimation problem.\\
 
 In Bayesian statistics, data is considered to be fixed and parameters are treated as random variables. The researcher has a prior belief about the distribution of the parameters in a model. After observing the data, this prior belief is combined with the likelihood according to Bayes' theorem in order to obtain the posterior distribution of the parameters. This principle can be applied to $\alpha$, $\beta$ and $\Sigma$ in the reconciliation regression.
 \begin{align}
 	f(\alpha, \beta, \Sigma\ |\ \hat{y}) \propto f(\hat{y}\ |\ \alpha, \beta, \Sigma) \times f(\alpha, \beta, \Sigma)
 \end{align}
-In other words, the posterior distribution of the bottom-level forecasts is proportional to the likelihood of the hierarchy to be consistent times the prior distribution of the parameters. In order to approximate the distribution of $\hat{y}$, we draw $n$ $h$-periods-ahead-predictions $\hat{y}_i$ from their unreconciled predictive distributions. The likelihood function for the data is then given by 
+In other words, the posterior distribution of the bottom-level forecasts is proportional to the likelihood of the hierarchy to be consistent times the prior distribution of the parameters. Because the priors are chosen as uninformative as possible, preferences about the importance of certain base forecasts are accommodated in the likelihood function. Defining $\Lambda$ as a diagonal weighting matrix, the minimization problem is given by the weighted mean squared error.
+\begin{align}
+\frac{1}{n}\sum_{i=1}^n \Big( \Lambda(\hat{y}_i - \alpha - S\beta)\Big)^2 = \frac{1}{n}\sum_{i=1}^n \Big( \Lambda e_i\Big)^2
+\end{align}
+The likelihood function for the data is then given by 
 \begin{align*}
 f(\hat{y}\ &|\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Lambda\Sigma\Lambda'|} \exp\left[-\frac{1}{2} \sum_i \big( \Lambda(\hat{y}_i - \alpha - S\beta)\big)'\big(\Lambda\Sigma\Lambda'\big)^{-1}\big(\Lambda(\hat{y}_i - \alpha - S\beta)\big)\right]
 \end{align*}
-and the posterior distribution is accordingly
+Possible designs for the hyperparameter $\Lambda$ are discussed in subsection \ref{sec:weighting}, but it is crucial to note that its definition affects the covariance matrix of the distribution, but not the mean. This special case arises because the reconciliation equation provides a perfect fit for the prediction mean. The posterior distribution is accordingly
 \begin{align*}
 f(\alpha,\beta,\Sigma\ |\ \hat{y}) & \propto \frac{1}{|\Lambda\Sigma\Lambda'|} \exp\left[-\frac{1}{2} \sum_i \big( \Lambda(\hat{y}_i - \alpha - S\beta)\big)'\big(\Lambda\Sigma\Lambda'\big)^{-1}\big(\Lambda(\hat{y}_i - \alpha - S\beta)\big)\right] \\
 &\times \exp \left[-\frac{1}{2}(\alpha - a_0)'A_0^{-1}(\alpha - a_0)\right] \\
 &\times \exp \left[-\frac{1}{2}(\beta - b_0)'B_0^{-1}(\beta - b_0)\right] \\
 &\times \frac{1}{|\Sigma|(v_0 - m - 1)} \exp \left[-\frac{1}{2} tr(R_0^{-1}\Sigma^{-1}) \right]
 \end{align*}
-The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde{y}$. Following \cite{Percy1992}, we get the marginal distributions by approximating the joint posterior distribution via Gibbs sampling from the conditional distributions. After choosing a set of arbitrary starting values, the following steps are repeated until convergence. This is usually achieved very quickly, irrespective of the starting values. It can be verified by testing for stability in the recursive means of the Markov chains. After convergence is achieved, a sufficiently large sample of draws from the joint posterior is saved and evaluated. \\
+The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde{y}$. In order to approximate the distribution of $\hat{y}$, we draw $n$ $h$-periods-ahead-predictions $\hat{y}_i$ from their unreconciled predictive distributions. Following \cite{Percy1992}, we get the marginal distributions by approximating the joint posterior distribution via Gibbs sampling from the conditional distributions.  This is usually achieved very quickly, irrespective of the starting values. It can be verified by testing for stability in the recursive means of the Markov chains. After convergence is achieved, a sufficiently large sample of draws from the joint posterior is saved and evaluated. After choosing a set of arbitrary starting values, the following steps are repeated until convergence.\\
 
 
 \noindent\textbf{Step 1: Draw $\beta$ conditional on $\alpha,\Sigma,\hat{y},S$}\\
-The parameter $\beta$ is the mean of the bottom level forecasts, given an appropriate aggregation matrix $S$. The conditional posterior distribution is given by
+The parameter $\beta$ is the mean of the bottom level forecasts, given an appropriate aggregation matrix $S$. The weighting matrix $\Lambda$ cancels out nicely when calculating the conditional posterior distribution.
 \begin{align}
 \beta\ |\ \alpha,\Sigma,\hat{y} &\sim N(b_1,B_1)
 \end{align}
 where
 \begin{align*}
-B_1 &= \left(\sum_i S'\big(\Lambda\Sigma\Lambda'\big)^{-1}S + B_0^{-1}\right)^{-1} \\
-b_1 &= B_1 \left(\sum_i S'\big(\Lambda\Sigma\Lambda'\big)^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)
+B_1 &= \left(\sum_i S'\Sigma^{-1}S + B_0^{-1}\right)^{-1} \\
+b_1 &= B_1 \left(\sum_i S'\Sigma^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)
 \end{align*}
 Unless there is reason to believe otherwise, the priors $b_0$ and $B_0$ should be chosen as uninformative as possible. In some cases, negative values in the reconciled forecasts are a concern. This issue can be resolved quite uncomplicated during the sampling process by discarding draws of $\beta$ that contain negative entries.\\
 
@@ -194,14 +192,14 @@ This simplification leaves the reconciliation biases as a function of the data a
 \begin{align}
 a &= M\left(\frac{1}{n}\sum_i \hat{y}_i\right)
 \end{align}
-Due to the presence of multicollinearity, an inverse of the covariance matrix $A = M\Sigma M'/n$ does not exist. This issue can be resolved by introducing a tiny amount of uncertainty $A_0$  to the diagonal entries. This leads to a negligible bias, but significantly less variation in the parameter estimates. This is referred to as a ridge estimator, developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}. Having enforced the orthogonality of reconciliation biases and summation matrix $S$, the prior variance $A_0$ is allowed to be uninformative. The prior mean $a_0$ is a zero vector. A numerically stable conditional posterior for $\alpha$ is therefore given by
+Due to the presence of multicollinearity, an inverse of the covariance matrix $M\Sigma M'/n$ does not exist. This issue can be resolved by introducing a tiny amount of uncertainty $A_0$  to the diagonal entries. This leads to a negligible bias, but significantly less variation in the parameter estimates. This is referred to as a ridge estimator, developed by \cite{Brown1980} and extended to the seemingly unrelated regression framework by \cite{Haitovsky1987} and \cite{Firinguetti1997}. Having enforced the orthogonality of reconciliation biases and summation matrix $S$, the prior variance $A_0$ is allowed to be uninformative. The prior mean $a_0$ is a zero vector. A numerically stable conditional posterior for $\alpha$ is therefore given by
 \begin{align}
 	\label{eq:alpha}
 	\alpha\ |\ \beta,\Sigma,\hat{y} &\sim N(a_1,A_1)
 \end{align}
 where
 \begin{align*}
-	A_1 &= M\Bigg(\frac{\Lambda\Sigma\Lambda'}{n}\Bigg)M' + A_0\\
+	A_1 &= M\Bigg(\frac{\Sigma}{n}\Bigg)M' + A_0\\
 	a_1 &= M\Bigg(\frac{1}{n}\sum_i \hat{y}_i\Bigg) + A_0^{-1}a_0
 \end{align*}
 The precision of this approach can be verified easily by comparing the estimate of $\alpha$ and the reconciliation biases from the fitted values. \\
