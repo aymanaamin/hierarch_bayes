@@ -39,7 +39,7 @@ mint <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar% {
       
     } else {
       
-      asdf <- matrix(NA,6,13084)
+      asdf <- matrix(NA,6,13118)
       rownames(asdf) <- c("ME","RMSE","MAE","MAPE","MPE","MASE")
       colnames(asdf) <- colnames(aggts(tradegts_reduced2))
       out <- list(asdf,asdf,asdf)

@@ -19,13 +19,17 @@ load("dat/countries.rda")
 # 1. IMPORT DATA -----------------------------------------------------------
 
 total <- import_data()
+total$value <- total$value/1e+6
 
 total_exp <- total[substr(tsKey,1,1) == "E",]
+total_imp <- total[substr(tsKey,1,1) == "I",]
 total_exp_reg <- total_exp[, .(value = sum(value)), by = list(period, tsKey = substr(tsKey,2,5))]
 total_exp_cat <- total_exp[, .(value = sum(value)), by = list(period, tsKey = substr(tsKey,6,14))]
 
 dat_exp <- dt2ts(total_exp)
+dat_imp <- dt2ts(total_imp)
 colnames(dat_exp) <-  substr(colnames(dat_exp),2,14)
+colnames(dat_imp) <-  substr(colnames(dat_imp),2,14)
 dat_exp_reg <- dt2ts(total_exp_reg)
 dat_exp_cat <- dt2ts(total_exp_cat)
 
@@ -37,6 +41,14 @@ dat_exp_cat <- dt2ts(total_exp_cat)
 
 # define grouped hierarchy
 tradegts <- gts(y = dat_exp,
+                gnames = c("Regions Total", "Countries Total" ,"Goods Total Lvl 1","Goods Total Lvl 2",
+                           "Goods Total Lvl 3","Goods Total Lvl 4","Goods Total Lvl 5","Goods Lvl 1 per Region",
+                           "Goods Lvl 2 per Region","Goods Lvl 3 per Region","Goods Lvl 4 per Region",
+                           "Goods Lvl 5 per Region","Goods Lvl 1 per Country","Goods Lvl 2 per Country",
+                           "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
+                characters = list(c(2,2), c(2,1,1,2,2)))
+
+tradegts_imp <- gts(y = dat_imp,
                 gnames = c("Regions Total", "Countries Total" ,"Goods Total Lvl 1","Goods Total Lvl 2",
                            "Goods Total Lvl 3","Goods Total Lvl 4","Goods Total Lvl 5","Goods Lvl 1 per Region",
                            "Goods Lvl 2 per Region","Goods Lvl 3 per Region","Goods Lvl 4 per Region",
@@ -67,7 +79,7 @@ tradegts_reduced2 <- gts(y = agggts_red2,
 tradehts_reduced <- list(cat = hts(y = aggts(tradehts$cat, levels = 2), characters = c(2,1)),
                          reg = hts(y = aggts(tradehts$reg, levels = 2), characters = c(2,2)))
 
-rm(dat_exp,dat_exp_reg,dat_exp_cat,total_exp,total_exp_reg,
+rm(dat_exp,dat_imp,dat_exp_reg,dat_exp_cat,total_exp,total_exp_reg,
    total_exp_cat,agggts_red1,agggts_red2,total)
 
 
@@ -102,9 +114,8 @@ rm(agg_hts_reg,agg_hts_cat,agg_gts_red1,agg_gts_red2)
 # 4. SAVE DATA ------------------------------------------------------------
 
 save(tradegts, file = "dat/tradegts.Rdata")
+save(tradegts_imp, file = "dat/tradegts_imp.Rdata")
 save(tradehts, file = "dat/tradehts.Rdata")
 save(tradegts_reduced1, file = "dat/tradegts_reduced1.Rdata")
 save(tradegts_reduced2, file = "dat/tradegts_reduced2.Rdata")
 save(tradehts_reduced, file = "dat/tradehts_reduced.Rdata")
-
-

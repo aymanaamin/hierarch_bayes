@@ -28,7 +28,7 @@ RunBSR_test <- function(object, h, fmethod = "arima",
                "m" = nrow(S),
                "q" = ncol(S),
                "shrinkage" = shrinkage,
-               "xser_shr" = 1e+2,
+               "xser_shr" = 1e+3,
                "series_to_be_shrunk" = series_to_be_shrunk)
   
   if(!is.null(series_to_be_shrunk)) if(max(series_to_be_shrunk) > pars$m){
