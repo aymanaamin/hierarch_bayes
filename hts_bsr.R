@@ -23,7 +23,7 @@ load("dat/tradehts_reduced.Rdata")
 xgts <- infantgts # small gts
 
 # define training sample
-h <-  2 # forecast horizon
+h <-  3 # forecast horizon
 test_date = 2000
 xgts_training <- window(xgts, end = test_date)
 xgts_test <- window(xgts, start = test_date+1/frequency(xgts$bts), end = test_date+h/frequency(xgts$bts))
@@ -34,7 +34,7 @@ xgts_test <- window(xgts, start = test_date+1/frequency(xgts$bts), end = test_da
 results <- RunBSR_test(object = xgts_training, 
                        fmethod = "arima",
                        h = h,
-                       shrinkage = "td",
+                       shrinkage = "none",
                        series_to_be_shrunk = c(2,6))
 
 

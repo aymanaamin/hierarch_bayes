@@ -76,11 +76,19 @@ tradegts_reduced2 <- gts(y = agggts_red2,
                                     "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
                          characters = list(c(2,2), c(2,1)))
 
+agggts_red2_imp <- aggts(tradegts_imp, levels = 14)
+colnames(agggts_red2_imp) <- substr(colnames(agggts_red2_imp), 25,40)
+tradegts_reduced2_imp <- gts(y = agggts_red2_imp,
+                         gnames = c("Regions Total", "Countries Total",
+                                    "Goods Total Lvl 1","Goods Total Lvl 2","Goods Lvl 1 per Region",
+                                    "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
+                         characters = list(c(2,2), c(2,1)))
+
 tradehts_reduced <- list(cat = hts(y = aggts(tradehts$cat, levels = 2), characters = c(2,1)),
                          reg = hts(y = aggts(tradehts$reg, levels = 2), characters = c(2,2)))
 
 rm(dat_exp,dat_imp,dat_exp_reg,dat_exp_cat,total_exp,total_exp_reg,
-   total_exp_cat,agggts_red1,agggts_red2,total)
+   total_exp_cat,agggts_red1,agggts_red2,total,agggts_red2_imp)
 
 
 # 3. INSPECT DATA ----------------------------------------------------------
@@ -118,4 +126,5 @@ save(tradegts_imp, file = "dat/tradegts_imp.Rdata")
 save(tradehts, file = "dat/tradehts.Rdata")
 save(tradegts_reduced1, file = "dat/tradegts_reduced1.Rdata")
 save(tradegts_reduced2, file = "dat/tradegts_reduced2.Rdata")
+save(tradegts_reduced2_imp, file = "dat/tradegts_reduced2_imp.Rdata")
 save(tradehts_reduced, file = "dat/tradehts_reduced.Rdata")

@@ -21,7 +21,7 @@ load("dat/countries.rda")
 load("dat/tradegts.Rdata")
 load("dat/tradehts.Rdata")
 load("dat/tradegts_reduced2.Rdata")
-tsl <- as.list(aggts(tradegts_reduced2)/1e+9)
+tsl <- as.list(aggts(tradegts_reduced2))
 
 # Options
 options(scipen=10)

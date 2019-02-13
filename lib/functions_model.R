@@ -18,7 +18,7 @@ RunBSR <- function(object, h, fmethod = "arima",
   start.time = Sys.time() # Tic
   
   # Step 1: Define Summation Matrix & Parameters
-  S <- Matrix(smatrix(object))
+  S <- hts:::SmatrixM(object$groups)
   pars <- list("sparse" = T,
                "length_sample" = 1000,
                "length_max" = 1e+5,
@@ -28,7 +28,7 @@ RunBSR <- function(object, h, fmethod = "arima",
                "m" = nrow(S),
                "q" = ncol(S),
                "shrinkage" = shrinkage,
-               "xser_shr" = 1e+3,
+               "xser_shr" = 1e+5,
                "series_to_be_shrunk" = series_to_be_shrunk)
   
   if(!is.null(series_to_be_shrunk)) if(max(series_to_be_shrunk) > pars$m){
@@ -138,7 +138,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
     # Preallocation
     chain <- matrix(NA, nrow = pars$length_max, ncol = 3)
     
-    draw_save <- matrix(NA,pars$length_sample,pars$q)
+    draw_save <- list("beta" = matrix(NA,pars$length_sample,pars$q),
+                      "Sigma" = matrix(NA,pars$length_sample,pars$m))
     
     # Starting values
     Sigma = Diagonal(x = apply(Y, 1, var) + 1e-16)
@@ -153,7 +154,7 @@ RunReconciliation <- function(S, forecasts.list, pars){
     while(checks$jx < pars$length_max){
       
       checks$jx <- checks$jx+1
-
+      
       W <- pars$lambda %*% Sigma %*% pars$lambda
       
       # 1. Compute Alpha
@@ -164,8 +165,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta
-      B1  <- solve(pars$n*(t(S) %*% solve(Sigma) %*% S))
-      b1 <- B1 %*% (pars$n*(t(S) %*% solve(Sigma) %*% (Y_mean - alpha)))
+      B1  <- solve(pars$n*(t(S) %*% solve(W) %*% S))
+      b1 <- B1 %*% (pars$n*(t(S) %*% solve(W) %*% (Y_mean - alpha)))
       beta <- b1 + t(rnorm(pars$q,0,1) %*% chol(B1))
       
       # 3. Compute Sigma
@@ -189,11 +190,14 @@ RunReconciliation <- function(S, forecasts.list, pars){
         if(checks$jx > 200) if(all(abs(chain[checks$jx,2]/chain[checks$jx-100,2]-1) < 1e-6)) checks$convergence <- T
       }
       
+      if(checks$jx %% 100 == 0) plot(mcmc(chain[c(1:checks$jx),]))
+      
       # X2. start sampling upon convergence
       if(checks$convergence & !checks$sampling){
         
         checks$ix <- checks$ix + 1
-        draw_save[checks$ix,] = as.matrix(beta)
+        draw_save$beta[checks$ix,] = as.matrix(beta)
+        draw_save$Sigma[checks$ix,] = diag(Sigma)
         
         if(checks$ix == pars$length_sample) checks$sampling <- T
         
@@ -204,7 +208,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
         print(sprintf('h = %d: convergence achieved and sampling completed after %d draws.',hx,checks$jx+1))
         
         # Compute discrete statistics of posterior distribution
-        results <- colMeans(draw_save)
+        results <- list("beta" = colMeans(draw_save$beta),
+                        "Sigma" = colMeans(draw_save$Sigma))
         
         break
         
@@ -220,10 +225,14 @@ RunReconciliation <- function(S, forecasts.list, pars){
 
 CollectOutput <- function(object, forecasts.list, results.list, pars){
   
-  bfcasts <- do.call(rbind,results.list)
+  bfcasts <- t(do.call(cbind, lapply(results.list,function(x) x$beta)))
   bfcasts <- ts(bfcasts, 
                 start = as.numeric(tail(time(object$bts),1)) + 1/frequency(object$bts),
                 frequency = frequency(object$bts))
+  bvar <- ts(t(do.call(cbind, lapply(results.list,function(x) x$Sigma))), 
+             start = as.numeric(tail(time(object$bts),1)) + 1/frequency(object$bts),
+             frequency = frequency(object$bts))
+  colnames(bvar) <- colnames(aggts(object))
   colnames(bfcasts) <- colnames(object$bts)
   class(bfcasts) <- class(object$bts)
   attr(bfcasts, "msts") <- attr(object$bts, "msts")
@@ -233,6 +242,8 @@ CollectOutput <- function(object, forecasts.list, results.list, pars){
   } else {
     out$groups <- object$groups
   }
+  
+  out$var <- bvar
   
   return(structure(out, class = class(object)))
   

@@ -13,13 +13,16 @@ library(Matrix)
 library(MCMCpack)
 
 # Model
-source("lib/functions_model_test.R")
+source("lib/functions_model_electricity.R")
 
 # Data
 load("dat/countries.rda")
 load("dat/tradegts_reduced1.Rdata")
 load("dat/tradehts_reduced.Rdata")
-tsl <- as.list(aggts(tradegts_reduced1)/1e+6)
+load("dat/tradegts_imp.Rdata")
+load("dat/tradegts_reduced2_imp.Rdata")
+tsl_imp <- as.list(aggts(tradegts_imp))
+tsl <- as.list(aggts(tradegts_reduced1))
 
 # Options
 options(scipen=10)
@@ -29,28 +32,24 @@ options(scipen=10)
 # 1. SEASONALITIES --------------------------------------------------------
 
 # Data
-yr <- 2017
+yr <- 2018
 training <- window(tradegts_reduced1, end = yr-1/12)
-# training_hts <- window(tradehts_reduced$reg, end = yr-1/12)
-training$bts <- training$bts/1e+6 
+fc_td <- forecast(window(tradehts_reduced$reg, end = yr-1/12), h = 12, fmethod = "arima")
 
 # BSR
-fc_bsr <- RunBSR_test(object = training, h = 12, fmethod = "arima", shrinkage = "none")
-fcm <- as.list(aggts(fc_bsr$forecast))
-fcv <- as.list(fc_bsr$variance)
+fc_bsr <- RunBSR(object = training, h = 12, fmethod = "arima", shrinkage = "none")
+fcm <- as.list(aggts(fc_bsr))
+fcv <- as.list(fc_bsr$var)
 
-# Others
-# fc_td <- forecast(training, h = 12, method = "tdfp", fmethod = "arima")
-
-ts1 <- "Total"
-ts2 <- "Regions Total/AO"
+ts1 <- "Goods Total Lvl 1/09"
+ts2 <- "AO09"
 
 tot_m <- c(fcm[[ts1]])
 aus_m <- c(fcm[[ts2]])
 tot_v <- c(fcv[[ts1]])
 aus_v <- c(fcv[[ts2]])
 
-data <- bind_rows(tibble(series = factor("World", levels = c("World","Australia")),
+data <- bind_rows(tibble(series = factor("to the World", levels = c("to the World","to Australia")),
                          rea = c(window(tsl[[ts1]], start = yr, end = yr + 11/12)),
                          avg = tot_m,
                          min1 = tot_m - 2.58*sqrt(tot_v),
@@ -62,7 +61,7 @@ data <- bind_rows(tibble(series = factor("World", levels = c("World","Australia"
                          min4 = tot_m - 1.28*sqrt(tot_v),
                          max4 = tot_m + 1.28*sqrt(tot_v),
                          mon = as_factor(month.abb,ordered = T)),
-                  tibble(series = factor("Australia", levels = c("World","Australia")),
+                  tibble(series = factor("to Australia", levels = c("to the World","to Australia")),
                          rea = c(window(tsl[[ts2]], start = yr, end = yr + 11/12)),
                          avg = aus_m,
                          min1 = aus_m - 2.58*sqrt(aus_v),
@@ -75,49 +74,77 @@ data <- bind_rows(tibble(series = factor("World", levels = c("World","Australia"
                          max4 = aus_m + 1.28*sqrt(aus_v),
                          mon = as_factor(month.abb,ordered = T)))
 
+test <- data %>%
+  gather(state,mean, -c(series,mon,min1,max1,min2,max2,min3,max3,min4,max4)) %>% 
+  mutate(state = factor(recode(state, "rea" = "Realization in 2018", "avg" = "Forecast Mean in 2018")))
 
-ggplot(data, aes(x = mon, group = series)) +
+
+ggplot(test, aes(x = mon, group = series)) +
   geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
   geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
   geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
   geom_ribbon(aes(ymin = min4, ymax = max4), fill = "grey70", alpha = 0.5) +
-  geom_line(aes(y = avg), color = "black") +
-  geom_line(aes(y = rea), color = "red", lty = 2) +
+  geom_line(aes(y = mean, group = state, color = state, linetype = state)) +
+  scale_x_discrete(expand = c(0, 0)) +
+  scale_colour_manual("", values=c("black","blue")) +
+  scale_linetype_manual("", values=c("solid","dashed")) +
   facet_grid(series ~ ., scales = "free_y") +
   ylab("Volume (in Mio. CHF)") +
   xlab(NULL) +
-  theme_bw()
+  theme_bw() + theme(legend.position="bottom")
+
+ggsave("tex/fig/fig_forecast.pdf", device = "pdf",
+       width = 18, height = 10, units = "cm")
 
 
 
 
 
 
-# DOWNWEIGHTING SERIES ----------------------------------------------------
 
+
+
+# AIRPLANES ---------------------------------------------------------------
 
 # Data
-training <- window(tradegts_reduced1, end = 2015-1/12)
-test <- window(tradegts_reduced1, start = 2015, end = 2015+11/12)
-training$bts <- training$bts/1e+6
-test$bts <- test$bts/1e+6
-
-# Define Shrinkage
-# ea <- toupper(c("at","be","cy","ee","fi","fr","de","gr","ie","it","lv","lt",
-#         "lu","mt","nl","pt","sk","si","es"))
-# down <- which(!(substr(colnames(aggts(training)),3,4) %in% ea))
-down <- which(substr(colnames(aggts(training)),1,2) != "EU")
+training <- window(tradegts_reduced2_imp, start = 2010, end = 2018-1/12)
+test <- window(tradegts_reduced2_imp, start = 2018, end = 2018)
 
 
-# BSR with and without shrinkage for non-EA countries
-fc_bsr_shr <- RunBSR_test(object = training, h = 12, fmethod = "arima",
-                          shrinkage = "none", series_to_be_shrunk = down)
-fc_bsr_non <- RunBSR_test(object = training, h = 12, fmethod = "arima",
-                      shrinkage = "none")
+# BSR with and without shrinkage
+shr <- which(names(as.list(aggts(training))) == "Goods Total Lvl 1/02")
+fc_bsr_shr <- RunBSR(object = training, h = 1, fmethod = "arima",
+                     shrinkage = "none", series_to_be_shrunk = shr)
+fc_bsr_non <- RunBSR(object = training, h = 1, fmethod = "arima",
+                     shrinkage = "none", series_to_be_shrunk = )
 
 # Evaluation
 acc_bsr_shr <- t(accuracy(fc_bsr_shr$forecast, test))
 acc_bsr_non <- t(accuracy(fc_bsr_non$forecast, test))
+
+
+
+
+# ELECTRICITY -------------------------------------------------------------
+
+# Data
+training <- window(tradegts_reduced1, end = 2002-1/12)
+test <- window(tradegts_reduced1, start = 2002, end = 2002+11/12)
+
+
+# BSR with and without shrinkage
+shr <- which(names(as.list(aggts(training))) == "Goods Total Lvl 1/02")
+fc_bsr_shr <- RunBSR(object = training, h = 12, fmethod = "arima",
+                     shrinkage = "none", series_to_be_shrunk = shr)
+fc_bsr_non <- RunBSR(object = training, h = 12, fmethod = "arima",
+                     shrinkage = "none")
+
+# Evaluation
+acc_bsr_shr <- t(accuracy(fc_bsr_shr$forecast, test))
+acc_bsr_non <- t(accuracy(fc_bsr_non$forecast, test))
+
+
+
 
 
 
@@ -146,4 +173,8 @@ acc_bsr_non <- t(accuracy(fc_bsr_non$forecast, test))
 #   theme_bw()
 
 
-
+# Define Shrinkage
+# ea <- toupper(c("at","be","cy","ee","fi","fr","de","gr","ie","it","lv","lt",
+#         "lu","mt","nl","pt","sk","si","es"))
+# down <- which(!(substr(colnames(aggts(training)),3,4) %in% ea))
+# down <- which(substr(colnames(aggts(training)),1,2) != "EU")

@@ -137,11 +137,11 @@ In other words, the posterior distribution of the bottom-level forecasts is prop
 \begin{align}
 \frac{1}{n}\sum_{i=1}^n \Big( \Lambda(\hat{y}_i - \alpha - S\beta)\Big)^2 = \frac{1}{n}\sum_{i=1}^n \Big( \Lambda e_i\Big)^2
 \end{align}
-The likelihood function for the data is then given by 
+$\Lambda$ is treated as a hyperparameter and discussed in greater detail in subsection \ref{sec:weighting}. The likelihood function for the data is then given by 
 \begin{align*}
 f(\hat{y}\ &|\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Lambda\Sigma\Lambda'|} \exp\left[-\frac{1}{2} \sum_i \big( \Lambda(\hat{y}_i - \alpha - S\beta)\big)'\big(\Lambda\Sigma\Lambda'\big)^{-1}\big(\Lambda(\hat{y}_i - \alpha - S\beta)\big)\right]
 \end{align*}
-The hyperparameter $\Lambda$ is discussed in greater detail in subsection \ref{sec:weighting}, but it is crucial to note that it affects the covariance matrix of the distribution, but not the mean. This special case arises because the reconciliation equation provides a perfect fit for the prediction mean. The posterior distribution is accordingly
+ The joint posterior distribution is accordingly
 \begin{align*}
 f(\alpha,\beta,\Sigma\ |\ \hat{y}) & \propto \frac{1}{|\Lambda\Sigma\Lambda'|} \exp\left[-\frac{1}{2} \sum_i \big( \Lambda(\hat{y}_i - \alpha - S\beta)\big)'\big(\Lambda\Sigma\Lambda'\big)^{-1}\big(\Lambda(\hat{y}_i - \alpha - S\beta)\big)\right] \\
 &\times \exp \left[-\frac{1}{2}(\alpha - a_0)'A_0^{-1}(\alpha - a_0)\right] \\
@@ -152,14 +152,14 @@ The Bayesian approach has the advantage that uncertainty surrounding the paramet
 
 
 \noindent\textbf{Step 1: Draw $\beta$ conditional on $\alpha,\Sigma,\hat{y},S$}\\
-The parameter $\beta$ is the mean of the bottom level forecasts, given an appropriate aggregation matrix $S$. The weighting matrix $\Lambda$ cancels out nicely when calculating the conditional posterior distribution.
+The parameter $\beta$ is the mean of the bottom level forecasts, given an appropriate aggregation matrix $S$. The conditional posterior distribution is then given by
 \begin{align}
 \beta\ |\ \alpha,\Sigma,\hat{y} &\sim N(b_1,B_1)
 \end{align}
 where
 \begin{align*}
-B_1 &= \left(\sum_i S'\Sigma^{-1}S + B_0^{-1}\right)^{-1} \\
-b_1 &= B_1 \left(\sum_i S'\Sigma^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)
+B_1 &= \left(\sum_i S'\big(\Lambda\Sigma\Lambda'\big)^{-1}S + B_0^{-1}\right)^{-1} \\
+b_1 &= B_1 \left(\sum_i S'\big(\Lambda\Sigma\Lambda'\big)^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)
 \end{align*}
 Unless there is reason to believe otherwise, the priors $b_0$ and $B_0$ should be chosen as uninformative as possible. In some cases, negative values in the reconciled forecasts are a concern. This issue can be resolved quite uncomplicated during the sampling process by discarding draws of $\beta$ that contain negative entries.\\
 
@@ -186,7 +186,7 @@ In order to eliminate $b$ from equation (\ref{eq:prior1}), both sides of the equ
 	\label{eq:prior2}
 	(I_m - P)\ a &= (I_m - P)\ \frac{1}{n}\sum_i \hat{y}_i  
 \end{align}
-It is useful to define the idempotent residual maker $M = I_m - P$. Using an identity matrix for $W$, the residual maker generates the generalized least squares residuals that result from a regression of the reconciliation biases on the aggregation matrix $S$. Because the generated residuals are by definition the reconciliation biases, it follows that $Ma = a$.
+It is useful to define the idempotent residual maker $M = I_m - P$. Using an identity matrix for $\Lambda$, the residual maker generates the generalized least squares residuals that result from a regression of the reconciliation biases on the aggregation matrix $S$. Because the generated residuals are by definition the reconciliation biases, it follows that $Ma = a$.
 
 This simplification leaves the reconciliation biases as a function of the data and the residual maker $M$. This result is again very intuitive since the reconciliation biases are the residuals from a regression of the base forecasts on the aggregation matrix.
 \begin{align}
@@ -200,7 +200,7 @@ Due to the presence of multicollinearity, an inverse of the covariance matrix $M
 where
 \begin{align*}
 	A_1 &= M\Bigg(\frac{\Sigma}{n}\Bigg)M' + A_0\\
-	a_1 &= M\Bigg(\frac{1}{n}\sum_i \hat{y}_i\Bigg) + A_0^{-1}a_0
+	a_1 &= M\Bigg(\frac{1}{n}\sum_i \hat{y}_i\Bigg) 
 \end{align*}
 The precision of this approach can be verified easily by comparing the estimate of $\alpha$ and the reconciliation biases from the fitted values. \\
 
@@ -224,15 +224,14 @@ Besides the shrinkage of selected reconciliation biases towards zero, there are 
 We use a comprehensive dataset of exports and imports of goods in Switzerland, provided by the Swiss Federal Customs Administration. It contains the nominal value in Swiss francs of goods traded with 8 geographical regions, aggregated from 245 countries and dependent territories. In addition, the goods can be classified into economic sectors, following a national nomenclature covering 12 main groups and 48 subgroups\footnote{Precious metals, precious and semi-precious stones, works of art and antiques are generally omitted in business cycle research due to volatility and structural breaks.}. This leads to a grouped hierarchy with 13'084 time series containing nonzero entries in total. The data covers a period from 1988 to 2018 in monthly frequency and is not adjusted for seasonalities or working days. Figure \ref{fig:area} shows the composition of the regional and categorical hierarchies and their historical developments.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_area}
-	\caption{Regional and Categorical Contribution to Swiss Exports of Goods}\label{fig:area}
-	\footnotesize{Nominal values, not seasonally adjusted. Time series range from 1988 to 2018 in monthly frequency. Average export shares of the year 2018 in parentheses.}
+	\caption[Contribution to Swiss Exports of Goods]{\textbf{Contribution to Swiss Exports of Goods}. Nominal values, not seasonally adjusted. Average export shares of the year 2018 in parentheses}\label{fig:area}
 \end{figure}
 As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia with around 17\% each. Exports to Africa and the Middle East, Latin America, Central and South Asia and Australia account only for a bit more than 10\% combined.
 
 The hierarchical grouping by categories is more evenly distributed. The most important categories are «chemicals and pharmaceuticals», «precision instruments» and «machines and electronics». Figure \ref{fig:treemap} shows the changes in composition between 1988 and 2018.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_treemap}
-	\caption{Swiss Exports in Goods}\label{fig:treemap}
+	\caption{\textbf{Regional and Categorical Composition of Swiss Goods Exports}}\label{fig:treemap}
 \end{figure}
 The two hierarchical groupings are quite different. The geographic hierarchy with 8 groups and 245 subgroups is very wide.  With a majority of the export volume going to European countries, it is nevertheless highly concentrated. In the past 30 years, the relative share of exports to the rest of the world, but especially to North America and East Asia, has increased substantially. The categorical hierarchy on the other hand is rather narrow with 12 groups and 48 subgroups. Compared to the regional hierarchy, the export volume is however more evenly distributed, even though an increasing concentration can be noted.\\
 
@@ -251,9 +250,6 @@ For each of the 13'084 series, forecasts are calculated from three models: An au
 
 The forecasts are then reconciled using several basic and optimal reconciliation methods. The basic techniques include bottom-up, top-down and middle-out reconciliation. The latter two can only be used for non-grouped time series and are therefore tested on the regional and categorical hierarchies separately. The optimal combination methods tested are the ordinary and weighted least squares, nseries, MinT and Bayesian reconciliation approaches. If aggregation of the reconciliation errors is necessary, they are weighted with their respective export share.\\
 
-
-\clearpage
-
 \subsection{Results}
 This section will explore empirical evidence for the benefits of optimal hierarchical combination. Figure \ref{fig:mase} shows the mean absolute scaled errors of basic and optimal reconciliation methods. The MASE has the advantage that the errors are scaled the same at all levels. The forecast errors tend to be higher at the lowest levels of the hierarchy and in particular for the country level series, which are more fragmented. It is also evident that the basic reconciliation method are often not able to beat the unreconciled forecasts, indicated by the horizontal lines. The bottom-up reconciliation appears to aggregate a lot of model bias from the lowest levels, whereas the middle-out and top-down approaches fare reasonably well at least for higher levels. It is also worth noting that optimal combination methods and bottom-up forecasts are the only techniques that allows for a consistency across all levels of a grouped hierarchy.
 \begin{figure}[H]
@@ -265,27 +261,33 @@ Optimal combination forecasts on the other hand tend to outperform the basic met
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_relative}
 	\caption[Accuracy of Reconciliation Methods]{\textbf{Accuracy of Reconciliation Methods.} Higher bars indicate better forecasts. Zero line shows the accuracy of unreconciled predictions.} \label{fig:rmse}
 \end{figure}
-Having established that some optimal combination methods lead to consistently better results, it is instructive to look at the development of their forecasting accuracy over time.
+Having established that some optimal combination methods lead to consistently better results, it is instructive to look at the development of their forecasting accuracy over time. Even though they are more accurate on average, the combination methods do not consistently outperform the unreconciled forecasts. For the top level series, the benefits occured mostly during times of economic distress. The biggest gains can be observed during the early 2000s recession following the burst of the dot-com bubble, the global financial crisis and the sudden appreciation of the Swiss franc after the Swiss National Bank stopped supporting the currency peg to the Euro in January 2015.
  \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_time}
 	\caption[Accuracy of Reconciliation Methods over Time]{\textbf{Accuracy of Reconciliation Methods over Time.} Higher lines indicate more accurate forecasts. Zero line shows the accuracy of unreconciled predictions.} \label{fig:rmse_time}
 \end{figure}
-For which series in a hierarchy is reconciliation particularly useful?
+Lower level series appear to benefit less from forecast combination. An exception is the occurence of high volatility, for instance the reclassification of electric energy as a good instead of a service in 2002 led to large forecast errors in the following years. The rigid structure imposed by the hierarchy has led to substantial benefits relative to the unreconciled case. This gives rise to the question of which time series characteristics increase the benefits from reconciliation. Figure \ref{fig:eval_regions} provides an overview of the relative forecast accuracy by geographical classification. It appears again that series with a larger share and less volatility are benefit more from reconciliation. Forecasts of exports to Europe, North America and East Asia are almost entirely better off than in the unreconciled case, whereas forecasts of exports to countries with a lower share such as the islands in Oceania tend to be worse off. 
  \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_regions}
-	\caption[Accuracy of Reconciliation Methods by Regions]{\textbf{Accuracy of Reconciliation Methods by Regions.} Higher points indicate better forecasts. Zero line shows the accuracy of unreconciled predictions.}\label{fig:regions}
+	\caption[Accuracy of Reconciliation Methods by Regions]{\textbf{Accuracy of Reconciliation Methods by Regions.} Higher points indicate better forecasts. Zero line shows the accuracy of unreconciled predictions.}\label{fig:eval_regions}
 \end{figure}
-
+Forecasts are on average better due to reconciliation, but not in every case. This also holds true for the relative forecast accuracy by categories, as shown in figure \ref{fig:eval_categories}. Because the export shares in the categorical hierarchy are more evenly distributed, the pattern of smaller volumes being worse off is less pronounced.
  \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_categories}
-	\caption[Accuracy of Reconciliation Methods by Categories]{\textbf{Accuracy of Reconciliation Methods by Categories.} Higher points indicate more accurate forecasts. Zero line shows the accuracy of unreconciled predictions.}\label{fig:categories}
+	\caption[Accuracy of Reconciliation Methods by Categories]{\textbf{Accuracy of Reconciliation Methods by Categories.} Higher points indicate more accurate forecasts. Zero line shows the accuracy of unreconciled predictions.}\label{fig:eval_categories}
 \end{figure}
+ 
+  \begin{figure}[H]
+ 	\includegraphics[width=\textwidth]{fig/fig_forecast}
+ 	\caption[Forecast for Exports of Machinery, Appliances and Electronics]{\textbf{Forecast for Exports of Machinery, Appliances and Electronics}. Grey ribbons indicate 80, 90, 95 and 99 percentile confidence intervals.}\label{fig:regions}
+ \end{figure}
  
  Todo:
  \begin{itemize}
- 	\item  Plot with density forecast for main category (e.g.World) and subcategory (e.g. Australia)
- 	\item Forecast experiment with downweighted euro area forecasts during the Swiss franc shock 2015
+ 	\item Forecast experiment
  \end{itemize}
+
+
 
 
 \clearpage
