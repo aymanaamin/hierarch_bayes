@@ -165,8 +165,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
       alpha <- a1 + t(rnorm(pars$m,0,1) %*% chol(A1))
       
       # 2. Compute Beta
-      B1  <- solve(pars$n*(t(S) %*% solve(W) %*% S))
-      b1 <- B1 %*% (pars$n*(t(S) %*% solve(W) %*% (Y_mean - alpha)))
+      B1  <- solve(pars$n*(t(S) %*% solve(Sigma) %*% S))
+      b1 <- B1 %*% (pars$n*(t(S) %*% solve(Sigma) %*% (Y_mean - alpha)))
       beta <- b1 + t(rnorm(pars$q,0,1) %*% chol(B1))
       
       # 3. Compute Sigma

@@ -30,28 +30,28 @@ options(scipen=10)
 # 1. STACKED AREA PLOTS ---------------------------------------------------
 
 tab <- bind_rows(tibble("Date" = time(tsl$`Regions Total/AF`),
-                        "Europe (54.3%)" = tsl$`Regions Total/EU`,
-                        "North America (16.9%)" = tsl$`Regions Total/NA`,
+                        "Europe (53.4%)" = tsl$`Regions Total/EU`,
+                        "North America (17.8%)" = tsl$`Regions Total/NA`,
                         "East Asia (16.6%)" = tsl$`Regions Total/EA`,
-                        "Africa and Middle East (5.6%)"  = tsl$`Regions Total/AF`,
-                        "Australia and Oceania (1.2%)" = tsl$`Regions Total/AO`,
-                        "Central Asia (1.4%)" = tsl$`Regions Total/CA`,
+                        "Africa and Middle East (5.3%)"  = tsl$`Regions Total/AF`,
+                        "Australia and Oceania (1.3%)" = tsl$`Regions Total/AO`,
+                        "Central Asia (1.5%)" = tsl$`Regions Total/CA`,
                         "Latin America (3.0%)" = tsl$`Regions Total/LA`,
-                        "South Asia (1.1%)" = tsl$`Regions Total/SA`) %>% 
+                        "South Asia (1.0%)" = tsl$`Regions Total/SA`) %>% 
                    gather(key = Name, value = Exports, -Date) %>% 
                    add_column("Classification" = factor("by Region",levels = c("by Region","by Category"))),
                  tibble("Date" = time(tsl$`Goods Total Lvl 1/01`),
-                        "Agricultural Products (4.4%)" = tsl$`Goods Total Lvl 1/01`,
-                        "Energy Source (0.9%)" = tsl$`Goods Total Lvl 1/02`,
-                        "Textiles (1.9%)" = tsl$`Goods Total Lvl 1/03`,
-                        "Graphical Products (0.8%)" = tsl$`Goods Total Lvl 1/04`,
-                        "Leather, Rubber, Plastics (1.9%)" = tsl$`Goods Total Lvl 1/05`,
+                        "Agricultural Products (4.3%)" = tsl$`Goods Total Lvl 1/01`,
+                        "Energy Source (1.2%)" = tsl$`Goods Total Lvl 1/02`,
+                        "Textiles (2.1%)" = tsl$`Goods Total Lvl 1/03`,
+                        "Graphical Products (0.7%)" = tsl$`Goods Total Lvl 1/04`,
+                        "Leather, Rubber, Plastics (2.0%)" = tsl$`Goods Total Lvl 1/05`,
                         "Chemicals and Pharmaceuticals (44.7%)" = tsl$`Goods Total Lvl 1/06`,
                         "Stones and Earth (0.4%)" = tsl$`Goods Total Lvl 1/07`,
                         "Metals (6.2%)" = tsl$`Goods Total Lvl 1/08`,
-                        "Machines and Electronics (14.5%)" = tsl$`Goods Total Lvl 1/09`,
-                        "Vehicles (2.5%)" = tsl$`Goods Total Lvl 1/10`,
-                        "Precision Instruments (21.2%)" = tsl$`Goods Total Lvl 1/11`,
+                        "Machines and Electronics (14.4%)" = tsl$`Goods Total Lvl 1/09`,
+                        "Vehicles (2.2%)" = tsl$`Goods Total Lvl 1/10`,
+                        "Precision Instruments (21.3%)" = tsl$`Goods Total Lvl 1/11`,
                         "Various Goods (0.6%)" = tsl$`Goods Total Lvl 1/12`) %>% 
                    gather(key = Name, value = Exports, -Date) %>% 
                    add_column("Classification" = factor("by Category",levels = c("by Region","by Category"))))
@@ -61,28 +61,29 @@ tab2 <- tab %>%
   add_row(Date = 2000, Name = "Categories", Exports = 0, Classification = "by Category") %>% 
   add_row(Date = 2000, Name = " ", Exports = 0, Classification = "by Category") %>% 
   mutate(Name = factor(Name,levels = c("Regions",
-                                       "Europe (54.3%)",
-                                       "North America (16.9%)",
+                                       "Europe (53.4%)",
+                                       "North America (17.8%)",
                                        "East Asia (16.6%)" ,
-                                       "Africa and Middle East (5.6%)" ,
+                                       "Africa and Middle East (5.3%)" ,
                                        "Latin America (3.0%)" ,
-                                       "Central Asia (1.4%)" ,
-                                       "South Asia (1.1%)",
-                                       "Australia and Oceania (1.2%)",
+                                       "Central Asia (1.5%)" ,
+                                       "South Asia (1.0%)",
+                                       "Australia and Oceania (1.3%)",
                                        " ",
                                        "Categories",
                                        "Chemicals and Pharmaceuticals (44.7%)",
-                                       "Precision Instruments (21.2%)",
-                                       "Machines and Electronics (14.5%)",
+                                       "Precision Instruments (21.3%)",
+                                       "Machines and Electronics (14.4%)",
                                        "Metals (6.2%)",
-                                       "Agricultural Products (4.4%)",
-                                       "Vehicles (2.5%)" ,
-                                       "Textiles (1.9%)" ,
-                                       "Leather, Rubber, Plastics (1.9%)",
-                                       "Energy Source (0.9%)",
-                                       "Graphical Products (0.8%)" ,
+                                       "Agricultural Products (4.3%)",
+                                       "Vehicles (2.2%)" ,
+                                       "Textiles (2.1%)" ,
+                                       "Leather, Rubber, Plastics (2.0%)",
+                                       "Energy Source (1.2%)",
+                                       "Graphical Products (0.7%)" ,
                                        "Various Goods (0.6%)",
-                                       "Stones and Earth (0.4%)"), ordered = T))
+                                       "Stones and Earth (0.4%)"), ordered = T)) %>% 
+  mutate(Exports = Exports/1e+3)
 
 ggplot(tab2, aes(x = Date, y = Exports)) + 
   geom_area(aes(fill = Name)) +
@@ -101,20 +102,15 @@ ggplot(tab2, aes(x = Date, y = Exports)) +
 ggsave("tex/fig/fig_area.pdf", device = "pdf",
        width = 18, height = 14.8, units = "cm")
 
-# tot <- tab_cat %>% spread(key = Categories, value = Exports) %>% filter(Date >= 2017 & Date < 2018)
-# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
-# tot <- tab_reg %>% spread(key = Region, value = Exports) %>% filter(Date >= 2017 & Date < 2018)
-# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
-
 
 
 
 # 2. FEATURE PLOTS --------------------------------------------------------
 
 # regional
-reglist <- as.list(aggts(tradehts$reg))
+reglist <- as.list(aggts(tradehts$reg)*1e+6)
 rlvl <- sapply(tradehts$reg$nodes, function(x) length(x))
-reg_exports <- sapply(as.list(aggts(tradehts$reg)), 
+reg_exports <- sapply(as.list(aggts(tradehts$reg)*1e+6), 
                       function(x) mean(tail(x,12)))
 rgroup <- recode(substr(names(reglist),1,2),
                  "To" = "World",
@@ -160,7 +156,7 @@ ggplot(regfeatures, aes(x=Exports, y=PC1)) +
                      labels = c("1e+1","1e+2","1e+3","1e+4","1e+5","1e+6","1e+7",
                                 "1e+8","1e+9","1e+10")) +
   theme_bw() +
-  xlab("Export Volume (in bn CHF, log scale)") +
+  xlab("Export Volume (in CHF, log scale)") +
   ylab("Predictability") +
   theme(legend.position="bottom", legend.box = "horizontal") + 
   guides(color=guide_legend(nrow=3), size=guide_legend(nrow=3))
@@ -185,7 +181,7 @@ dat <- as.tibble(sapply(1:nrow(cntr),
                         function(x) tsl[[paste0("Countries Total/",
                                                 cntr$regCode[x],
                                                 cntr$isoCode[x])]]/tsl$Total)) %>%
-  add_column(date = floor(seq(1988, to = 2018-1/12, by = 1/12)), .before = 1)
+  add_column(date = floor(seq(1988, to = 2019-1/12, by = 1/12)), .before = 1)
 colnames(dat) <- c("date",cntr$isoCode)
 dat <- dat %>% 
   gather(key = isoCode, value = share, -date) %>% 
@@ -203,7 +199,7 @@ dat_regional <- dat %>%
   ungroup 
 
 dat_reg <- full_join(dat,dat_regional, by = c("date", "regCode")) %>% 
-  filter(date %in% c(1988,2017)) %>% 
+  filter(date %in% c(1988,2018)) %>% 
   mutate(lvl1 = recode(regCode,
                        "AF" = "Africa and Middle East",
                        "AO" = "Australia and Oceania",
@@ -228,7 +224,7 @@ goods$code <- gsub(pattern = ".", replacement = "", x = goods$code, fixed=T)
 
 dat <- as.tibble(sapply(goods$code,
                         function(x) tsl[[paste0("Goods Total Lvl 2/",x)]]/tsl$Total)) %>%
-  add_column(date = floor(seq(1988, to = 2018-1/12, by = 1/12)), .before = 1)
+  add_column(date = floor(seq(1988, to = 2019-1/12, by = 1/12)), .before = 1)
 colnames(dat) <- c("date",goods$code)
 dat <- dat %>% 
   gather(key = code, value = share, -date) %>% 
@@ -244,7 +240,7 @@ dat_categorical <- dat %>%
   ungroup 
 
 dat_cat <- full_join(dat,dat_categorical, by = c("date", "catcode")) %>% 
-  filter(date %in% c(1988,2017)) %>% 
+  filter(date %in% c(1988,2018)) %>% 
   mutate(lvl1 = recode(catcode,
                        "01"  = "Agricultural Products",
                        "02"  = "Energy Source",
@@ -267,12 +263,12 @@ dat_cat <- inner_join(dat_cat,goods, by = "code") %>%
 
 dat <- bind_rows(dat_reg,dat_cat) %>% 
   mutate(date = as.character(date)) %>% 
-  mutate(date = recode(date,"1988" = "in 1988","2017" = "in 2018"))
+  mutate(date = recode(date,"1988" = "in 1988","2018" = "in 2018"))
 
 ggplot(dat, aes(area = share2, fill = share1, label = lvl2, subgroup = lvl1)) +
   geom_treemap(colour = "dark grey") +
   facet_grid(hierarchy ~ date, switch = "y") +
-  scale_fill_gradient(name = "Regional Share of Exports (in %)" , low = "#6FCBFF", high = "#08306B") +
+  scale_fill_gradient(name = "Regional or Categorical Share of Exports (in %)" , low = "#6FCBFF", high = "#08306B") +
   geom_treemap_text(colour = "white", place = "bottomleft", size = 8, 
                     min.size = 8, grow = F, alpha = 0.5) +
   geom_treemap_subgroup_border(colour = "black", lwd = 1) +
@@ -290,7 +286,7 @@ ggsave("tex/fig/fig_treemap.pdf", device = "pdf",
 
 # JUNKYARD ----------------------------------------------------------------
 
-# 
+
 # 
 # tab_reg <- tibble("Date" = time(tsl$`Regions Total/AF`),
 #                   "Europe (54.3%)" = tsl$`Regions Total/EU`,
@@ -300,8 +296,8 @@ ggsave("tex/fig/fig_treemap.pdf", device = "pdf",
 #                   "Australia and Oceania (1.2%)" = tsl$`Regions Total/AO`,
 #                   "Central Asia (1.4%)" = tsl$`Regions Total/CA`,
 #                   "Latin America (3.0%)" = tsl$`Regions Total/LA`,
-#                   "South Asia (1.1%)" = tsl$`Regions Total/SA`) %>% 
-#   gather(key = Region, value = Exports, -Date) %>% 
+#                   "South Asia (1.1%)" = tsl$`Regions Total/SA`) %>%
+#   gather(key = Region, value = Exports, -Date) %>%
 #   mutate(Region = fct_reorder(factor(Region), Exports, last, .desc = T))
 # 
 # tab_cat <- tibble("Date" = time(tsl$`Goods Total Lvl 1/01`),
@@ -316,9 +312,16 @@ ggsave("tex/fig/fig_treemap.pdf", device = "pdf",
 #                   "Machines and Electronics (14.5%)" = tsl$`Goods Total Lvl 1/09`,
 #                   "Vehicles (2.5%)" = tsl$`Goods Total Lvl 1/10`,
 #                   "Precision Instruments (21.2%)" = tsl$`Goods Total Lvl 1/11`,
-#                   "Various Goods (0.6%)" = tsl$`Goods Total Lvl 1/12`) %>% 
-#   gather(key = Categories, value = Exports, -Date) %>% 
+#                   "Various Goods (0.6%)" = tsl$`Goods Total Lvl 1/12`) %>%
+#   gather(key = Categories, value = Exports, -Date) %>%
 #   mutate(Categories = fct_reorder(factor(Categories), Exports, last, .desc = T))
+# 
+# tot <- tab_cat %>% spread(key = Categories, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
+# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
+# tot <- tab_reg %>% spread(key = Region, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
+# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
+
+
 # 
 # p1 <- ggplot(tab_reg, aes(x = Date, y = Exports)) +
 #   geom_area(aes(fill = Region), alpha=0.75) +

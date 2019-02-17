@@ -21,7 +21,7 @@ load("dat/tradegts_reduced1.Rdata")
 load("dat/tradehts_reduced.Rdata")
 load("dat/tradegts_imp.Rdata")
 load("dat/tradegts_reduced2_imp.Rdata")
-tsl_imp <- as.list(aggts(tradegts_imp))
+# tsl_imp <- as.list(aggts(tradegts_imp))
 tsl <- as.list(aggts(tradegts_reduced1))
 
 # Options
@@ -105,76 +105,116 @@ ggsave("tex/fig/fig_forecast.pdf", device = "pdf",
 
 
 # AIRPLANES ---------------------------------------------------------------
-
-# Data
-training <- window(tradegts_reduced2_imp, start = 2010, end = 2018-1/12)
-test <- window(tradegts_reduced2_imp, start = 2018, end = 2018)
-
-
-# BSR with and without shrinkage
-shr <- which(names(as.list(aggts(training))) == "Goods Total Lvl 1/02")
-fc_bsr_shr <- RunBSR(object = training, h = 1, fmethod = "arima",
-                     shrinkage = "none", series_to_be_shrunk = shr)
-fc_bsr_non <- RunBSR(object = training, h = 1, fmethod = "arima",
-                     shrinkage = "none", series_to_be_shrunk = )
-
-# Evaluation
-acc_bsr_shr <- t(accuracy(fc_bsr_shr$forecast, test))
-acc_bsr_non <- t(accuracy(fc_bsr_non$forecast, test))
-
-
-
+# 
+# # Data
+# training <- window(tradegts_reduced2_imp, start = 2010, end = 2018-1/12)
+# test <- window(tradegts_reduced2_imp, start = 2018, end = 2018)
+# 
+# 
+# # BSR with and without shrinkage
+# shr <- which(names(as.list(aggts(training))) == "Goods Total Lvl 1/02")
+# fc_bsr_shr <- RunBSR(object = training, h = 1, fmethod = "arima",
+#                      shrinkage = "none", series_to_be_shrunk = shr)
+# fc_bsr_non <- RunBSR(object = training, h = 1, fmethod = "arima",
+#                      shrinkage = "none", series_to_be_shrunk = )
+# 
+# # Evaluation
+# acc_bsr_shr <- t(accuracy(fc_bsr_shr$forecast, test))
+# acc_bsr_non <- t(accuracy(fc_bsr_non$forecast, test))
+# 
+# 
+# 
 
 # ELECTRICITY -------------------------------------------------------------
 
 # Data
-training <- window(tradegts_reduced1, end = 2002-1/12)
-test <- window(tradegts_reduced1, start = 2002, end = 2002+11/12)
+training <- window(tradegts_reduced1, end = 2002)
+test <- window(tradegts_reduced1, start = 2002+1/12, end = 2002+11/12)
 
 
 # BSR with and without shrinkage
 shr <- which(names(as.list(aggts(training))) == "Goods Total Lvl 1/02")
-fc_bsr_shr <- RunBSR(object = training, h = 12, fmethod = "arima",
-                     shrinkage = "none", series_to_be_shrunk = shr)
-fc_bsr_non <- RunBSR(object = training, h = 12, fmethod = "arima",
-                     shrinkage = "none")
+fc_bsr_shr <- RunBSR_electric(object = training, 
+                              h = 11, fmethod = "ets",
+                              shrinkage = "none", 
+                              series_to_be_shrunk = shr)
+fc_bsr_non <- RunBSR_electric(object = training, h = 11, 
+                              fmethod = "ets",
+                              shrinkage = "none")
 
-# Evaluation
-acc_bsr_shr <- t(accuracy(fc_bsr_shr$forecast, test))
-acc_bsr_non <- t(accuracy(fc_bsr_non$forecast, test))
+# evaluation
+acc_bsr_shr <- t(accuracy(fc_bsr_shr, test))
+acc_bsr_non <- t(accuracy(fc_bsr_non, test))
+acc_bsr_shr[,"RMSE"]/acc_bsr_non[,"RMSE"]
 
+# get mean and variances
+shr_m_ls <- as.list(aggts(fc_bsr_shr))
+shr_v_ls <- as.list(fc_bsr_shr$var)
+non_m_ls <- as.list(aggts(fc_bsr_non))
+non_v_ls <- as.list(fc_bsr_non$var)
 
+# define series
+ts1 <- "Goods Total Lvl 1/02"
 
-
-
-
-
-# data <- bind_rows(tibble(series = factor("World", levels = c("World","Australia")),
-#                          rea = c(window(tsl[[ts1]], start = yr, end = yr + 11/12)),
-#                          avg = tot_m,
-#                          min = tot_m - 2*sqrt(tot_v),
-#                          max = tot_m + 2*sqrt(tot_v),
-#                          mon = as_factor(month.abb,ordered = T)),
-#                   tibble(series = factor("Australia", levels = c("World","Australia")),
-#                          rea = c(window(tsl[[ts2]], start = yr, end = yr + 11/12)),
-#                          avg = aus_m,
-#                          min = aus_m - 2*sqrt(aus_v),
-#                          max = aus_m + 2*sqrt(aus_v),
-#                          mon = as_factor(month.abb,ordered = T)))
-# 
-# 
-# ggplot(data, aes(x = mon, group = series)) +
-#   geom_ribbon(aes(ymin = min, ymax = max), fill = "grey70", alpha = 0.5) +
-#   geom_line(aes(y = avg), color = "black") +
-#   geom_line(aes(y = rea), color = "red") +
-#   facet_grid(series ~ ., scales = "free_y") +
-#   ylab("Volume (in Mio. CHF)") +
-#   xlab(NULL) +
-#   theme_bw()
+# extract series
+m0 <- window(tsl[[ts1]], start = 2002, end = 2002)
+shr_m <- ts(c(m0,shr_m_ls[[ts1]]), start = 2002, frequency = 12)
+shr_v <- ts(c(0,shr_v_ls[[ts1]]), start = 2002, frequency = 12)
+non_m <- ts(c(m0,non_m_ls[[ts1]]), start = 2002, frequency = 12)
+non_v <- ts(c(0,non_v_ls[[ts1]]), start = 2002, frequency = 12)
 
 
-# Define Shrinkage
-# ea <- toupper(c("at","be","cy","ee","fi","fr","de","gr","ie","it","lv","lt",
-#         "lu","mt","nl","pt","sk","si","es"))
-# down <- which(!(substr(colnames(aggts(training)),3,4) %in% ea))
-# down <- which(substr(colnames(aggts(training)),1,2) != "EU")
+dat <- rbind(as_tibble(cbind("date" = time(window(tsl[[ts1]], start = 2002-4/12, end = 2002 + 11/12)),
+                             "Realization" = window(tsl[[ts1]], start = 2002, end = 2002 + 11/12),
+                             "Historical Data" = window(tsl[[ts1]], start = 2002-4/12, end = 2002),
+                             "Reconciled Forecast Mean" = shr_m,
+                             "min1" = shr_m - 2.58*sqrt(shr_v),
+                             "max1" = shr_m + 2.58*sqrt(shr_v),
+                             "min2" = shr_m - 1.96*sqrt(shr_v),
+                             "max2" = shr_m + 1.96*sqrt(shr_v),
+                             "min3" = shr_m - 1.64*sqrt(shr_v),
+                             "max3" = shr_m + 1.64*sqrt(shr_v))) %>%
+               gather(series,value, -c(date,min1, max1,min2,max2,min3,max3)) %>% 
+               add_column(fct = factor("weighted", levels = c("weighted","unweighted"))) %>% 
+               mutate(series = factor(series, levels = c("Historical Data","Realization","Reconciled Forecast Mean"))),
+             as_tibble(cbind("date" = time(window(tsl[[ts1]], start = 2002-4/12, end = 2002 + 11/12)),
+                             "Realization" = window(tsl[[ts1]], start = 2002, end = 2002 + 11/12),
+                             "Historical Data" = window(tsl[[ts1]], start = 2002-4/12, end = 2002),
+                             "Reconciled Forecast Mean" = non_m,
+                             "min1" = non_m - 2.58*sqrt(non_v),
+                             "max1" = non_m + 2.58*sqrt(non_v),
+                             "min2" = non_m - 1.96*sqrt(non_v),
+                             "max2" = non_m + 1.96*sqrt(non_v),
+                             "min3" = non_m - 1.64*sqrt(non_v),
+                             "max3" = non_m + 1.64*sqrt(non_v))) %>%
+               gather(series,value, -c(date,min1, max1,min2,max2,min3,max3)) %>% 
+               add_column(fct = factor("unweighted", levels = c("weighted","unweighted"))) %>% 
+               mutate(series = factor(series, levels = c("Historical Data","Realization","Reconciled Forecast Mean"))))
+
+
+
+ggplot(dat, aes(x = date)) +
+  geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
+  geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
+  geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
+  geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
+  geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
+  geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
+  geom_line(aes(y = value, color = series, linetype = series)) +
+  scale_x_continuous(expand = c(0,0),
+                     breaks = c(2001.75,2002,2002.25,2002.5,2002.75),
+                     labels = c("Oct","Jan","Apr","Jul","Oct"),
+                     minor_breaks = seq(2001.75,2003,1/12)) +
+  geom_vline(mapping=aes(xintercept=2002), color="black", size = 0.25) +
+  scale_colour_manual("Exports of Energy Sources", values = c("blue","blue","black")) +
+  facet_grid(. ~ fct) +
+  scale_linetype_manual("Exports of Energy Sources", values = c("solid","dashed","solid")) +
+  ylab("Volume (in Mio. CHF)") +
+  xlab(NULL) +
+  theme_bw() + theme(legend.position="bottom")
+
+
+ggsave("tex/fig/fig_electricity.pdf", device = "pdf",
+       width = 18, height = 8, units = "cm")
+
+
