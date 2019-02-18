@@ -15,7 +15,6 @@
 % 2. Model	
 \section{Introduction}
 \label{sec:intro}
-%\todo{This is more like a `background to forecast reconciliation' section rather than an intro.  We will write an intro at the end}
 Forecasting large collections of time series is an important problem in many disciplines, including macroeconomics.  In many cases time series respect known linear constraints; for instance total exports equal the sum of exports from each trading partner. In such cases, ex post adjustment of forecasts that ensure coherence with known linear constraints can also lead to improvements in forecast accuracy~\citep[see][and references therein]{Wickramasuriya2015}. Despite these successes, the technique for making this adjustment, known as forecast reconciliation, suffers from some shortcomings.  First, an important theoretical assumption is that forecasts are unbiased prior to reconciliation.  In many cases this assumption may fail to hold in practice.  Second, the weight given to individual forecasts in the process of reconciliation is determined by one-step ahead in-sample forecast errors.  In some cases however, practitioners may judgmentally decide that forecasts of some series are more reliable than others.  Alternatively it may be also possible to exploit features of the predictive density in forecast reconciliation.  In this paper we develop new reconciliation techniques based on taking a Bayesian approach that address these shortcomings.
 
 The focus of our empirical study will be data on all Swiss exports and imports. Swiss exports (imports) can be disaggregated by destination into geographical regions such as Europe, North America or Australia and then further disaggregated by country. Swiss exports (imports) can also be disaggregated into product categories such as precision instruments, textiles or metals and then further disaggregated into subcategories.  Combining these leads to a so-called grouped hierarchy \citep{Hyndman2016}. Figure \ref{fig:tree} gives a simple example of grouped structure with $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the most disaggregate or `bottom' level.
@@ -100,6 +99,12 @@ where $Y_t(h)$ is an ($m \times 1$) vector containing the h-periods-ahead base f
 \end{align}
 
 This choice minimises the generalised Euclidean distance between $Y_t(h)$ and $Sb_{h}$ with respect to $W_h$. Reconciliation is also guaranteed to reduce the distance to the eventual realisation.  However, there are several potential choices for $W_h$.  Letting $W_h=I$ corresponds to an ordinary least squares estimate.  Alternatively, a high degree of heteroskedasticity in the error terms motivates a diagonal $W_h$ or weighted least squares approach. Weights can be determined by the variance of in-sample $h$-step ahead forecast variances or by the simpler `nseries' approach due to \cite{Athanasopoulos2017}, whereby weights are based on the number of series aggregated at each node.  More recently, the `MinT' approach was developed by \cite{Wickramasuriya2015} to allow for a $W_h$ that is not diagonal and exploits the covariances between the $h$-step-ahead reconciled forecast errors. The nomenclature minT refers to the fact that this approach minimises the trace of the covariance matrix of reconciliation errors.  
+
+\begin{itemize}
+	\item Discuss bias
+	\item Discuss judgmental adjustment 
+	\item Discuss using predictive
+\end{itemize}
 
 This paper contributes to the literature on optimal hierarchical forecasting by constructing a Bayesian reconciliation framework that generalizes previous approaches. In section \ref{sec:model}, it introduces an explicit definition of the coherency errors as model parameters. Probabilistic reconciliation takes the uncertainty surrounding these parameters into account and leads to reconciled density forecasts. Furthermore, flexible shrinkage priors enable the model to shrink selected reconciled forecasts towards their base forecast. In section \ref{sec:appl}, the method is compared with existing reconciliation techniques using a comprehensive hierarchical dataset of Swiss goods exports.
 
