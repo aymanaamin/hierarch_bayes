@@ -11,7 +11,7 @@
 \contentsline {subsection}{\numberline {3.2}Setup}{14}{subsection.3.2}
 \contentsline {subsection}{\numberline {3.3}Results}{15}{subsection.3.3}
 \contentsline {section}{\numberline {4}Conclusion}{21}{section.4}
-\contentsline {section}{References}{III}{section*.14}
+\contentsline {section}{References}{III}{section*.20}
 \contentsline {section}{\numberline {A}Appendix}{V}{appendix.A}
 \contentsline {subsection}{\numberline {A.1}Robustness}{V}{subsection.A.1}
 \contentsline {subsection}{\numberline {A.2}Data}{VI}{subsection.A.2}
