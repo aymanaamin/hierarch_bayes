@@ -5,6 +5,8 @@ rm(list = ls())
 
 library(MCMCpack)
 library(hts)
+library(tidyverse)
+library(sp)
 
 
 source("lib/functions_model_subspace.R")
@@ -22,7 +24,7 @@ pars <- list("sparse" = T,
              "fmethod" = "arima",
              "ols" = F,
              "h" = 1,
-             "n" = 200,
+             "n" = 1000,
              "m" = nrow(S),
              "q" = ncol(S),
              "shrinkage" = "none",
@@ -76,13 +78,13 @@ ggplot(dat, aes(x = mean, y = pnts, fill = ser, color = ser)) +
   geom_boxplot(width = 2, varwidth = F, outlier.size = NA,
                position = position_identity(), alpha = 0.2) +
   facet_wrap( ~ recon, ncol=2, labeller = label_parsed) +
-  scale_x_continuous(expression("Reconciled Forecast Mean (S"*beta*")"), breaks = seq(5,15,5)) +
-  scale_y_continuous("Unreconciled Forecast Draws", breaks = seq(0,20,5)) +
-  scale_color_manual("Forecasts", values = c(bpy.colors(5)[-c(1,5)]),
+  scale_x_continuous(expression("Reconciled Forecast Mean (S"*beta*")"), breaks = seq(4,16,4)) +
+  scale_y_continuous("Unreconciled Forecast Draws", breaks = seq(4,16,4)) +
+  scale_color_manual("Unreconciled Base Forecasts", values = c(bpy.colors(5)[-c(1,5)]),
                      labels = labs) +
-  scale_fill_manual("Forecasts", values = c(bpy.colors(5)[-c(1,5)]),
+  scale_fill_manual("Unreconciled Base Forecasts", values = c(bpy.colors(5)[-c(1,5)]),
                     labels = labs) +
-  coord_cartesian(expand = FALSE, xlim = c(0,20), ylim = c(0,20)) +
+  coord_flip(expand = FALSE, xlim = c(0,20), ylim = c(0,20)) +
   theme_bw() + theme(legend.position="bottom") 
 
 ggsave("tex/fig/fig_biases.pdf", device = "pdf",

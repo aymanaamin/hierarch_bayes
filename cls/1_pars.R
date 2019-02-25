@@ -12,7 +12,7 @@ library(foreach)
 library(Matrix)
 
 # Functions
-source("lib/functions_model.R")
+source("lib/functions_model_lite.R")
 
 # Data
 load("dat/tradehts_reduced.Rdata")

@@ -19,17 +19,17 @@ load("dat/countries.rda")
 # 1. IMPORT DATA -----------------------------------------------------------
 
 total <- import_data()
-total$value <- total$value/1e+6
+# total$value <- total$value/1e+6
 
 total_exp <- total[substr(tsKey,1,1) == "E",]
-total_imp <- total[substr(tsKey,1,1) == "I",]
+# total_imp <- total[substr(tsKey,1,1) == "I",]
 total_exp_reg <- total_exp[, .(value = sum(value)), by = list(period, tsKey = substr(tsKey,2,5))]
 total_exp_cat <- total_exp[, .(value = sum(value)), by = list(period, tsKey = substr(tsKey,6,14))]
 
 dat_exp <- dt2ts(total_exp)
-dat_imp <- dt2ts(total_imp)
+# dat_imp <- dt2ts(total_imp)
 colnames(dat_exp) <-  substr(colnames(dat_exp),2,14)
-colnames(dat_imp) <-  substr(colnames(dat_imp),2,14)
+# colnames(dat_imp) <-  substr(colnames(dat_imp),2,14)
 dat_exp_reg <- dt2ts(total_exp_reg)
 dat_exp_cat <- dt2ts(total_exp_cat)
 
@@ -48,13 +48,13 @@ tradegts <- gts(y = dat_exp,
                            "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
                 characters = list(c(2,2), c(2,1,1,2,2)))
 
-tradegts_imp <- gts(y = dat_imp,
-                gnames = c("Regions Total", "Countries Total" ,"Goods Total Lvl 1","Goods Total Lvl 2",
-                           "Goods Total Lvl 3","Goods Total Lvl 4","Goods Total Lvl 5","Goods Lvl 1 per Region",
-                           "Goods Lvl 2 per Region","Goods Lvl 3 per Region","Goods Lvl 4 per Region",
-                           "Goods Lvl 5 per Region","Goods Lvl 1 per Country","Goods Lvl 2 per Country",
-                           "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
-                characters = list(c(2,2), c(2,1,1,2,2)))
+# tradegts_imp <- gts(y = dat_imp,
+                # gnames = c("Regions Total", "Countries Total" ,"Goods Total Lvl 1","Goods Total Lvl 2",
+                #            "Goods Total Lvl 3","Goods Total Lvl 4","Goods Total Lvl 5","Goods Lvl 1 per Region",
+                #            "Goods Lvl 2 per Region","Goods Lvl 3 per Region","Goods Lvl 4 per Region",
+                #            "Goods Lvl 5 per Region","Goods Lvl 1 per Country","Goods Lvl 2 per Country",
+                #            "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
+                # characters = list(c(2,2), c(2,1,1,2,2)))
 
 # define categories and countries hierarchies
 tradehts <- list(cat = hts(y = dat_exp_cat, characters = c(2,1,1,2,2)),
@@ -76,13 +76,13 @@ tradegts_reduced2 <- gts(y = agggts_red2,
                                     "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
                          characters = list(c(2,2), c(2,1)))
 
-agggts_red2_imp <- aggts(tradegts_imp, levels = 14)
-colnames(agggts_red2_imp) <- substr(colnames(agggts_red2_imp), 25,40)
-tradegts_reduced2_imp <- gts(y = agggts_red2_imp,
-                         gnames = c("Regions Total", "Countries Total",
-                                    "Goods Total Lvl 1","Goods Total Lvl 2","Goods Lvl 1 per Region",
-                                    "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
-                         characters = list(c(2,2), c(2,1)))
+# agggts_red2_imp <- aggts(tradegts_imp, levels = 14)
+# colnames(agggts_red2_imp) <- substr(colnames(agggts_red2_imp), 25,40)
+# tradegts_reduced2_imp <- gts(y = agggts_red2_imp,
+#                          gnames = c("Regions Total", "Countries Total",
+#                                     "Goods Total Lvl 1","Goods Total Lvl 2","Goods Lvl 1 per Region",
+#                                     "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
+#                          characters = list(c(2,2), c(2,1)))
 
 tradehts_reduced <- list(cat = hts(y = aggts(tradehts$cat, levels = 2), characters = c(2,1)),
                          reg = hts(y = aggts(tradehts$reg, levels = 2), characters = c(2,2)))
