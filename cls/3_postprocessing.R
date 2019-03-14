@@ -18,8 +18,8 @@ results <- lapply(recon, function(ix) eval(parse(text=ix)))
 names(results) <- recon
 rm(list = recon,recon,ix)
 
-# # Cluster
-# cl <- makeCluster(20)
+# Cluster
+# cl <- makeCluster(4)
 # registerDoParallel(cl)
 
 
@@ -34,8 +34,8 @@ horizons <- names(results$ols$`1998`$ets)
 levels <- unname(colnames(results$ols$`1998`$ets$`1`))
 levels[grepl("/",levels)] <- sapply(strsplit(levels[grepl("/",levels)],"/"),`[`,2)
 grid <- CJ(rmethod,fdates,fmethod,horizons)
-grid <- grid[!(V2 == 2017 & V4 %in% c(3,2)),]
-grid <- grid[!(V2 == 2016 & V4 %in% c(3)),]
+grid <- grid[!(V2 == 2018 & V4 %in% c(3,2)),]
+grid <- grid[!(V2 == 2017 & V4 %in% c(3)),]
 
 # Create table for each forecast accuracy measure
 acc_measures <- c("RMSE","MAPE","MASE")
@@ -59,6 +59,8 @@ tabs <- lapply(acc_measures, function(tx){
   return(tab)
 
 })
+
+# stopCluster(cl)
 
 names(tabs) <- acc_measures
 save(tabs, file = "out/tabs.Rdata")

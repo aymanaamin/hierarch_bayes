@@ -31,7 +31,7 @@ rm(tsl)
 # x = reconciliation methods, y = accuracy
 tab <- tabs$MASE %>% 
   gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
-  filter(fmethod == "arima" & horizon == "1") %>% 
+  filter(fmethod == "arima") %>% 
   group_by(recon,level) %>%
   summarise(accuracy = mean(accuracy)) %>% 
   mutate(reg_lvl = factor(case_when(
@@ -91,12 +91,12 @@ ggplot() +
            aes(x=Grouping, y=Accuracy, fill = Reconciliation),
            colour="black", stat="identity", position = position_dodge()) +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
-  scale_y_continuous(position = "right") +
+  scale_y_continuous(position = "right", breaks = seq(1,2.5,0.5)) +
   scale_fill_manual(values = c(bpy.colors(10))) +
   ylab("Forecast Error (MASE)") +
   xlab("Reconciliation Methods") +
   theme_bw() +
-  coord_cartesian(ylim = c(1,1.6)) +
+  coord_cartesian(ylim = c(1,2.5)) +
   theme(legend.position="bottom", legend.title = element_blank())  +
   guides(fill=guide_legend(nrow=2))
 
@@ -110,7 +110,7 @@ ggsave("tex/fig/fig_eval_mase.pdf", device = "pdf",
 # x = reconciliation methods, y = accuracy
 tab <- tabs$RMSE %>% 
   gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
-  filter(fmethod == "arima" & horizon == "1") %>% 
+  filter(fmethod == "arima") %>% 
   mutate(accuracy = accuracy^2) %>% 
   group_by(recon,level) %>%
   summarise(accuracy = mean(accuracy)) %>% 
@@ -144,32 +144,37 @@ tab3 <- tab2 %>%
 tab4 <- tab3 %>% 
   spread(key = recon, value = accuracy) %>% 
   mutate(`Bottom-Up` = 100*(unrecon/bu-1),
-         `Middle-Out (Cat.)` = 100*(unrecon/mo_cat-1),
-         `Middle-Out (Reg.)` = 100*(unrecon/mo_reg-1),
-         `Top-Down (Cat.)` = 100*(unrecon/tdfp_cat-1),
-         `Top-Down (Reg.)` = 100*(unrecon/tdfp_reg-1),
-         `MinT    ` = 100*(unrecon/mint-1),
-         `WLS    ` = 100*(unrecon/wls-1),
-         `OLS    ` = 100*(unrecon/ols-1),
-         `BSR    ` = 100*(unrecon/bsr-1),
+         `Middle-Out (Categories)` = 100*(unrecon/mo_cat-1),
+         `Middle-Out (Regions)` = 100*(unrecon/mo_reg-1),
+         `Top-Down (Categories)` = 100*(unrecon/tdfp_cat-1),
+         `Top-Down (Regions)` = 100*(unrecon/tdfp_reg-1),
+         `MinT` = 100*(unrecon/mint-1),
+         `WLS` = 100*(unrecon/wls-1),
+         `OLS` = 100*(unrecon/ols-1),
+         `BSR` = 100*(unrecon/bsr-1),
          `nseries` = 100*(unrecon/nseries-1)) %>% 
   select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
   gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
-  mutate(Reconciliation = factor(Reconciliation,
-                                 levels = c("Bottom-Up","Middle-Out (Cat.)","Middle-Out (Reg.)",
-                                            "Top-Down (Cat.)","Top-Down (Reg.)",
-                                            "MinT    ","WLS    ","OLS    ","nseries","BSR    "), ordered = T),
-         Grouping = recode(Reconciliation,
+  mutate(Grouping = recode(Reconciliation,
                            "Bottom-Up" = "Basic",
-                           "Middle-Out (Cat.)" = "Basic",
-                           "Middle-Out (Reg.)" = "Basic",
-                           "Top-Down (Cat.)" = "Basic",
-                           "Top-Down (Reg.)" = "Basic",
-                           "OLS    " = "Optimal",
-                           "WLS    " = "Optimal",
-                           "BSR    " = "Optimal",
+                           "Middle-Out (Categories)" = "Basic",
+                           "Middle-Out (Regions)" = "Basic",
+                           "Top-Down (Categories)" = "Basic",
+                           "Top-Down (Regions)" = "Basic",
+                           "OLS" = "Optimal",
+                           "WLS" = "Optimal",
+                           "BSR" = "Optimal",
                            "nseries" = "Optimal",
-                           "MinT    " = "Optimal"))
+                           "MinT" = "Optimal"),
+         Reconciliation = factor(Reconciliation,
+                                 levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
+                                            "Top-Down (Categories)","Top-Down (Regions)",
+                                            "MinT","WLS","OLS","nseries","BSR"), 
+                                 labels = c(" Bottom-Up"," Middle-Out (Categories) "," Middle-Out (Regions) ",
+                                            " Top-Down (Categories) "," Top-Down (Regions) ",
+                                            " MinT    "," WLS    "," OLS    "," nseries"," BSR    "),
+                                 ordered = T))
+
 
 
 ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
@@ -180,7 +185,6 @@ ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +
   scale_fill_manual(values = c(bpy.colors(10))) +
   ylab("Relative Forecast Accuracy") +
   xlab("Reconciliation Methods") +
-  # coord_cartesian(ylim = c(-10,10)) +
   theme_bw() +
   theme(legend.position="bottom", legend.title = element_blank())  +
   guides(fill=guide_legend(nrow=2))
@@ -238,18 +242,21 @@ tab4 <- tab3 %>%
   mutate(Reconciliation = factor(Reconciliation,
                                  levels = c("MinT","WLS","BSR"), ordered = T))
 
-ggplot(tab4, aes(x=date, y=Accuracy, group = Reconciliation)) +
+ggplot(tab4, aes(x=date, y=Accuracy, group = Reconciliation, size = Reconciliation)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
-  geom_line(aes(color= Reconciliation, linetype = Reconciliation)) +
+  geom_line(aes(color= Reconciliation, linetype = Reconciliation, size = Reconciliation)) +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
   scale_linetype_manual(values=c(1,1,1)) +
-  scale_y_continuous(position = "right") +
+  scale_size_manual(values = c(0.5,0.5,0.5)) +
+  scale_y_continuous(position = "right", breaks = seq(-40,80,40)) +
   scale_x_continuous(breaks = seq(1998, 2018, by = 4), labels = c("98","02","06","10","14","18")) +
   scale_color_manual(values = c(bpy.colors(5)[-c(1,5)])) +
   ylab("Relative Forecast Accuracy") +
   xlab("Reconciliation Methods") +
   theme_bw() +
-  theme(legend.position="bottom", legend.title = element_blank())  +
+  theme(legend.position="bottom",
+        legend.title = element_blank(),
+        panel.grid.minor.x = element_blank())  +
   guides(fill=guide_legend(nrow=3))
 
 ggsave("tex/fig/fig_eval_rmse_time.pdf", device = "pdf",
@@ -289,15 +296,17 @@ tab2 <- tab %>%
                            "2" = "2y",
                            "3" = "3y"))
 
-ggplot(tab2, aes(x=date, y=accuracy, group = Method)) + 
+ggplot(tab2, aes(x=date, y=accuracy, group = Method, size = Method)) + 
   geom_line(aes(colour = Method)) +
   facet_grid(measure ~ horizon2, scales = "free_y") +
   scale_colour_manual(values = c(bpy.colors(5)[-c(1,5)])) + 
+  scale_size_manual(values = c(0.5,0.5,0.5)) +
   ylab("Forecast Accuracy") +
   xlab("Forecasted Period") +
   scale_x_continuous(breaks = seq(1998, 2018, by = 4), labels = c("98","02","06","10","14","18")) +
   theme_bw() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom",
+        panel.grid.minor.x = element_blank())
 
 ggsave("tex/fig/fig_eval_methods_top.pdf", device = "pdf",
        width = 18, height = 11, units = "cm")
@@ -352,15 +361,17 @@ tab4 <- tab3 %>%
                           levels = c("RMSE","MAPE","MASE"), ordered = T))
 
 
-ggplot(tab4, aes(x=date, y=accuracy, group = Method)) + 
+ggplot(tab4, aes(x=date, y=accuracy, group = Method, size = Method)) + 
   geom_line(aes(colour = Method)) +
   facet_grid(measure ~ horizon2, scales = "free_y") +
   scale_colour_manual(values = c(bpy.colors(5)[-c(1,5)])) +
+  scale_size_manual(values = c(0.5,0.5,0.5)) +
   ylab("Forecast Accuracy") +
   xlab("Forecasted Period") +
   scale_x_continuous(breaks = seq(1998, 2018, by = 4), labels = c("98","02","06","10","14","18")) +
   theme_bw() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom",
+        panel.grid.minor.x = element_blank())
 
 ggsave("tex/fig/fig_eval_methods_bottom.pdf", device = "pdf",
        width = 18, height = 11, units = "cm")
@@ -373,15 +384,15 @@ ggsave("tex/fig/fig_eval_methods_bottom.pdf", device = "pdf",
 # Region
 tab1 <- tabs$RMSE %>% 
   gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
-  filter(recon %in% c("wls","unrecon") & horizon == "1" & fmethod == "arima") %>% 
+  filter(recon %in% c("bsr","unrecon") & fmethod == "arima") %>% 
   filter((nchar(level) == 4 & grepl("^[A-Za-z]+$", level) == T) | 
            (nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == T)) %>% 
   group_by(recon,level) %>%
   summarise(accuracy = mean(accuracy^2,na.rm=T)) %>% 
   ungroup %>% 
   spread(key = recon, value = accuracy) %>% 
-  mutate(relacc = 100*(unrecon^0.5/wls^0.5-1)) %>% 
-  select(-c(unrecon,wls))
+  mutate(relacc = 100*(unrecon^0.5/bsr^0.5-1)) %>% 
+  select(-c(unrecon,bsr))
 
 tab2 <- tab1 %>% 
   mutate(Regions = factor(case_when(
@@ -405,9 +416,10 @@ tab2 <- tab1 %>%
 ggplot(tab2, aes(Regions, relacc)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
   geom_jitter(aes(color = Regions, size = Share, shape = Level), width = 0.1, height = 0) +
-  coord_cartesian(ylim = c(-5,15)) +
+  coord_cartesian(ylim = c(-5,20)) +
   scale_shape_manual(name = "Level", values = c(1,20)) +
-  scale_size_continuous(name = "Export Shares (in %)", breaks = c(1,10,20,40)) +
+  scale_size_continuous(name = "Export Shares (in %)",
+                        breaks = c(1,10,20), range = c(1,10)) +
   scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +
   ylab("Relative Forecast Accuracy") +
   xlab(NULL) +
@@ -422,14 +434,14 @@ ggsave("tex/fig/fig_eval_regions.pdf", device = "pdf",
 # Category
 tab1 <- tabs$RMSE %>% 
   gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
-  filter(recon %in% c("wls","unrecon") & horizon == "1" & fmethod == "arima") %>% 
+  filter(recon %in% c("bsr","unrecon") & fmethod == "arima") %>% 
   filter((nchar(level) == 3) | (nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == F)) %>% 
   group_by(recon,level) %>%
   summarise(accuracy = mean(accuracy^2,na.rm=T)) %>% 
   ungroup %>% 
   spread(key = recon, value = accuracy) %>% 
-  mutate(relacc = 100*(unrecon^0.5/wls^0.5-1)) %>% 
-  select(-c(unrecon,wls))
+  mutate(relacc = 100*(unrecon^0.5/bsr^0.5-1)) %>% 
+  select(-c(unrecon,bsr))
 
 tab2 <- tab1 %>% 
   mutate(Categories = factor(case_when(
@@ -459,9 +471,10 @@ tab2 <- tab1 %>%
 ggplot(tab2, aes(Categories, relacc)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
   geom_jitter(aes(color = Categories, size = Share, shape = Level), width = 0.1, height = 0) +
-  coord_cartesian(ylim = c(-10,20)) +
+  coord_cartesian(ylim = c(-10,15)) +
   scale_shape_manual(name = "Level", values = c(1,20)) +
-  scale_size_continuous(name = "Export Shares (in %)", breaks = c(1,10,20,40), limits = c(0,50)) +
+  scale_size_continuous(name = "Export Shares (in %)",
+                       breaks = c(1,10,20), range = c(1,10), limits = c(0,40)) +
   scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +
   ylab("Relative Forecast Accuracy") +
   xlab(NULL) +
@@ -471,4 +484,271 @@ ggplot(tab2, aes(Categories, relacc)) +
 
 ggsave("tex/fig/fig_eval_categories.pdf", device = "pdf",
        width = 18, height = 10, units = "cm")  
+
+
+
+
+# RELATIVE RMSE BY RECONCILIATION METHOD AND LEVEL / H1 -------------------
+
+tab <- tabs$RMSE %>% 
+  gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
+  filter(fmethod == "arima" & horizon == "1") %>% 
+  mutate(accuracy = accuracy^2) %>% 
+  group_by(recon,level) %>%
+  summarise(accuracy = mean(accuracy)) %>% 
+  ungroup
+
+tab2 <- tab %>% 
+  add_column(weights = sapply(tab$level, function(x) weights[which(names(weights) == x)])) %>% 
+  mutate(acc_weighted = accuracy*weights)
+
+tab3 <- tab2 %>% 
+  mutate(reg_lvl = factor(case_when(
+    level == "Total" ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 3 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == T ~ "Region",
+    nchar(level) %in% c(4,5) & grepl("^[A-Za-z]+$", level) == F ~ "Region",
+    nchar(level) == 4 & grepl("^[A-Za-z]+$", level) == T ~ "Country",
+    nchar(level) > 5 & grepl("^[A-Za-z]+$", level) == F ~ "Country"),
+    levels = c("World","Region","Country"), ordered = T),
+    cat_lvl = factor(case_when(
+      level == "Total" ~ "Total",
+      nchar(level) %in% c(2,4) & grepl("^[A-Za-z]+$", level) == T ~ "Total",
+      nchar(level) %in% c(2) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(4,6) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
+      levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
+  group_by(reg_lvl,cat_lvl,recon) %>%
+  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  ungroup
+
+tab4 <- tab3 %>% 
+  spread(key = recon, value = accuracy) %>% 
+  mutate(`Bottom-Up` = 100*(unrecon/bu-1),
+         `Middle-Out (Categories)` = 100*(unrecon/mo_cat-1),
+         `Middle-Out (Regions)` = 100*(unrecon/mo_reg-1),
+         `Top-Down (Categories)` = 100*(unrecon/tdfp_cat-1),
+         `Top-Down (Regions)` = 100*(unrecon/tdfp_reg-1),
+         `MinT` = 100*(unrecon/mint-1),
+         `WLS` = 100*(unrecon/wls-1),
+         `OLS` = 100*(unrecon/ols-1),
+         `BSR` = 100*(unrecon/bsr-1),
+         `nseries` = 100*(unrecon/nseries-1)) %>% 
+  select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
+  gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
+  mutate(Grouping = recode(Reconciliation,
+                           "Bottom-Up" = "Basic",
+                           "Middle-Out (Categories)" = "Basic",
+                           "Middle-Out (Regions)" = "Basic",
+                           "Top-Down (Categories)" = "Basic",
+                           "Top-Down (Regions)" = "Basic",
+                           "OLS" = "Optimal",
+                           "WLS" = "Optimal",
+                           "BSR" = "Optimal",
+                           "nseries" = "Optimal",
+                           "MinT" = "Optimal"),
+         Reconciliation = factor(Reconciliation,
+                                 levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
+                                            "Top-Down (Categories)","Top-Down (Regions)",
+                                            "MinT","WLS","OLS","nseries","BSR"), 
+                                 labels = c(" Bottom-Up"," Middle-Out (Categories) "," Middle-Out (Regions) ",
+                                            " Top-Down (Categories) "," Top-Down (Regions) ",
+                                            " MinT    "," WLS    "," OLS    "," nseries"," BSR    "),
+                                 ordered = T))
+
+
+
+ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
+  geom_bar(colour="black", stat="identity", position = position_dodge()) +
+  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
+  scale_y_continuous(position = "right") +
+  scale_fill_manual(values = c(bpy.colors(10))) +
+  ylab("Relative Forecast Accuracy") +
+  xlab("Reconciliation Methods") +
+  theme_bw() +
+  theme(legend.position="bottom", legend.title = element_blank())  +
+  guides(fill=guide_legend(nrow=2))
+
+ggsave("tex/fig/fig_eval_rmse_relative_h2.pdf", device = "pdf",
+       width = 18, height = 12, units = "cm")
+
+
+
+
+
+# RELATIVE RMSE BY RECONCILIATION METHOD AND LEVEL / H2 -------------------
+
+tab <- tabs$RMSE %>% 
+  gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
+  filter(fmethod == "arima" & horizon == "2") %>% 
+  mutate(accuracy = accuracy^2) %>% 
+  group_by(recon,level) %>%
+  summarise(accuracy = mean(accuracy)) %>% 
+  ungroup
+
+tab2 <- tab %>% 
+  add_column(weights = sapply(tab$level, function(x) weights[which(names(weights) == x)])) %>% 
+  mutate(acc_weighted = accuracy*weights)
+
+tab3 <- tab2 %>% 
+  mutate(reg_lvl = factor(case_when(
+    level == "Total" ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 3 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == T ~ "Region",
+    nchar(level) %in% c(4,5) & grepl("^[A-Za-z]+$", level) == F ~ "Region",
+    nchar(level) == 4 & grepl("^[A-Za-z]+$", level) == T ~ "Country",
+    nchar(level) > 5 & grepl("^[A-Za-z]+$", level) == F ~ "Country"),
+    levels = c("World","Region","Country"), ordered = T),
+    cat_lvl = factor(case_when(
+      level == "Total" ~ "Total",
+      nchar(level) %in% c(2,4) & grepl("^[A-Za-z]+$", level) == T ~ "Total",
+      nchar(level) %in% c(2) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(4,6) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
+      levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
+  group_by(reg_lvl,cat_lvl,recon) %>%
+  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  ungroup
+
+tab4 <- tab3 %>% 
+  spread(key = recon, value = accuracy) %>% 
+  mutate(`Bottom-Up` = 100*(unrecon/bu-1),
+         `Middle-Out (Categories)` = 100*(unrecon/mo_cat-1),
+         `Middle-Out (Regions)` = 100*(unrecon/mo_reg-1),
+         `Top-Down (Categories)` = 100*(unrecon/tdfp_cat-1),
+         `Top-Down (Regions)` = 100*(unrecon/tdfp_reg-1),
+         `MinT` = 100*(unrecon/mint-1),
+         `WLS` = 100*(unrecon/wls-1),
+         `OLS` = 100*(unrecon/ols-1),
+         `BSR` = 100*(unrecon/bsr-1),
+         `nseries` = 100*(unrecon/nseries-1)) %>% 
+  select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
+  gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
+  mutate(Grouping = recode(Reconciliation,
+                           "Bottom-Up" = "Basic",
+                           "Middle-Out (Categories)" = "Basic",
+                           "Middle-Out (Regions)" = "Basic",
+                           "Top-Down (Categories)" = "Basic",
+                           "Top-Down (Regions)" = "Basic",
+                           "OLS" = "Optimal",
+                           "WLS" = "Optimal",
+                           "BSR" = "Optimal",
+                           "nseries" = "Optimal",
+                           "MinT" = "Optimal"),
+         Reconciliation = factor(Reconciliation,
+                                 levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
+                                            "Top-Down (Categories)","Top-Down (Regions)",
+                                            "MinT","WLS","OLS","nseries","BSR"), 
+                                 labels = c(" Bottom-Up"," Middle-Out (Categories) "," Middle-Out (Regions) ",
+                                            " Top-Down (Categories) "," Top-Down (Regions) ",
+                                            " MinT    "," WLS    "," OLS    "," nseries"," BSR    "),
+                                 ordered = T))
+
+
+
+ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
+  geom_bar(colour="black", stat="identity", position = position_dodge()) +
+  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
+  scale_y_continuous(position = "right") +
+  scale_fill_manual(values = c(bpy.colors(10))) +
+  ylab("Relative Forecast Accuracy") +
+  xlab("Reconciliation Methods") +
+  theme_bw() +
+  theme(legend.position="bottom", legend.title = element_blank())  +
+  guides(fill=guide_legend(nrow=2))
+
+ggsave("tex/fig/fig_eval_rmse_relative_h2.pdf", device = "pdf",
+       width = 18, height = 12, units = "cm")
+
+
+# RELATIVE RMSE BY RECONCILIATION METHOD AND LEVEL / H3-------------------
+
+tab <- tabs$RMSE %>% 
+  gather(key = level, value = accuracy, -c(date,recon,fmethod,horizon)) %>% 
+  filter(fmethod == "arima" & horizon == "3") %>% 
+  mutate(accuracy = accuracy^2) %>% 
+  group_by(recon,level) %>%
+  summarise(accuracy = mean(accuracy)) %>% 
+  ungroup
+
+tab2 <- tab %>% 
+  add_column(weights = sapply(tab$level, function(x) weights[which(names(weights) == x)])) %>% 
+  mutate(acc_weighted = accuracy*weights)
+
+tab3 <- tab2 %>% 
+  mutate(reg_lvl = factor(case_when(
+    level == "Total" ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 3 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == T ~ "Region",
+    nchar(level) %in% c(4,5) & grepl("^[A-Za-z]+$", level) == F ~ "Region",
+    nchar(level) == 4 & grepl("^[A-Za-z]+$", level) == T ~ "Country",
+    nchar(level) > 5 & grepl("^[A-Za-z]+$", level) == F ~ "Country"),
+    levels = c("World","Region","Country"), ordered = T),
+    cat_lvl = factor(case_when(
+      level == "Total" ~ "Total",
+      nchar(level) %in% c(2,4) & grepl("^[A-Za-z]+$", level) == T ~ "Total",
+      nchar(level) %in% c(2) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(4,6) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
+      levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
+  group_by(reg_lvl,cat_lvl,recon) %>%
+  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  ungroup
+
+tab4 <- tab3 %>% 
+  spread(key = recon, value = accuracy) %>% 
+  mutate(`Bottom-Up` = 100*(unrecon/bu-1),
+         `Middle-Out (Categories)` = 100*(unrecon/mo_cat-1),
+         `Middle-Out (Regions)` = 100*(unrecon/mo_reg-1),
+         `Top-Down (Categories)` = 100*(unrecon/tdfp_cat-1),
+         `Top-Down (Regions)` = 100*(unrecon/tdfp_reg-1),
+         `MinT` = 100*(unrecon/mint-1),
+         `WLS` = 100*(unrecon/wls-1),
+         `OLS` = 100*(unrecon/ols-1),
+         `BSR` = 100*(unrecon/bsr-1),
+         `nseries` = 100*(unrecon/nseries-1)) %>% 
+  select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
+  gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
+  mutate(Grouping = recode(Reconciliation,
+                           "Bottom-Up" = "Basic",
+                           "Middle-Out (Categories)" = "Basic",
+                           "Middle-Out (Regions)" = "Basic",
+                           "Top-Down (Categories)" = "Basic",
+                           "Top-Down (Regions)" = "Basic",
+                           "OLS" = "Optimal",
+                           "WLS" = "Optimal",
+                           "BSR" = "Optimal",
+                           "nseries" = "Optimal",
+                           "MinT" = "Optimal"),
+         Reconciliation = factor(Reconciliation,
+                                 levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
+                                            "Top-Down (Categories)","Top-Down (Regions)",
+                                            "MinT","WLS","OLS","nseries","BSR"), 
+                                 labels = c(" Bottom-Up"," Middle-Out (Categories) "," Middle-Out (Regions) ",
+                                            " Top-Down (Categories) "," Top-Down (Regions) ",
+                                            " MinT    "," WLS    "," OLS    "," nseries"," BSR    "),
+                                 ordered = T))
+
+
+
+ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
+  geom_bar(colour="black", stat="identity", position = position_dodge()) +
+  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
+  scale_y_continuous(position = "right") +
+  scale_fill_manual(values = c(bpy.colors(10))) +
+  ylab("Relative Forecast Accuracy") +
+  xlab("Reconciliation Methods") +
+  theme_bw() +
+  theme(legend.position="bottom", legend.title = element_blank())  +
+  guides(fill=guide_legend(nrow=2))
+
+ggsave("tex/fig/fig_eval_rmse_relative_h3.pdf", device = "pdf",
+       width = 18, height = 12, units = "cm")
+
 
