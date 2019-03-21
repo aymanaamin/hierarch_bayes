@@ -11,6 +11,8 @@ library(tidyverse)
 library(sp)
 library(Matrix)
 library(MCMCpack)
+library(MASS)
+library(multDM)
 
 # Model
 source("lib/functions_model_electricity.R")
@@ -103,28 +105,6 @@ ggsave("tex/fig/fig_forecast.pdf", device = "pdf",
 
 
 
-
-# AIRPLANES ---------------------------------------------------------------
-# 
-# # Data
-# training <- window(tradegts_reduced2_imp, start = 2010, end = 2018-1/12)
-# test <- window(tradegts_reduced2_imp, start = 2018, end = 2018)
-# 
-# 
-# # BSR with and without shrinkage
-# shr <- which(names(as.list(aggts(training))) == "Goods Total Lvl 1/02")
-# fc_bsr_shr <- RunBSR(object = training, h = 1, fmethod = "arima",
-#                      shrinkage = "none", series_to_be_shrunk = shr)
-# fc_bsr_non <- RunBSR(object = training, h = 1, fmethod = "arima",
-#                      shrinkage = "none", series_to_be_shrunk = )
-# 
-# # Evaluation
-# acc_bsr_shr <- t(accuracy(fc_bsr_shr$forecast, test))
-# acc_bsr_non <- t(accuracy(fc_bsr_non$forecast, test))
-# 
-# 
-# 
-
 # ELECTRICITY -------------------------------------------------------------
 
 # Data
@@ -145,7 +125,23 @@ fc_bsr_non <- RunBSR_electric(object = training, h = 11,
 # evaluation
 acc_bsr_shr <- t(accuracy(fc_bsr_shr, test))
 acc_bsr_non <- t(accuracy(fc_bsr_non, test))
-acc_bsr_shr[,"RMSE"]/acc_bsr_non[,"RMSE"]
+acc_bsr_shr[,"RMSE"]^2/acc_bsr_non[,"RMSE"]^2
+
+# dm test
+f_shr <- as.list(aggts(fc_bsr_shr))
+f_non <- as.list(aggts(fc_bsr_non))
+f_tst <- as.list(aggts(test))
+
+dm_out <- lapply(names(f_shr), function(x){
+  
+  DM.test(f1 = f_shr[[x]], f2 = f_non[[x]], y = f_tst[[x]], 
+          loss.type = "SE", H1 = "more", c = TRUE)
+  
+})
+
+names(dm_out) <- names(f_shr)
+do.call(rbind, lapply(dm_out, function(x) round(x$p.value,2)))
+
 
 # get mean and variances
 shr_m_ls <- as.list(aggts(fc_bsr_shr))

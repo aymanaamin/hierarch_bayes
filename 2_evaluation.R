@@ -92,7 +92,7 @@ ggplot() +
            colour="black", stat="identity", position = position_dodge()) +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
   scale_y_continuous(position = "right", breaks = seq(1,2.5,0.5)) +
-  scale_fill_manual(values = c(bpy.colors(10))) +
+  scale_fill_manual(values = c(bpy.colors(11)[-11])) +
   ylab("Forecast Error (MASE)") +
   xlab("Reconciliation Methods") +
   theme_bw() +
@@ -138,7 +138,7 @@ tab3 <- tab2 %>%
       nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
       levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
   group_by(reg_lvl,cat_lvl,recon) %>%
-  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  summarise(accuracy = sum(acc_weighted)) %>% 
   ungroup
 
 tab4 <- tab3 %>% 
@@ -156,16 +156,16 @@ tab4 <- tab3 %>%
   select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
   gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
   mutate(Grouping = recode(Reconciliation,
-                           "Bottom-Up" = "Basic",
-                           "Middle-Out (Categories)" = "Basic",
-                           "Middle-Out (Regions)" = "Basic",
-                           "Top-Down (Categories)" = "Basic",
-                           "Top-Down (Regions)" = "Basic",
-                           "OLS" = "Optimal",
-                           "WLS" = "Optimal",
-                           "BSR" = "Optimal",
-                           "nseries" = "Optimal",
-                           "MinT" = "Optimal"),
+                           "Bottom-Up" = 1,
+                           "Middle-Out (Categories)" = 1,
+                           "Middle-Out (Regions)" = 1,
+                           "Top-Down (Categories)" = 1,
+                           "Top-Down (Regions)" = 1,
+                           "OLS" = 2,
+                           "WLS" = 2,
+                           "BSR" = 2,
+                           "nseries" = 2,
+                           "MinT" = 2),
          Reconciliation = factor(Reconciliation,
                                  levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
                                             "Top-Down (Categories)","Top-Down (Regions)",
@@ -175,19 +175,24 @@ tab4 <- tab3 %>%
                                             " MinT    "," WLS    "," OLS    "," nseries"," BSR    "),
                                  ordered = T))
 
-
-
 ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
-  geom_bar(colour="black", stat="identity", position = position_dodge()) +
-  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  geom_ribbon(ymin = (qf(0.05,3*12*21,3*12*21)-1)*100,
+              ymax = (qf(0.95,3*12*21,3*12*21)-1)*100,
+              x = seq(0,5,length.out = 90), alpha=0.5, fill = "grey80") +
+  geom_hline(aes(yintercept=0), color = "black", lwd = 0.5) +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
-  scale_y_continuous(position = "right") +
-  scale_fill_manual(values = c(bpy.colors(10))) +
+  geom_bar(colour="black", stat="identity", position = position_dodge()) +
+  scale_y_continuous(position = "right", breaks = c(-20,0,20), limits = c(-40,40)) +
+  scale_x_continuous(breaks = c(1,2),labels = c("Basic","Optimal")) +
+  scale_fill_manual(values = c(bpy.colors(11)[-11])) +
   ylab("Relative Forecast Accuracy") +
   xlab("Reconciliation Methods") +
   theme_bw() +
-  theme(legend.position="bottom", legend.title = element_blank())  +
+  theme(legend.position="bottom",
+        legend.title = element_blank(),
+        panel.grid.minor.x = element_blank())  +
   guides(fill=guide_legend(nrow=2))
+
 
 ggsave("tex/fig/fig_eval_rmse_relative.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
@@ -229,7 +234,7 @@ tab3 <- tab2 %>%
       nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
       levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
   group_by(reg_lvl,cat_lvl,recon,date) %>%
-  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  summarise(accuracy = sum(acc_weighted)) %>% 
   ungroup
 
 tab4 <- tab3 %>% 
@@ -243,16 +248,21 @@ tab4 <- tab3 %>%
                                  levels = c("MinT","WLS","BSR"), ordered = T))
 
 ggplot(tab4, aes(x=date, y=Accuracy, group = Reconciliation, size = Reconciliation)) +
-  geom_hline(aes(yintercept=0), color = "darkgrey") +
-  geom_line(aes(color= Reconciliation, linetype = Reconciliation, size = Reconciliation)) +
+  geom_ribbon(ymin = (qf(0.05,3*12,3*12)-1)*100,
+              ymax = (qf(0.95,3*12,3*12)-1)*100,
+              alpha=0.25, fill = "grey80", show.legend = F) +
+  geom_hline(yintercept=0, color = "black", lwd = 0.5) +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
+  geom_line(aes(color= Reconciliation, linetype = Reconciliation, size = Reconciliation)) +
   scale_linetype_manual(values=c(1,1,1)) +
   scale_size_manual(values = c(0.5,0.5,0.5)) +
-  scale_y_continuous(position = "right", breaks = seq(-40,80,40)) +
-  scale_x_continuous(breaks = seq(1998, 2018, by = 4), labels = c("98","02","06","10","14","18")) +
-  scale_color_manual(values = c(bpy.colors(5)[-c(1,5)])) +
+  scale_y_continuous(position = "right", breaks = seq(-100,300,100), minor_breaks = NULL) +
+  scale_x_continuous(breaks = seq(2000, 2016, by = 4),
+                     labels = c("2000","04","08","12","16"),
+                     expand = c(0,0)) +
+  scale_color_manual(values = bpy.colors(11)[c(6,7,10)]) +
   ylab("Relative Forecast Accuracy") +
-  xlab("Reconciliation Methods") +
+  xlab("Time") +
   theme_bw() +
   theme(legend.position="bottom",
         legend.title = element_blank(),
@@ -391,7 +401,7 @@ tab1 <- tabs$RMSE %>%
   summarise(accuracy = mean(accuracy^2,na.rm=T)) %>% 
   ungroup %>% 
   spread(key = recon, value = accuracy) %>% 
-  mutate(relacc = 100*(unrecon^0.5/bsr^0.5-1)) %>% 
+  mutate(relacc = 100*(unrecon/bsr-1)) %>% 
   select(-c(unrecon,bsr))
 
 tab2 <- tab1 %>% 
@@ -416,11 +426,12 @@ tab2 <- tab1 %>%
 ggplot(tab2, aes(Regions, relacc)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
   geom_jitter(aes(color = Regions, size = Share, shape = Level), width = 0.1, height = 0) +
-  coord_cartesian(ylim = c(-5,20)) +
+  coord_cartesian(ylim = c(-10,40)) +
   scale_shape_manual(name = "Level", values = c(1,20)) +
   scale_size_continuous(name = "Export Shares (in %)",
                         breaks = c(1,10,20), range = c(1,10)) +
   scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +
+  scale_y_continuous(breaks = seq(-20,40,20)) + 
   ylab("Relative Forecast Accuracy") +
   xlab(NULL) +
   theme_bw() +
@@ -440,7 +451,7 @@ tab1 <- tabs$RMSE %>%
   summarise(accuracy = mean(accuracy^2,na.rm=T)) %>% 
   ungroup %>% 
   spread(key = recon, value = accuracy) %>% 
-  mutate(relacc = 100*(unrecon^0.5/bsr^0.5-1)) %>% 
+  mutate(relacc = 100*(unrecon/bsr-1)) %>% 
   select(-c(unrecon,bsr))
 
 tab2 <- tab1 %>% 
@@ -471,11 +482,12 @@ tab2 <- tab1 %>%
 ggplot(tab2, aes(Categories, relacc)) +
   geom_hline(aes(yintercept=0), color = "darkgrey") +
   geom_jitter(aes(color = Categories, size = Share, shape = Level), width = 0.1, height = 0) +
-  coord_cartesian(ylim = c(-10,15)) +
+  coord_cartesian(ylim = c(-20,40)) +
   scale_shape_manual(name = "Level", values = c(1,20)) +
   scale_size_continuous(name = "Export Shares (in %)",
-                       breaks = c(1,10,20), range = c(1,10), limits = c(0,40)) +
+                        breaks = c(1,10,20), range = c(1,10), limits = c(0,40)) +
   scale_colour_manual(values = c(bpy.colors(13)[-13]),guide=F) +
+  scale_y_continuous(breaks = seq(-20,40,20)) + 
   ylab("Relative Forecast Accuracy") +
   xlab(NULL) +
   theme_bw() +
@@ -520,7 +532,7 @@ tab3 <- tab2 %>%
       nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
       levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
   group_by(reg_lvl,cat_lvl,recon) %>%
-  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  summarise(accuracy = sum(acc_weighted)) %>% 
   ungroup
 
 tab4 <- tab3 %>% 
@@ -538,16 +550,16 @@ tab4 <- tab3 %>%
   select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
   gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
   mutate(Grouping = recode(Reconciliation,
-                           "Bottom-Up" = "Basic",
-                           "Middle-Out (Categories)" = "Basic",
-                           "Middle-Out (Regions)" = "Basic",
-                           "Top-Down (Categories)" = "Basic",
-                           "Top-Down (Regions)" = "Basic",
-                           "OLS" = "Optimal",
-                           "WLS" = "Optimal",
-                           "BSR" = "Optimal",
-                           "nseries" = "Optimal",
-                           "MinT" = "Optimal"),
+                           "Bottom-Up" = 1,
+                           "Middle-Out (Categories)" = 1,
+                           "Middle-Out (Regions)" = 1,
+                           "Top-Down (Categories)" = 1,
+                           "Top-Down (Regions)" = 1,
+                           "OLS" = 2,
+                           "WLS" = 2,
+                           "BSR" = 2,
+                           "nseries" = 2,
+                           "MinT" = 2),
          Reconciliation = factor(Reconciliation,
                                  levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
                                             "Top-Down (Categories)","Top-Down (Regions)",
@@ -560,18 +572,22 @@ tab4 <- tab3 %>%
 
 
 ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
-  geom_bar(colour="black", stat="identity", position = position_dodge()) +
-  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  geom_hline(aes(yintercept=0), color = "black", lwd = 0.5) +
+  geom_ribbon(ymin = (qf(0.05,12*21,12*21)-1)*100,
+              ymax = (qf(0.95,12*21,12*21)-1)*100,
+              x = seq(0,5,length.out = 90), alpha=0.5, fill = "grey80") +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
-  scale_y_continuous(position = "right") +
-  scale_fill_manual(values = c(bpy.colors(10))) +
+  geom_bar(colour="black", stat="identity", position = position_dodge()) +
+  scale_y_continuous(position = "right", breaks = c(-20,0,20), limits = c(-40,40)) +
+  scale_x_continuous(breaks = c(1,2),labels = c("Basic","Optimal")) +
+  scale_fill_manual(values = c(bpy.colors(11)[-11])) +
   ylab("Relative Forecast Accuracy") +
   xlab("Reconciliation Methods") +
   theme_bw() +
   theme(legend.position="bottom", legend.title = element_blank())  +
   guides(fill=guide_legend(nrow=2))
 
-ggsave("tex/fig/fig_eval_rmse_relative_h2.pdf", device = "pdf",
+ggsave("tex/fig/fig_eval_rmse_relative_h1.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
 
 
@@ -610,7 +626,7 @@ tab3 <- tab2 %>%
       nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
       levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
   group_by(reg_lvl,cat_lvl,recon) %>%
-  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  summarise(accuracy = sum(acc_weighted)) %>% 
   ungroup
 
 tab4 <- tab3 %>% 
@@ -628,16 +644,16 @@ tab4 <- tab3 %>%
   select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
   gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
   mutate(Grouping = recode(Reconciliation,
-                           "Bottom-Up" = "Basic",
-                           "Middle-Out (Categories)" = "Basic",
-                           "Middle-Out (Regions)" = "Basic",
-                           "Top-Down (Categories)" = "Basic",
-                           "Top-Down (Regions)" = "Basic",
-                           "OLS" = "Optimal",
-                           "WLS" = "Optimal",
-                           "BSR" = "Optimal",
-                           "nseries" = "Optimal",
-                           "MinT" = "Optimal"),
+                           "Bottom-Up" = 1,
+                           "Middle-Out (Categories)" = 1,
+                           "Middle-Out (Regions)" = 1,
+                           "Top-Down (Categories)" = 1,
+                           "Top-Down (Regions)" = 1,
+                           "OLS" = 2,
+                           "WLS" = 2,
+                           "BSR" = 2,
+                           "nseries" = 2,
+                           "MinT" = 2),
          Reconciliation = factor(Reconciliation,
                                  levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
                                             "Top-Down (Categories)","Top-Down (Regions)",
@@ -650,11 +666,15 @@ tab4 <- tab3 %>%
 
 
 ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
-  geom_bar(colour="black", stat="identity", position = position_dodge()) +
-  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  geom_hline(aes(yintercept=0), color = "black", lwd = 0.5) +
+  geom_ribbon(ymin = (qf(0.05,12*21,12*21)-1)*100,
+              ymax = (qf(0.95,12*21,12*21)-1)*100,
+              x = seq(0,5,length.out = 90), alpha=0.5, fill = "grey80") +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
-  scale_y_continuous(position = "right") +
-  scale_fill_manual(values = c(bpy.colors(10))) +
+  geom_bar(colour="black", stat="identity", position = position_dodge()) +
+  scale_y_continuous(position = "right", breaks = c(-20,0,20), limits = c(-40,40)) +
+  scale_x_continuous(breaks = c(1,2),labels = c("Basic","Optimal")) +
+  scale_fill_manual(values = c(bpy.colors(11)[-11])) +
   ylab("Relative Forecast Accuracy") +
   xlab("Reconciliation Methods") +
   theme_bw() +
@@ -697,7 +717,7 @@ tab3 <- tab2 %>%
       nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
       levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
   group_by(reg_lvl,cat_lvl,recon) %>%
-  summarise(accuracy = sum(acc_weighted)^0.5) %>% 
+  summarise(accuracy = sum(acc_weighted)) %>% 
   ungroup
 
 tab4 <- tab3 %>% 
@@ -715,16 +735,16 @@ tab4 <- tab3 %>%
   select(-c(unrecon,bu,mint,mo_cat,mo_reg,ols,tdfp_cat,tdfp_reg,wls,bsr)) %>% 
   gather(key = Reconciliation, value = Accuracy, -c(reg_lvl,cat_lvl)) %>% 
   mutate(Grouping = recode(Reconciliation,
-                           "Bottom-Up" = "Basic",
-                           "Middle-Out (Categories)" = "Basic",
-                           "Middle-Out (Regions)" = "Basic",
-                           "Top-Down (Categories)" = "Basic",
-                           "Top-Down (Regions)" = "Basic",
-                           "OLS" = "Optimal",
-                           "WLS" = "Optimal",
-                           "BSR" = "Optimal",
-                           "nseries" = "Optimal",
-                           "MinT" = "Optimal"),
+                           "Bottom-Up" = 1,
+                           "Middle-Out (Categories)" = 1,
+                           "Middle-Out (Regions)" = 1,
+                           "Top-Down (Categories)" = 1,
+                           "Top-Down (Regions)" = 1,
+                           "OLS" = 2,
+                           "WLS" = 2,
+                           "BSR" = 2,
+                           "nseries" = 2,
+                           "MinT" = 2),
          Reconciliation = factor(Reconciliation,
                                  levels = c("Bottom-Up","Middle-Out (Categories)","Middle-Out (Regions)",
                                             "Top-Down (Categories)","Top-Down (Regions)",
@@ -737,11 +757,15 @@ tab4 <- tab3 %>%
 
 
 ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +   
-  geom_bar(colour="black", stat="identity", position = position_dodge()) +
-  geom_hline(aes(yintercept=0), color = "darkgrey") +
+  geom_hline(aes(yintercept=0), color = "black", lwd = 0.5) +
+  geom_ribbon(ymin = (qf(0.05,12*21,12*21)-1)*100,
+              ymax = (qf(0.95,12*21,12*21)-1)*100,
+              x = seq(0,5,length.out = 90), alpha=0.5, fill = "grey80") +
   facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
-  scale_y_continuous(position = "right") +
-  scale_fill_manual(values = c(bpy.colors(10))) +
+  geom_bar(colour="black", stat="identity", position = position_dodge()) +
+  scale_y_continuous(position = "right", breaks = c(-20,0,20), limits = c(-40,40)) +
+  scale_x_continuous(breaks = c(1,2),labels = c("Basic","Optimal")) +
+  scale_fill_manual(values = c(bpy.colors(11)[-11])) +
   ylab("Relative Forecast Accuracy") +
   xlab("Reconciliation Methods") +
   theme_bw() +
