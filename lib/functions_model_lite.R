@@ -122,7 +122,8 @@ RunReconciliation <- function(S, forecasts.list, pars){
     Y <- Matrix(do.call(rbind, lapply(forecasts.list, function(fx) fx[,hx])))
     Y_mean <- rowMeans(Y)
     Sigma = Diagonal(x = apply(Y, 1, var) + 1e-16)
-    M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(Sigma) %*% S) %*% t(S)%*% solve(Sigma))
+    W <- pars$lambda %*% Sigma %*% pars$lambda
+    M <- Diagonal(n = pars$m) - (S %*% solve(t(S) %*% solve(W) %*% S) %*% t(S)%*% solve(W))
     alpha <- M %*% Y_mean
     
     # 2. Compute Beta

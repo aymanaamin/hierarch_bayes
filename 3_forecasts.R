@@ -12,7 +12,7 @@ library(sp)
 library(Matrix)
 library(MCMCpack)
 library(MASS)
-library(multDM)
+
 
 # Model
 source("lib/functions_model_electricity.R")
@@ -126,21 +126,6 @@ fc_bsr_non <- RunBSR_electric(object = training, h = 11,
 acc_bsr_shr <- t(accuracy(fc_bsr_shr, test))
 acc_bsr_non <- t(accuracy(fc_bsr_non, test))
 acc_bsr_shr[,"RMSE"]^2/acc_bsr_non[,"RMSE"]^2
-
-# dm test
-f_shr <- as.list(aggts(fc_bsr_shr))
-f_non <- as.list(aggts(fc_bsr_non))
-f_tst <- as.list(aggts(test))
-
-dm_out <- lapply(names(f_shr), function(x){
-  
-  DM.test(f1 = f_shr[[x]], f2 = f_non[[x]], y = f_tst[[x]], 
-          loss.type = "SE", H1 = "more", c = TRUE)
-  
-})
-
-names(dm_out) <- names(f_shr)
-do.call(rbind, lapply(dm_out, function(x) round(x$p.value,2)))
 
 
 # get mean and variances
