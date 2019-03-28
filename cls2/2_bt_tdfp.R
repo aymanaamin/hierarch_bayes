@@ -1,10 +1,10 @@
 
 rm(list = ls())
 
-source("cls/1_pars.R")
+source("cls2/1_pars.R")
 
 # create cluster for parallel processing
-cl <- makeCluster(length(fdate))
+cl <- makeCluster(cores_l)
 registerDoParallel(cl)
 
 tdfp_cat <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar% {
@@ -15,7 +15,7 @@ tdfp_cat <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar
     
     # Run forecasting methods
     forecast(window(tradehts_reduced$cat, end = dx-1/12),
-             h = tail(horizons,1)*12,
+             h = horizon,
              method = "tdfp",
              fmethod = fx)
     
@@ -31,7 +31,7 @@ tdfp_reg <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar
     
     # Run forecasting methods
     forecast(window(tradehts_reduced$reg, end = dx-1/12),
-             h = tail(horizons,1)*12,
+             h = horizon,
              method = "tdfp",
              fmethod = fx)
     

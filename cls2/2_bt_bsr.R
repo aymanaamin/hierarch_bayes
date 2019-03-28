@@ -1,10 +1,10 @@
 
 rm(list = ls())
 
-source("cls/1_pars.R")
+source("cls2/1_pars.R")
 
 # create cluster for parallel processing
-cl <- makeCluster(12)
+cl <- makeCluster(cores_s)
 registerDoParallel(cl)
 
 bsr <- foreach(n = 1:length(fdate), .packages = c("hts","forecast","Matrix")) %dopar% {
@@ -18,7 +18,7 @@ bsr <- foreach(n = 1:length(fdate), .packages = c("hts","forecast","Matrix")) %d
       # Run forecasting methods
       RunBSR(object = window(tradegts_reduced2, end = dx-1/12), 
              fmethod = fx,
-             h = tail(horizons,1)*12,
+             h = horizon,
              shrinkage = "none",
              series_to_be_shrunk = c())
       

@@ -1,13 +1,13 @@
 
 rm(list = ls())
 
-source("cls/1_pars.R")
+source("cls2/1_pars.R")
 # rm(tradegts_reduced1,tradehts_reduced)
 
 tradegts_reduced2$bts[which(tradegts_reduced2$bts == 0)] <- rlnorm(length(which(tradegts_reduced2$bts == 0)),0,1)*100
 
 # create cluster for parallel processing
-cl <- makeCluster(length(fdate))
+cl <- makeCluster(cores_s)
 registerDoParallel(cl)
 
 mint <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar% {
@@ -20,7 +20,7 @@ mint <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar% {
       
       # Run forecasting methods
       forecast(window(tradegts_reduced2, end = dx-1/12),
-               h = tail(horizons,1)*12,
+               h = horizon,
                method = "comb",
                weights = "mint",
                fmethod = fx)

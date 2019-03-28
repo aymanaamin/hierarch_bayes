@@ -213,20 +213,21 @@ tab1 <- as_tibble(do.call(cbind,dm)) %>%
 
 
 ggplot(tab1, aes(x = h, y = pval, group = Reconciliation, color = Reconciliation)) +
-  geom_jitter() +
-  geom_smooth(se = F) +
+  geom_point(size = 1) +
+  geom_smooth(lwd = 0.5, se = F) +
   facet_grid(. ~ Grouping) +
   theme_bw() +
   coord_cartesian(ylim = c(0,1), expand = F) +
   scale_x_continuous(breaks = c(12,24,36)) + 
   scale_y_continuous(breaks = seq(0,1,0.2)) + 
   scale_color_manual(values = c(bpy.colors(11)[-11])) +
-  ylab("P-values of Diebold-Mariano Tests") +
+  ylab("P-Values of Diebold-Mariano Test") +
   xlab("Forecast Horizon (in Months)") +
   theme(legend.position="bottom", legend.title = element_blank())  +
   guides(fill=guide_legend(nrow=2))
 
-
+ggsave("tex/fig/fig_dm.pdf", device = "pdf",
+       width = 18, height = 10, units = "cm")
   
   
   

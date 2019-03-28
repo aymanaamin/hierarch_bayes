@@ -21,7 +21,10 @@ load("dat/tradegts_reduced2.Rdata")
 
 # Define aggregation and forecasting methods over which to loop
 fmethods <- c("ets" = "ets", "arima" = "arima", "rw" = "rw")
-fdate <- 1995:2018; names(fdate) = fdate
-horizons <- seq(1,3); names(horizons) = horizons # h = 1 means we have data until just before fdate
+fdate <- seq(1995,2018,1/12); names(fdate) = fdate
+horizon <- 36
 
 
+# Pars
+cores_l <- 24
+cores_s <- 12
