@@ -4,7 +4,6 @@ rm(list = ls())
 # Packages
 library(hts)
 library(data.table)
-library(tsfeatures)
 library(ggplot2)
 library(gridExtra)
 library(tidyverse)
@@ -21,8 +20,6 @@ source("lib/functions_model_electricity.R")
 load("dat/countries.rda")
 load("dat/tradegts_reduced1.Rdata")
 load("dat/tradehts_reduced.Rdata")
-load("dat/tradegts_imp.Rdata")
-load("dat/tradegts_reduced2_imp.Rdata")
 # tsl_imp <- as.list(aggts(tradegts_imp))
 tsl <- as.list(aggts(tradegts_reduced1))
 
@@ -30,79 +27,79 @@ tsl <- as.list(aggts(tradegts_reduced1))
 options(scipen=10)
 
 
-
-# 1. SEASONALITIES --------------------------------------------------------
-
-# Data
-yr <- 2018
-training <- window(tradegts_reduced1, end = yr-1/12)
-fc_td <- forecast(window(tradehts_reduced$reg, end = yr-1/12), h = 12, fmethod = "arima")
-
-# BSR
-fc_bsr <- RunBSR(object = training, h = 12, fmethod = "arima", shrinkage = "none")
-fcm <- as.list(aggts(fc_bsr))
-fcv <- as.list(fc_bsr$var)
-
-ts1 <- "Goods Total Lvl 1/09"
-ts2 <- "AO09"
-
-tot_m <- c(fcm[[ts1]])
-aus_m <- c(fcm[[ts2]])
-tot_v <- c(fcv[[ts1]])
-aus_v <- c(fcv[[ts2]])
-
-data <- bind_rows(tibble(series = factor("to the World", levels = c("to the World","to Australia")),
-                         rea = c(window(tsl[[ts1]], start = yr, end = yr + 11/12)),
-                         avg = tot_m,
-                         min1 = tot_m - 2.58*sqrt(tot_v),
-                         max1 = tot_m + 2.58*sqrt(tot_v),
-                         min2 = tot_m - 1.96*sqrt(tot_v),
-                         max2 = tot_m + 1.96*sqrt(tot_v),
-                         min3 = tot_m - 1.64*sqrt(tot_v),
-                         max3 = tot_m + 1.64*sqrt(tot_v),
-                         min4 = tot_m - 1.28*sqrt(tot_v),
-                         max4 = tot_m + 1.28*sqrt(tot_v),
-                         mon = as_factor(month.abb,ordered = T)),
-                  tibble(series = factor("to Australia", levels = c("to the World","to Australia")),
-                         rea = c(window(tsl[[ts2]], start = yr, end = yr + 11/12)),
-                         avg = aus_m,
-                         min1 = aus_m - 2.58*sqrt(aus_v),
-                         max1 = aus_m + 2.58*sqrt(aus_v),
-                         min2 = aus_m - 1.96*sqrt(aus_v),
-                         max2 = aus_m + 1.96*sqrt(aus_v),
-                         min3 = aus_m - 1.64*sqrt(aus_v),
-                         max3 = aus_m + 1.64*sqrt(aus_v),
-                         min4 = aus_m - 1.28*sqrt(aus_v),
-                         max4 = aus_m + 1.28*sqrt(aus_v),
-                         mon = as_factor(month.abb,ordered = T)))
-
-test <- data %>%
-  gather(state,mean, -c(series,mon,min1,max1,min2,max2,min3,max3,min4,max4)) %>% 
-  mutate(state = factor(recode(state, "rea" = "Realization in 2018", "avg" = "Forecast Mean in 2018")))
-
-
-ggplot(test, aes(x = mon, group = series)) +
-  geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
-  geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
-  geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
-  geom_ribbon(aes(ymin = min4, ymax = max4), fill = "grey70", alpha = 0.5) +
-  geom_line(aes(y = mean, group = state, color = state, linetype = state)) +
-  scale_x_discrete(expand = c(0, 0)) +
-  scale_colour_manual("", values=c("black","blue")) +
-  scale_linetype_manual("", values=c("solid","dashed")) +
-  facet_grid(series ~ ., scales = "free_y") +
-  ylab("Volume (in Mio. CHF)") +
-  xlab(NULL) +
-  theme_bw() + theme(legend.position="bottom")
-
-ggsave("tex/fig/fig_forecast.pdf", device = "pdf",
-       width = 18, height = 10, units = "cm")
-
-
-
-
-
-
+# 
+# # 1. SEASONALITIES --------------------------------------------------------
+# 
+# # Data
+# yr <- 2018
+# training <- window(tradegts_reduced1, end = yr-1/12)
+# fc_td <- forecast(window(tradehts_reduced$reg, end = yr-1/12), h = 12, fmethod = "arima")
+# 
+# # BSR
+# fc_bsr <- RunBSR(object = training, h = 12, fmethod = "arima", shrinkage = "none")
+# fcm <- as.list(aggts(fc_bsr))
+# fcv <- as.list(fc_bsr$var)
+# 
+# ts1 <- "Goods Total Lvl 1/09"
+# ts2 <- "AO09"
+# 
+# tot_m <- c(fcm[[ts1]])
+# aus_m <- c(fcm[[ts2]])
+# tot_v <- c(fcv[[ts1]])
+# aus_v <- c(fcv[[ts2]])
+# 
+# data <- bind_rows(tibble(series = factor("to the World", levels = c("to the World","to Australia")),
+#                          rea = c(window(tsl[[ts1]], start = yr, end = yr + 11/12)),
+#                          avg = tot_m,
+#                          min1 = tot_m - 2.58*sqrt(tot_v),
+#                          max1 = tot_m + 2.58*sqrt(tot_v),
+#                          min2 = tot_m - 1.96*sqrt(tot_v),
+#                          max2 = tot_m + 1.96*sqrt(tot_v),
+#                          min3 = tot_m - 1.64*sqrt(tot_v),
+#                          max3 = tot_m + 1.64*sqrt(tot_v),
+#                          min4 = tot_m - 1.28*sqrt(tot_v),
+#                          max4 = tot_m + 1.28*sqrt(tot_v),
+#                          mon = as_factor(month.abb,ordered = T)),
+#                   tibble(series = factor("to Australia", levels = c("to the World","to Australia")),
+#                          rea = c(window(tsl[[ts2]], start = yr, end = yr + 11/12)),
+#                          avg = aus_m,
+#                          min1 = aus_m - 2.58*sqrt(aus_v),
+#                          max1 = aus_m + 2.58*sqrt(aus_v),
+#                          min2 = aus_m - 1.96*sqrt(aus_v),
+#                          max2 = aus_m + 1.96*sqrt(aus_v),
+#                          min3 = aus_m - 1.64*sqrt(aus_v),
+#                          max3 = aus_m + 1.64*sqrt(aus_v),
+#                          min4 = aus_m - 1.28*sqrt(aus_v),
+#                          max4 = aus_m + 1.28*sqrt(aus_v),
+#                          mon = as_factor(month.abb,ordered = T)))
+# 
+# test <- data %>%
+#   gather(state,mean, -c(series,mon,min1,max1,min2,max2,min3,max3,min4,max4)) %>% 
+#   mutate(state = factor(recode(state, "rea" = "Realization in 2018", "avg" = "Forecast Mean in 2018")))
+# 
+# 
+# ggplot(test, aes(x = mon, group = series)) +
+#   geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
+#   geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
+#   geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
+#   geom_ribbon(aes(ymin = min4, ymax = max4), fill = "grey70", alpha = 0.5) +
+#   geom_line(aes(y = mean, group = state, color = state, linetype = state)) +
+#   scale_x_discrete(expand = c(0, 0)) +
+#   scale_colour_manual("", values=c("black","blue")) +
+#   scale_linetype_manual("", values=c("solid","dashed")) +
+#   facet_grid(series ~ ., scales = "free_y") +
+#   ylab("Volume (in Mio. CHF)") +
+#   xlab(NULL) +
+#   theme_bw() + theme(legend.position="bottom")
+# 
+# ggsave("tex/fig/fig_forecast.pdf", device = "pdf",
+#        width = 18, height = 10, units = "cm")
+# 
+# 
+# 
+# 
+# 
+# 
 
 
 # ELECTRICITY -------------------------------------------------------------
@@ -172,6 +169,35 @@ dat <- rbind(as_tibble(cbind("date" = time(window(tsl[[ts1]], start = 2002-4/12,
                add_column(fct = factor("unweighted", levels = c("weighted","unweighted"))) %>% 
                mutate(series = factor(series, levels = c("Historical Data","Realization","Reconciled Forecast Mean"))))
 
+dat[,c("min1","min2","min3","max1","max2","max3","value")] <- 
+  dat[,c("min1","min2","min3","max1","max2","max3","value")]/1e+6
+
+ggplot(dat, aes(x = date)) +
+  geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
+  geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
+  geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
+  geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
+  geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
+  geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
+  geom_line(aes(y = value, color = series, linetype = series)) +
+  scale_x_continuous(expand = c(0,0),
+                     breaks = c(2001.75,2002,2002.25,2002.5,2002.75),
+                     labels = c("Oct","Jan","Apr","Jul","Oct"),
+                     minor_breaks = seq(2001.75,2003,1/12)) +
+  geom_vline(mapping=aes(xintercept=2002), color="grey60", lty = 1, size = 0.5) +
+  scale_colour_manual("Exports of Energy Sources", values = c("blue","blue","black")) +
+  facet_grid(. ~ fct) +
+  scale_linetype_manual("Exports of Energy Sources", values = c("solid","dashed","solid")) +
+  ylab("Volume (in Mio. CHF)") +
+  xlab(NULL) +
+  theme_bw() + theme(legend.position="bottom",
+                     panel.grid.major.x = element_blank(),
+                     panel.grid.minor.x = element_blank(),
+                     panel.grid.minor.y = element_blank())
+
+
+ggsave("tex/fig/fig_electricity.pdf", device = "pdf",
+       width = 18, height = 8, units = "cm")
 
 
 ggplot(dat, aes(x = date)) +
@@ -186,16 +212,18 @@ ggplot(dat, aes(x = date)) +
                      breaks = c(2001.75,2002,2002.25,2002.5,2002.75),
                      labels = c("Oct","Jan","Apr","Jul","Oct"),
                      minor_breaks = seq(2001.75,2003,1/12)) +
-  geom_vline(mapping=aes(xintercept=2002), color="black", size = 0.25) +
+  geom_vline(mapping=aes(xintercept=2002), color="grey60", lty = 1, size = 0.5) +
   scale_colour_manual("Exports of Energy Sources", values = c("blue","blue","black")) +
   facet_grid(. ~ fct) +
   scale_linetype_manual("Exports of Energy Sources", values = c("solid","dashed","solid")) +
   ylab("Volume (in Mio. CHF)") +
   xlab(NULL) +
-  theme_bw() + theme(legend.position="bottom")
+  theme_bw() + theme(legend.position="bottom",
+                     panel.grid.major.x = element_blank(),
+                     panel.grid.minor.x = element_blank(),
+                     panel.grid.minor.y = element_blank())
 
 
-ggsave("tex/fig/fig_electricity.pdf", device = "pdf",
-       width = 18, height = 8, units = "cm")
-
+ggsave("tex/fig/fig_electricity_p.pdf", device = "pdf",
+       width = 20, height = 6, units = "cm")
 

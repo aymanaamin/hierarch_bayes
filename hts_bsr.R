@@ -7,7 +7,7 @@ library(MCMCpack)
 library(hts)
 library(Matrix)
 
-source("lib/functions_model_test.R")
+source("lib/functions_model2.R")
 
 load("dat/tradegts_reduced2.Rdata")
 load("dat/tradegts_reduced1.Rdata")
@@ -31,10 +31,10 @@ xgts_test <- window(xgts, start = test_date+1/frequency(xgts$bts), end = test_da
 
 # 2. RECONCILIATION --------------------------------------------------------
 
-results <- RunBSR_test(object = xgts_training, 
+results <- RunBSR(object = xgts_training, 
                        fmethod = "arima",
                        h = h,
-                       shrinkage = "none",
+                       shrinkage = "td",
                        series_to_be_shrunk = c(2))
 
 

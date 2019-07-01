@@ -13,12 +13,20 @@ ols <- foreach(n = 1:length(fdate), .packages = c("hts","forecast")) %dopar% {
   
   lapply(fmethods, function(fx){
     
-    # Run forecasting methods
-    forecast(window(tradegts_reduced2, end = dx-1/12),
-                      h = horizon,
-                      method = "comb",
-                      weights = "ols",
-                      fmethod = fx)
+    if(fx == "arima"){
+      
+      # Run forecasting methods
+      forecast(window(tradegts_reduced2, end = dx-1/12),
+               h = horizon,
+               method = "comb",
+               weights = "ols",
+               fmethod = fx)
+      
+    } else {
+      
+      NULL
+      
+    }
     
   })
 }

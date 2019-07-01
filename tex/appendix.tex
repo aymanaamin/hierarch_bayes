@@ -2,6 +2,15 @@
 \appendix
 \section{Appendix}
 
+\subsection{Predictability}
+\label{sec:predic}
+
+Due to the aggregation involved, top level series are usually less noisy and exhibit more predictable characteristics such as seasonality or trend. Following \cite{Kang2017}, it is possible to construct a measure of predictability for each time series by estimating principal components from a number of time series features that are commonly associated with better predictability. This includes measures such as the strength of seasonality, trend, spectral entropy and serial correlation.  On the vertical axis, Figure \ref{fig:feature} shows the first principal component, which accounts for a large share of the variation in these predictability features.
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_confetti}
+	\caption[Predictability of Different Levels in a Hierarchy]{\textbf{Predictability of Different Levels in a Hierarchy.}\textit{ Predictability is defined as the first principal component of a large number of time series characteristics.}} \label{fig:feature}
+\end{figure}
+It is evident that there exists a strong correlation between predictability and export volume. This implies that larger series and consequently those at the top of a hierarchy are easier to forecast. This finding strengthens the claim that reconciliation biases for top level series should be smaller in relative terms than those at the bottom level.\\
 
 \subsection{Robustness}
 \label{sec:robust}
@@ -18,20 +27,9 @@
 	\includegraphics[width=\textwidth]{fig/fig_eval_mase}
 	\caption[Forecast Errors of Reconciliation Methods]{\textbf{Forecast Errors of Reconciliation Methods.} \textit{Lower bars indicate better forecasts. Horizontal lines show the mean absolute scaled error of unreconciled predictions. Average of all forecast horizons.}}\label{fig:mase}
 \end{figure}
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_relative_h1}
-	\caption[Relative Accuracy of Reconciliation Methods (h = 1)]{\textbf{Relative Accuracy of Reconciliation Methods (h = 1).} \textit{Higher bars indicate better forecasts. Zero line shows the accuracy of unreconciled predictions, with a 90\% confidence interval for the ratio of mean squared errors to be one.}} \label{fig:rmseh1}
-\end{figure}
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_relative_h2}
-	\caption[Relative Accuracy of Reconciliation Methods (h = 2)]{\textbf{Relative Accuracy of Reconciliation Methods (h = 2).} \textit{Higher bars indicate better forecasts. Zero line shows the accuracy of unreconciled predictions, with a 90\% confidence interval for the ratio of mean squared errors to be one.}} \label{fig:rmseh2}
-\end{figure}
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_relative_h3}
-	\caption[Relative Accuracy of Reconciliation Methods (h = 3)]{\textbf{Relative Accuracy of Reconciliation Methods (h = 3).} \textit{Higher bars indicate better forecasts. Zero line shows the accuracy of unreconciled predictions, with a 90\% confidence interval for the ratio of mean squared errors to be one.}} \label{fig:rmseh3}
-\end{figure}
 
-\hspace{2cm}
+
+\clearpage
 
 \subsection{Data}
 \label{sec:data}

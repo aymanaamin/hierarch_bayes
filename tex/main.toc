@@ -5,14 +5,15 @@
 \contentsline {section}{\numberline {2}Bayesian Forecast Reconciliation}{4}{section.2}
 \contentsline {subsection}{\numberline {2.1}Model}{4}{subsection.2.1}
 \contentsline {subsection}{\numberline {2.2}Estimation}{5}{subsection.2.2}
-\contentsline {subsection}{\numberline {2.3}Weighting}{8}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.3}Weighting}{7}{subsection.2.3}
 \contentsline {section}{\numberline {3}Reconciliation of Export Forecasts}{10}{section.3}
 \contentsline {subsection}{\numberline {3.1}Data}{10}{subsection.3.1}
 \contentsline {subsection}{\numberline {3.2}Setup}{12}{subsection.3.2}
 \contentsline {subsection}{\numberline {3.3}Comparative Results}{13}{subsection.3.3}
 \contentsline {subsection}{\numberline {3.4}Benefits of Weighting}{18}{subsection.3.4}
 \contentsline {section}{\numberline {4}Conclusion}{19}{section.4}
-\contentsline {section}{References}{III}{section*.14}
+\contentsline {section}{References}{III}{section*.13}
 \contentsline {section}{\numberline {A}Appendix}{V}{appendix.A}
-\contentsline {subsection}{\numberline {A.1}Robustness}{V}{subsection.A.1}
-\contentsline {subsection}{\numberline {A.2}Data}{VIII}{subsection.A.2}
+\contentsline {subsection}{\numberline {A.1}Predictability}{V}{subsection.A.1}
+\contentsline {subsection}{\numberline {A.2}Robustness}{VI}{subsection.A.2}
+\contentsline {subsection}{\numberline {A.3}Data}{VIII}{subsection.A.3}

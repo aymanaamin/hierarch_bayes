@@ -83,7 +83,7 @@ tab2 <- tab %>%
                                        "Graphical Products (0.7%)" ,
                                        "Various Goods (0.6%)",
                                        "Stones and Earth (0.4%)"), ordered = T)) %>% 
-  mutate(Exports = Exports/1e+3)
+  mutate(Exports = Exports/1e+9)
 
 ggplot(tab2, aes(x = Date, y = Exports)) + 
   geom_area(aes(fill = Name)) +
@@ -95,7 +95,10 @@ ggplot(tab2, aes(x = Date, y = Exports)) +
   scale_fill_manual(values = c("white",colorRampPalette(rev(brewer.pal(9,"Blues")))(9)[-9],
                                "white","white",colorRampPalette(rev(brewer.pal(9,"Blues")))(13)[-13])) +
   theme_bw(base_size = 9) +
-  theme(legend.position="right") +
+  theme(legend.position="right",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank()) +
   guides(fill = guide_legend(title = NULL, ncol = 1))
 
 
@@ -169,7 +172,7 @@ ggsave("tex/fig/fig_confetti.pdf", device = "pdf",
 
 
 
-# TREEMAP -----------------------------------------------------------------
+# 3. TREEMAP ---------------------------------------------------------------
 
 # Get Metadata
 cntr <- as_tibble(countries) %>% 
@@ -280,74 +283,79 @@ ggplot(dat, aes(area = share2, fill = share1, label = lvl2, subgroup = lvl1)) +
 ggsave("tex/fig/fig_treemap.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
 
+ggsave("tex/fig/fig_treemap_pres.pdf", device = "pdf",
+       width = 20, height = 9, units = "cm")
 
 
 
 
-# JUNKYARD ----------------------------------------------------------------
+# PRESENTATION ------------------------------------------------------------
 
+tab_reg <- tibble("Date" = time(tsl$`Regions Total/AF`),
+                  "Europe" = tsl$`Regions Total/EU`,
+                  "North America" = tsl$`Regions Total/NA`,
+                  "East Asia" = tsl$`Regions Total/EA`,
+                  "Africa and Middle East"  = tsl$`Regions Total/AF`,
+                  "Australia and Oceania" = tsl$`Regions Total/AO`,
+                  "Central Asia" = tsl$`Regions Total/CA`,
+                  "Latin America" = tsl$`Regions Total/LA`,
+                  "South Asia" = tsl$`Regions Total/SA`) %>%
+  gather(key = Region, value = Exports, -Date) %>%
+  mutate(Exports = as.numeric(Exports)/1e+9) %>% 
+  mutate(Region = fct_reorder(factor(Region), Exports, last, .desc = T))
 
-# 
-# tab_reg <- tibble("Date" = time(tsl$`Regions Total/AF`),
-#                   "Europe (54.3%)" = tsl$`Regions Total/EU`,
-#                   "North America (16.9%)" = tsl$`Regions Total/NA`,
-#                   "East Asia (16.6%)" = tsl$`Regions Total/EA`,
-#                   "Africa and Middle East (5.6%)"  = tsl$`Regions Total/AF`,
-#                   "Australia and Oceania (1.2%)" = tsl$`Regions Total/AO`,
-#                   "Central Asia (1.4%)" = tsl$`Regions Total/CA`,
-#                   "Latin America (3.0%)" = tsl$`Regions Total/LA`,
-#                   "South Asia (1.1%)" = tsl$`Regions Total/SA`) %>%
-#   gather(key = Region, value = Exports, -Date) %>%
-#   mutate(Region = fct_reorder(factor(Region), Exports, last, .desc = T))
-# 
-# tab_cat <- tibble("Date" = time(tsl$`Goods Total Lvl 1/01`),
-#                   "Agricultural Products (4.4%)" = tsl$`Goods Total Lvl 1/01`,
-#                   "Energy Source (0.9%)" = tsl$`Goods Total Lvl 1/02`,
-#                   "Textiles (1.9%)" = tsl$`Goods Total Lvl 1/03`,
-#                   "Graphical Products (0.8%)" = tsl$`Goods Total Lvl 1/04`,
-#                   "Leather, Rubber, Plastics (1.9%)" = tsl$`Goods Total Lvl 1/05`,
-#                   "Chemicals and Pharmaceuticals (44.7%)" = tsl$`Goods Total Lvl 1/06`,
-#                   "Stones and Earth (0.4%)" = tsl$`Goods Total Lvl 1/07`,
-#                   "Metals (6.2%)" = tsl$`Goods Total Lvl 1/08`,
-#                   "Machines and Electronics (14.5%)" = tsl$`Goods Total Lvl 1/09`,
-#                   "Vehicles (2.5%)" = tsl$`Goods Total Lvl 1/10`,
-#                   "Precision Instruments (21.2%)" = tsl$`Goods Total Lvl 1/11`,
-#                   "Various Goods (0.6%)" = tsl$`Goods Total Lvl 1/12`) %>%
-#   gather(key = Categories, value = Exports, -Date) %>%
-#   mutate(Categories = fct_reorder(factor(Categories), Exports, last, .desc = T))
-# 
-# tot <- tab_cat %>% spread(key = Categories, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
-# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
-# tot <- tab_reg %>% spread(key = Region, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
-# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
+tab_cat <- tibble("Date" = time(tsl$`Goods Total Lvl 1/01`),
+                  "Agricultural Products" = tsl$`Goods Total Lvl 1/01`,
+                  "Energy Source" = tsl$`Goods Total Lvl 1/02`,
+                  "Textiles" = tsl$`Goods Total Lvl 1/03`,
+                  "Graphical Products" = tsl$`Goods Total Lvl 1/04`,
+                  "Leather, Rubber, Plastics" = tsl$`Goods Total Lvl 1/05`,
+                  "Chemicals and Pharmaceuticals" = tsl$`Goods Total Lvl 1/06`,
+                  "Stones and Earth" = tsl$`Goods Total Lvl 1/07`,
+                  "Metals" = tsl$`Goods Total Lvl 1/08`,
+                  "Machines and Electronics" = tsl$`Goods Total Lvl 1/09`,
+                  "Vehicles" = tsl$`Goods Total Lvl 1/10`,
+                  "Precision Instruments" = tsl$`Goods Total Lvl 1/11`,
+                  "Various Goods" = tsl$`Goods Total Lvl 1/12`) %>%
+  gather(key = Categories, value = Exports, -Date) %>%
+  mutate(Exports = as.numeric(Exports)/1e+9) %>% 
+  mutate(Categories = fct_reorder(factor(Categories), Exports, last, .desc = T))
 
+tot <- tab_cat %>% spread(key = Categories, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
+round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
+tot <- tab_reg %>% spread(key = Region, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
+round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
 
-# 
-# p1 <- ggplot(tab_reg, aes(x = Date, y = Exports)) +
-#   geom_area(aes(fill = Region), alpha=0.75) +
-#   scale_x_continuous(breaks = seq(1990,2015,5)) +
-#   coord_cartesian(expand = FALSE) +
-#   scale_y_continuous() +
-#   labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
-#   scale_fill_manual(values = bpy.colors(9)[-9]) +
-#   theme_bw(base_size = 9) +
-#   theme(legend.position="right") +
-#   guides(fill = guide_legend(title = "Region"))
-# 
-# p2 <-  ggplot(tab_cat, aes(x = Date, y = Exports)) +
-#   geom_area(aes(fill = Categories), alpha=0.75) +
-#   scale_x_continuous(breaks = seq(1990,2015,5)) +
-#   scale_y_continuous() +
-#   coord_cartesian(expand = FALSE) +
-#   labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
-#   scale_fill_manual(values = bpy.colors(12)) +
-#   theme_bw(base_size = 9) +
-#   theme(legend.position="right") +
-#   guides(fill = guide_legend(title = "Category"))
-# 
-# g <- arrangeGrob(p1,p2,nrow = 2)
-# grid.newpage()
-# g <- grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-# 
-# ggsave("tex/fig/fig_test.pdf", g, device = "pdf",
-#        width = 16, height = 10, units = "cm")
+ggplot(tab_reg, aes(x = Date, y = Exports)) +
+  geom_area(aes(fill = Region), alpha=0.75) +
+  scale_x_continuous(breaks = seq(1990,2015,5)) +
+  coord_cartesian(expand = FALSE) +
+  scale_y_continuous() +
+  labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
+  scale_fill_manual(values = bpy.colors(9)[-9]) +
+  theme_bw(base_size = 9) +
+  theme(legend.position="right",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  guides(fill = guide_legend(title = NULL))
+
+ggsave("tex/fig/fig_area_reg_pres.pdf", device = "pdf",
+       width = 18, height = 8, units = "cm")
+
+ggplot(tab_cat, aes(x = Date, y = Exports)) +
+  geom_area(aes(fill = Categories), alpha=0.75) +
+  scale_x_continuous(breaks = seq(1990,2015,5)) +
+  scale_y_continuous() +
+  coord_cartesian(expand = FALSE) +
+  labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
+  scale_fill_manual(values = bpy.colors(12)) +
+  theme_bw(base_size = 9) +
+  theme(legend.position="right",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  guides(fill = guide_legend(title = NULL))
+
+ggsave("tex/fig/fig_area_cat_pres.pdf", device = "pdf",
+       width = 18, height = 8, units = "cm")

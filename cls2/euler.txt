@@ -1,0 +1,21 @@
+
+ssh feckert@euler.ethz.ch
+
+bbjobs
+bbjobs -a
+
+
+module load new gcc/4.8.2 r/3.5.1
+
+bsub -n 25 -W 70:00 "R --vanilla --slave < cls2/2_bt_bu.R > results.out"
+bsub -n 25 -W 24:00 "R --vanilla --slave < cls2/2_bt_mo.R > results.out"
+bsub -n 25 -W 24:00 "R --vanilla --slave < cls2/2_bt_tdfp.R > results.out"
+bsub -n 25 -W 100:00 "R --vanilla --slave < cls2/2_bt_unrecon.R > results.out"
+bsub -n 25 -W 50:00 "R --vanilla --slave < cls2/2_bt_ols.R > results.out"
+bsub -n 25 -W 50:00 "R --vanilla --slave < cls2/2_bt_wls.R > results.out"
+bsub -n 25 -W 50:00 "R --vanilla --slave < cls2/2_bt_nseries.R > results.out"
+
+
+-- Do these on other cluster with more memory
+bsub -n 16 -W 120:00 -R "rusage[mem=8000]" "R --vanilla --slave < cls2/2_bt_bsr.R > results.out"
+bsub -n 6 -W 120:00 -R "rusage[mem=21000]" "R --vanilla --slave < cls2/2_bt_mint.R > results.out"

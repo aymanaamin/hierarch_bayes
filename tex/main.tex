@@ -105,7 +105,7 @@ We propose an approach for forecast reconciliation that extends the existing met
 \section{Bayesian Forecast Reconciliation}
 \label{sec:model}
 \subsection{Model}
-As proven extensively in \cite{Timmermann2006}, combining information from different models for the same variable improves the forecast accuracy often substantially. Recent years have seen an increase in the use of model combinations for density forecasts. Besides providing additional information about the uncertainty surrounding a measure of central tendency, density forecasts allow for the use of this uncertainty for weighting purposes. In the spirit of \cite{Kapetanios2015} or \cite{Cesur2016}, the predictive distributions of the $m$ base forecast models are approximated by drawing samples of size $n$ from the respective distributions. This results in $n$ vectors $\hat{y}_{i}$, each of length $m$, that contain a draw $i$ from each predictive distribution.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} The error term consists of two components, a prediction error $e_{i}$ and a reconciliation bias $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
+Recent years have seen an increase in the use of model combinations also for probabilistic forecasts. Besides providing additional information about the uncertainty surrounding a measure of central tendency, density forecasts allow for the use of this uncertainty for weighting purposes. In the spirit of \cite{Kapetanios2015} or \cite{Cesur2016}, the predictive distributions of the $m$ base forecast models are approximated by drawing samples of size $n$. Possible sources for obtaining these draws are posterior predictive distributions from Bayesian forecasting models, bootstrap aggregating, model pooling or simply by sampling from a fitted model. This results in $n$ vectors $\hat{y}_{i}$, each of length $m$, that contain a draw $i$ from each predictive distribution.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} The error term consists of two components, a prediction error $e_{i}$ and a reconciliation bias $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
 \begin{align}
 \label{eq:main}
 \begin{tabular}{ccccccccc}
@@ -113,63 +113,45 @@ As proven extensively in \cite{Timmermann2006}, combining information from diffe
 	$\scriptscriptstyle (m\times 1)$ & & $\scriptscriptstyle (m\times 1)$  & & $ \scriptscriptstyle (m\times q) $ & & $\scriptscriptstyle (q\times 1)$ & & $\scriptscriptstyle (m\times 1)$
 \end{tabular}
 \end{align}
-where $e$ follows a normal distribution with mean zero and covariance matrix $\Sigma$. While $\Sigma$ is not singular by definition because the forecasts in $\hat{y}_{i}$ are not reconciled, it might be near-singular if the base forecasting models are estimated jointly. In the much more common case of independently estimated univariate models, $\Sigma$ is nearly a diagonal matrix. The unreconciled forecasts $\hat{y}_{i}$ follow a multivariate normal distribution.
-\begin{align}
-\hat{y}\ |\ \alpha,\beta,\Sigma \sim N(\alpha + S\beta,\Sigma)
-\end{align}
-We are however interested in the reconciled forecasts, which can be obtained by conditioning on $\alpha = 0$. An estimate for the reconciled means is therefore given by the conditional expectation function.
+where $e$ follows a normal distribution with mean zero and covariance matrix $\Sigma$. While $\Sigma$ is not singular by definition because the forecasts in $\hat{y}_{i}$ are not reconciled, it might be near-singular if the base forecasting models are estimated jointly. In the much more common case of independently estimated univariate models, $\Sigma$ is closer to a diagonal matrix. The distribution of the reconciled forecasts can be obtained by sampling from the posterior predictive distribution conditional on $\alpha$ being equal to zero.
 \begin{align*}
-\tilde{y} &= \text{E}(S\beta\ |\ \alpha = 0,\Sigma, \hat{y}) = \int \hat{y} f_{\hat{y}|\alpha,\beta,\Sigma}(0,\beta,\Sigma)\ d\hat{y}
+p(\tilde{y}\ |\ \alpha = 0,\hat{y}, S) &= \iint p(\tilde{y}\  |\  \alpha = 0,\beta,\Sigma,\hat{y},S)\ p(\alpha = 0,\beta,\Sigma\  |\  \hat{y},S)\ d\beta\ d\Sigma
 \end{align*}
-The conditional distributions can be retrieved conveniently from the Gibbs sampling algorithm described in the following subsection. 
-
-
-\subsection{Estimation}
-To account for cross-equation correlations, the reconciliation problem in (\ref{eq:main}) can be expressed as a system of seemingly unrelated regressions (SUR). Since the explanatory variables are the same for each equation, it is a special case of the SUR model in \cite{Zellner1962}. However, the parameters are impossible to estimate directly because of perfect multicollinearity in the regressors $I_m$ and $S$. As a result, there is no unique solution available and equation (\ref{eq:main}) represents an ill-posed problem. A convenient answer to this identification issue is given by Bayesian regularization methods. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity.\\
-
-In Bayesian statistics, data is considered to be fixed and parameters are treated as random variables. The researcher has a prior belief about the distribution of the parameters in a model. After observing the data, this prior belief is combined with the likelihood according to Bayes' theorem in order to obtain the posterior distribution of the parameters. This principle can be applied to $\alpha$, $\beta$ and $\Sigma$ in the reconciliation regression.
+The joint posterior distribution of $\alpha$, $\beta$ and $\Sigma$ is obtained by combining a prior belief on the parameters with the likelihood according to Bayes' theorem.
 \begin{align}
-	f(\alpha, \beta, \Sigma\ |\ \hat{y}) \propto f(\hat{y}\ |\ \alpha, \beta, \Sigma) \times f(\alpha, \beta, \Sigma)
+p(\alpha, \beta, \Sigma\ |\ \hat{y}, S) \propto p(\hat{y}, S\ |\ \alpha, \beta, \Sigma) \times p(\alpha, \beta, \Sigma)
 \end{align}
-In other words, the posterior distribution of the bottom-level forecasts is proportional to the likelihood times the prior distribution of the parameters. The likelihood function of the data is then given by
+The likelihood function of the data is given by
 \begin{align*}
-f(\hat{y}\ &|\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i  (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right]
+p(\hat{y},S\ &|\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i  (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right]
 \end{align*}
 The joint posterior distribution is accordingly given by
 \begin{align*}
-f(\alpha,\beta,\Sigma\ |\ \hat{y}) & \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i  (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right] \\
+p(\alpha,\beta,\Sigma\ |\ \hat{y},S) & \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i  (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right] \\
 &\times \exp \left[-\frac{1}{2}(\alpha - a_0)'A_0^{-1}(\alpha - a_0)\right] \\
 &\times \exp \left[-\frac{1}{2}(\beta - b_0)'B_0^{-1}(\beta - b_0)\right] \\
 &\times \frac{1}{|\Sigma|(v_0 - m - 1)} \exp \left[-\frac{1}{2} tr(R_0^{-1}\Sigma^{-1}) \right]
 \end{align*}
-The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account when calculating the conditional expectation of $\tilde{y}$. Following \cite{Percy1992}, we get the marginal distributions by approximating the joint posterior distribution via Gibbs sampling from the conditional distributions.  Convergence is usually achieved very quickly, irrespective of the starting values. It can be verified by testing for stability in the recursive means of the Markov chains. A sufficiently large sample of draws from the joint posterior is saved and evaluated.
+The Bayesian approach has the advantage that uncertainty surrounding the parameters $\alpha$, $\beta$ and $\Sigma$ is taken into account. Following \cite{Percy1992}, we get the marginal distributions by approximating the joint posterior distribution via Gibbs sampling from the conditional distributions.  Convergence is usually achieved very quickly, irrespective of the starting values. It can be verified by testing for stability in the recursive means of the Markov chains. A sufficiently large sample of draws from the posterior predictive distribution of $\tilde{y}$ is saved and evaluated to get summary statistics such as mean and variance of the reconciled forecasts.\\
 
+
+\subsection{Estimation}
+The reconciliation problem in (\ref{eq:main}) can be expressed as a system of seemingly unrelated regressions (SUR) to account for cross-equation correlations. Since the explanatory variables are the same for each equation, it is a special case of the SUR model in \cite{Zellner1962}. However, the parameters are impossible to estimate directly because of perfect multicollinearity in the regressors $I_m$ and $S$. This is quite intuitive since there is more than one unique way to reconcile incoherent forecasts. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity and the parameters are estimated in separate Gibbs sampling steps.\\
 
 \noindent\textbf{Step 1: Draw $\beta$ conditional on $\alpha,\Sigma,\hat{y},S$}\\
 The parameter $\beta$ is the mean of the bottom level forecasts, given an appropriate aggregation matrix $S$. The conditional posterior distribution is then given by
 \begin{align}
 \beta\ |\ \alpha,\Sigma,\hat{y} &\sim N(b_1,B_1)
 \end{align}
-where
-\begin{align*}
-B_1 &= \left(\sum_i S'\Sigma^{-1}S + B_0^{-1}\right)^{-1} \\
-b_1 &= B_1 \left(\sum_i S'\Sigma^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)
-\end{align*}
-Unless there is reason to believe otherwise, the priors $b_0$ and $B_0$ should be chosen as uninformative as possible. In some cases, this regression approach leads to negative values in the reconciled bottom level forecasts. This might be a concern since many applications such as sales or exports do not allow for negative observations. This issue can be resolved in an uncomplicated fashion during the sampling process by discarding draws of $\beta$ that contain negative entries.\\
+where $B_1 = \left(\sum_i S'\Sigma^{-1}S + B_0^{-1}\right)^{-1}$ and $b_1 = B_1 \left(\sum_i S'\Sigma^{-1} (\hat{y}_i - \alpha) + B_0^{-1}b_0\right)$. Unless there is reason to believe otherwise, the priors $b_0$ and $B_0$ should be chosen as uninformative as possible. In some cases, this regression approach leads to negative values in the reconciled bottom level forecasts. This might be a concern since many applications such as sales or exports do not allow for negative observations. This issue can be resolved in an uncomplicated fashion during the sampling process by discarding draws of $\beta$ that contain negative entries.\\
 
 \noindent\textbf{Step 2: Draw $\Sigma$ conditional on $\alpha,\beta,\hat{y},S$}\\
 $\Sigma$ is the covariance matrix of the prediction errors. It will have a diagonal structure if draws are made from the base predictive distributions independently.  If a joint model is used or if the draws are reordered following \cite{Jeon2018}, $\Sigma$ may have non-zero off-diagonal elements. In the former case, it is fast and simple to draw the variances equation-by-equation from an inverse gamma distribution.  In the latter case $\Sigma$ can be drawn from an inverse Wishart distribution.
 \begin{align}
 \Sigma\ |\ \alpha,\beta,\hat{y} \sim W^{-1}(v_1,R_1)
 \end{align}
-where
-\begin{align*}
-v_1 &= v_0 + n\\
-R_1 &=  \left( R_0^{-1} + \sum_i (\hat{y}_i - \alpha - S \beta)'(\hat{y}_i - \alpha - S \beta) \right)^{-1}
-\end{align*}
-It is useful to set an almost uninformative prior with $v_0$ and $R_0$ very close to zero, which introduces a tiny bit of noise into the reconciled forecasts. This has negligible impact on the posterior distribution, but ensures that $\Sigma$ is nonsingular in the case where a base forecast has no variation. Prediction intervals can also be computed from $\Sigma$, assuming that reconciled and unreconciled forecasts have the same variation.
+where $v_1 = v_0 + n$ and $R_1 =  \left( R_0^{-1} + \sum_i (\hat{y}_i - \alpha - S \beta)'(\hat{y}_i - \alpha - S \beta) \right)^{-1}$. It is useful to set an almost uninformative prior with $v_0$ and $R_0$ very close to zero, which introduces a tiny bit of noise into the reconciled forecasts. This has negligible impact on the posterior distribution, but ensures that $\Sigma$ is nonsingular in the case where a base forecast has no variation. Prediction intervals can also be computed from $\Sigma$, assuming that reconciled and unreconciled forecasts have the same variation.\\
 
-\clearpage
 \noindent\textbf{Step 3: Draw $\alpha$ conditional on $\beta,\Sigma,\hat{y},S$}\\
 Because the reconciliation regression is an ill-posed problem, it is necessary to impose additional restrictions on the reconciliation biases $\alpha$ in order to achieve identification. The conditional distribution of $\alpha$ can be expressed equivalently by concentrating out $\beta$ in the following reconciliation identity.
 \begin{align}
@@ -190,12 +172,7 @@ It is useful to define the idempotent residual maker $M = I_m - P$. Since $M$ is
 	\label{eq:alpha}
 	\alpha\ |\ \beta,\Sigma,\hat{y} &\sim N(a_1,A_1)
 \end{align}
-where
-\begin{align*}
-	A_1 &= M\Bigg(\frac{\Sigma}{n}\Bigg)M'\\
-	a_1 &= M\Bigg(\frac{1}{n}\sum_i \hat{y}_i\Bigg) 
-\end{align*}
-The precision of this approach can be verified easily by comparing the estimate of $\alpha$ and the reconciliation biases from the fitted values. \\
+where $A_1 = M\left(\frac{\Sigma}{n}\right)M'$ and $a_1 = M\left(\frac{1}{n}\sum_i \hat{y}_i\right)$. The precision of this approach can be verified easily by comparing the estimate of $\alpha$ and the reconciliation biases from the fitted values.\\
 
 
 \subsection{Weighting}
@@ -203,7 +180,7 @@ The precision of this approach can be verified easily by comparing the estimate 
 The definition of the projection matrix $P$ is crucial for the estimated parameters. Figure \ref{fig:weights} demonstrates the impact of different projections on the estimated reconciliation biases. It features identical unreconciled forecasts of a simple hierarchy with $m=3$ series, where $Y_A + Y_B = Y_0$. For each series a sample is drawn from the predictive forecasts density, assumed to be $N(4,2)$ for $Y_A$ (shown in blue), $N(6,1)$ for $Y_B$ (shown in purple), and $N(16,3)$ for $Y_0$ (shown in yellow). The horizontal axis shows draws from the unreconciled base forecasts, which are clearly incoherent. The vertical axis on the other hand shows the means of the reconciled forecasts. The diagonal line shows values where the means of base and reconciled forecasts are equal.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_biases}
-	\caption[Weighting Schemes]{\textbf{Weighting Schemes.} \textit{The grey line indicates where the unreconciled base forecasts on the x-axis are equal to reconciled forecast means on the y-axis.}}\label{fig:weights}
+	\caption[Weighting Schemes]{\textbf{Weighting Schemes.} \small{\textit{The grey line indicates where the unreconciled base forecasts on the x-axis are equal to reconciled forecast means on the y-axis.}}}\label{fig:weights}
 \end{figure}
 Each panel corresponds to a different choice of $P$. Using $P = S(S'S)^{-1}S'$ corresponds to the orthogonal projection in an ordinary least squares regression. Subfigure (1) shows that the forecast biases for each margin are treated equally, consequently the means of $Y_A$ and $Y_B$ are adjusted upwards while the mean of $Y_0$ is adjusted downwards. Using $P = S(S'\Sigma^{-1}S)^{-1}S'\Sigma^{-1}$ implies that the reconciliation biases are weighted with the inverse of their corresponding forecast variances. This leads to a smaller adjustment in $Y_B$ (the reconciled and base means are close) relative the others since it is more accurate.\\
 
@@ -220,44 +197,35 @@ It is important to note that the likelihood is invariant to these choices. Besid
 We use a comprehensive dataset containing exports of Swiss goods. All time series cover a period from 1988 to 2018 in monthly frequency and are denominated in Swiss francs. They are not adjusted for seasonalities or calendar effects. The data can be grouped by export destination and product category. The geographical hierarchy consists of 8 regions, aggregated from 245 countries and dependent territories. The categorical hierarchy follows a national nomenclature covering 12 main economic groups and 48 subgroups\footnote{Precious metals, precious and semi-precious stones, works of art and antiques are generally omitted in business cycle research due to volatility and structural breaks.}. This leads to a grouped hierarchy with $m = 13,118$ series containing nonzero entries in total and $q = 9,483$ series at the bottom level. Figure \ref{fig:area} shows the historical development of the regional and categorical hierarchies.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_area}
-	\caption[Contribution to Swiss Exports of Goods]{\textbf{Contribution to Swiss Exports of Goods}. \textit{Nominal values, not seasonally adjusted. Average export shares of the year 2018 in parentheses.}}\label{fig:area}
+	\caption[Contribution to Swiss Exports of Goods]{\small{\textbf{Contribution to Swiss Exports of Goods}. \textit{Nominal values, not adjusted for seasonalities or calendar effects. Average export shares of the year 2018 in parentheses.}}}\label{fig:area}
 \end{figure}
 As a result of its status as a small open economy in a rapidly globalizing world, nominal Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia with around 17\% each in 2018. Exports to Africa and the Middle East, Latin America, Central and South Asia and Australia account only for about 10\% combined.
 
 The hierarchical grouping by categories is more evenly distributed, but has been subject to greater shifts in its composition. The most important categories are `Chemicals and Pharmaceuticals', `Precision Instruments' and `Machines and Electronics'. Figure \ref{fig:treemap} shows the changes in composition between 1988 and 2018.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_treemap}
-	\caption[Regional and Categorical Composition of Swiss Goods Exports]{\textbf{Regional and Categorical Composition of Swiss Goods Exports.}}\label{fig:treemap}
+	\caption[Regional and Categorical Composition of Swiss Goods Exports]{\small{\textbf{Regional and Categorical Composition of Swiss Goods Exports.}}}\label{fig:treemap}
 \end{figure}
-The two hierarchical groupings are quite different. The geographic hierarchy with 8 groups and 245 subgroups is very wide. With a majority of the export volume going to European countries, it is nevertheless highly concentrated. This has changed slightly in the past 30 years as the relative share of exports to the rest of the world has increased. The categorical hierarchy on the other hand is rather narrow with 12 groups and 48 subgroups. Compared to the regional hierarchy, the export volume is however more evenly distributed, even though an increasing concentration, particularly in chemicals and pharmaceuticals, can be noted.\\
+The two hierarchical groupings are quite different. The geographic hierarchy with 8 groups and 245 subgroups is very wide. With a majority of the export volume going to European countries, it is nevertheless highly concentrated. This has changed slightly in the past 30 years as the relative share of exports to the rest of the world has increased. The categorical hierarchy on the other hand is rather narrow with 12 groups and 48 subgroups. Compared to the regional hierarchy, the export volume is however more evenly distributed, even though an increasing concentration, particularly in chemicals and pharmaceuticals, can be noted. 
 
-Due to the aggregation involved, top level series are usually less noisy and exhibit more predictable characteristics such as seasonality or trend. Following \cite{Kang2017}, it is possible to construct a measure of predictability for each time series by estimating principal components from a number of time series features that are commonly associated with better predictability. This includes measures such as the strength of seasonality, trend, spectral entropy and serial correlation.  On the vertical axis, Figure \ref{fig:feature} shows the first principal component, which accounts for a large share of the variation in these predictability features.
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_confetti}
-	\caption[Predictability of Different Levels in a Hierarchy]{\textbf{Predictability of Different Levels in a Hierarchy.}\textit{ Predictability is defined as the first principal components of a large number of time series characteristics.}} \label{fig:feature}
-\end{figure}
-It is evident that there exists a strong correlation between predictability and export volume. This implies that larger series and consequently those at the top of a hierarchy are easier to forecast. This finding strengthens the claim that reconciliation biases for top level series should be smaller in relative terms than those at the bottom level.\\
+Furthermore, time series at upper levels in the hierarchy or with larger shares of the total export volume exhibit more predictable features such as seasonalities, trends, or linearity (see appendix \ref{sec:predic}).\\
 
 
 \subsection{Setup}
-The Bayesian framework and various competing methods are tested by forecasting each month from 1998 to 2018. The expanding training sample starts in 1988 and stops at the end of the year preceding the forecasted month. Various accuracy measures such as the root mean squared error (RMSE), mean absolute percentage error (MAPE) and mean absolute scaled error (MASE) are then calculated over all months of the year following the training sample. The MASE has the advantage of making errors comparable across levels since they are scaled the same. However, the mean squared error is arguably a more appropriate measure for accuracy since it represents the criterion to be minimized in the loss function of the underlying base forecast models. For instance, the mean squared error for the year 2000 is calculated by averaging over the forecasts for all months in the year 2000, using data until December 1999. Gaps between the training and testing samples of one and two years are tested as well in order to check the robustness of the results with different forecasting horizons.\\
+The large hierarchy of Swiss goods exports is used to test the Bayesian reconciliation framework and various competing methods. Each month from 1995 to 2015, forecasts for all series in the hierarchy are calculated for the next 36 months. For each of the 13,118 series, forecasts are calculated from three models: An autoregressive integrated moving average model (ARIMA), an exponential smoothing state space model (ETS) and a seasonal random walk model (RW). As described in \cite{Hyndman2008}, the model for each series is parametrized automatically based on the Akaike information criterion. In order to get samples from the predictive densities, $n = 1000$ sample paths are simulated from each fitted model using Gaussian errors. With the exception of the volatile period during the Great Recession, the ARIMA and ETS approaches outperform the Random Walk on average for series at every level and forecasting horizon. All results in the following subsection will therefore rely on ARIMA forecasts.\footnote{A comparison of forecasting methods, horizons and accuracy measures can be found in appendix \ref{sec:robust}.}\\
 
-For each of the 13,118 series, forecasts are calculated from three models: An autoregressive integrated moving average model (ARIMA), an exponential smoothing state space model (ETS) and a seasonal random walk model (RW). As described in \cite{Hyndman2008}, the model for each series is parametrized automatically based on the Akaike information criterion. In order to get samples from the predictive densities, $n = 1000$ sample paths are simulated from each fitted model using Gaussian errors. With the exception of the volatile period during the Great Recession, the ARIMA and ETS approaches outperform the Random Walk on average for series at every level and forecasting horizon. All results in the following subsection will therefore rely on ARIMA forecasts using an expanding training sample until the preceding year.\footnote{A comparison of forecasting methods, horizons and accuracy measures can be found in appendix \ref{sec:robust}.}\\
+These incoherent forecasts are then reconciled using several basic single-level and reconciliation methods. The single-level techniques include bottom-up, top-down and middle-out methods. The latter two can only be used for non-grouped time series and are therefore tested on the regional and categorical hierarchies separately. The optimal combination methods used are the ordinary and weighted least squares, nseries, MinT and Bayesian reconciliation (BSR). If aggregation of the prediction errors is necessary, they are weighted with their respective export share.\\
 
-The forecasts are then reconciled using several basic single-level and reconciliation methods. The single-level techniques include `bottom-up', `top-down' and `middle-out' methods. The latter two can only be used for non-grouped time series and are therefore tested on the regional and categorical hierarchies separately. The reconciliation methods tested are the ordinary and weighted least squares, nseries, MinT and Bayesian reconciliation approaches. If aggregation of the reconciliation errors is necessary, they are weighted with their respective export share.\\
-
-To test whether the difference between reconciled and unreconciled forecasts is significant, the method of \cite{Diebold1995} is used. The Diebold-Mariano test checks for significance in the difference between two squared forecast errors at various forecasting horizons, accounting for serial correlation in the squared error loss. In addition, another significance test is used to compare the mean squared errors directly. Since the prediction errors are assumed to be normally distributed, the ratio between mean squared errors of an unreconciled forecast and a specific reconciled forecast has an $F$-distribution with degrees of freedom corresponding to the number of predictions made. This allows to test for equality of the unreconciled and reconciled mean squared prediction errors.\\
+The resulting coherent forecasts are evaluated using several accuracy measures such as the root mean squared error (RMSE), mean absolute percentage error (MAPE) and mean absolute scaled error (MASE). The MASE has the advantage of making errors comparable across levels since they are scaled the same. However, the mean squared error is arguably a more appropriate measure for accuracy since it represents the criterion to be minimized in the loss function of the underlying base forecast models. The method of \cite{Diebold1995} is used to test whether reconciled forecasts are significantly more accurate than unreconciled forecasts. The Diebold-Mariano test checks for significance in the difference between two squared forecast errors at various forecasting horizons, accounting for serial correlation in the squared error loss. In addition, another significance test is used to compare the mean squared errors directly. Since the prediction errors are assumed to be normally distributed, the ratio between mean squared errors of an unreconciled forecast and a specific reconciled forecast has an $F$-distribution with degrees of freedom corresponding to the number of predictions made. This allows us to test for equality of the unreconciled and reconciled mean squared prediction errors.\\
 
 
 \subsection{Comparative Results}
-This section provides empirical evidence for the benefits of optimal hierarchical combination. It compares the performance of different reconciliation methods, explores which data characteristics profit in particular from hierarchical combination and provides an example of how selective weighting improves overall forecast accuracy.
-
-\clearpage
+This section provides empirical evidence for the benefits of optimal hierarchical combination. It compares the performance of different reconciliation methods, explores which data characteristics profit in particular from hierarchical combination and provides an example of how selective weighting improves overall forecast accuracy.\\
  
 \noindent\textbf{Benefits of Hierarchical Combination.} Figure \ref{fig:rmse} shows the accuracy of forecasts, defined as the mean squared error of the base forecasts relative to the mean squared errors of the coherent forecasts from each method. Higher bars indicate therefore better forecast performance. The 90\% confidence interval shows the acceptance region of an $F$-test for equality of the mean squared errors. It is worth noting that reconciliation methods and bottom-up forecasts are the only techniques that allow for a coherence across all levels of a grouped hierarchy. Top-down and middle-out reconciliations are not applicable in the case grouped time series.\\
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_relative}
-	\caption[Relative Accuracy of Reconciliation Methods]{\textbf{Relative Accuracy of Reconciliation Methods.} \textit{Higher bars indicate better forecasts. Zero line shows the accuracy of unreconciled predictions, with a 90\% confidence interval for the ratio of mean squared errors to be one. Average of all forecast horizons.}} \label{fig:rmse}
+	\caption[Relative Accuracy of Reconciliation Methods]{\textbf{Relative Accuracy of Reconciliation Methods.} \small{\textit{Higher bars indicate better forecasts relative to the unreconciled case. The zero line shows the accuracy of unreconciled predictions, with a 95\% confidence interval for the ratio of mean squared errors to be one. Average of all forecast horizons.}}} \label{fig:rmse}
 \end{figure}
 
 It is evident that the basic single-level methods are often unable to beat the base forecasts and are often significantly worse. The bottom-up method appears to aggregate high model bias from the lowest levels, whereas the middle-out and top-down approaches fare reasonably well at least for higher levels. Reconciliation forecasts on the other hand tend to outperform the base forecasts especially for top and middle level series, although not significantly in every instance. The nseries and OLS approaches lead to very volatile results for bottom level series with a low volume, but are still not significantly worse than the unreconciled forecasts. MinT, WLS and BSR estimators work very well for most levels. 
@@ -267,28 +235,26 @@ Lower level series appear to benefit less from forecast combination. An exceptio
 \noindent\textbf{Comparison of Combination Methods.} It is also instructive to look at the development of the relative forecasting accuracy over time in figure \ref{fig:rmse_time}. Even though optimal combination methods are more accurate on average, they do not consistently outperform the unreconciled forecasts. It also appears that MinT, WLS and BSR perform fairly similar over time. For the top level series, the benefits of reconciliation accrued mostly during times of global economic distress and corresponding appreciations of the Swiss franc. The biggest gains can be observed during the early 2000s recession following the burst of the dot-com bubble, the global financial crisis and the following sovereign debt crisis in Europe, and the sudden appreciation of the Swiss franc after the Swiss National Bank stopped supporting the currency peg to the Euro in January 2015.\\
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_time}
-	\caption[Relative Accuracy of Reconciliation Methods over Time]{\textbf{Relative Accuracy of Reconciliation Methods over Time.} \textit{Higher lines indicate better forecasts. Zero line shows the accuracy of unreconciled predictions, with a 90\% confidence interval for the ratio of mean squared errors to be one. Base forecasts are generated using ARIMA models. Average of all forecast horizons.}} \label{fig:rmse_time}
+	\caption[Relative Accuracy of Reconciliation Methods over Time]{\textbf{Relative Accuracy of Reconciliation Methods over Time.} \small{\textit{Higher lines indicate better forecasts. Zero line shows the accuracy of unreconciled predictions, with a 90\% confidence interval for the ratio of mean squared errors to be one. Base forecasts are generated using ARIMA models. Average of all forecast horizons.}}} \label{fig:rmse_time}
 \end{figure}
-
-\clearpage
 
 \noindent\textbf{Significance of Results.} In order to check whether the accuracy improvements are significant, one-sided Diebold-Mariano tests are used for the top-level series. Figure \ref{fig:dmtest} shows the p-values when testing for equality of reconciled and unreconciled forecasts. The alternative hypothesis is that the accuracy of reconciliation methods is greater. It is clear that optimal combination methods are better than single-level methods at all forecasting horizons. It appears however that the null hypothesis of equality can only be rejected at longer forecasting horizons, using any reasonable significance level. This result can be partly attributed to the fact that the top-level series is already easier to forecast without using additional information from lower level series. It confirms however the finding that reconciliation is particularly useful if the predictions are associated with more uncertainty.
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_dm}
-	\caption[Significance of Forecast Accuracy Improvements]{\textbf{Significance of Forecast Accuracy Improvements.} \textit{Test for total exports series. Points indicate p-values of Diebold-Mariano test for greater accuracy of reconciled versus unreconciled forecasts. Lines indicate locally estimated scatterplot smoothed (loess) p-values.}} \label{fig:dmtest}
+	\caption[Significance of Forecast Accuracy Improvements]{\textbf{Significance of Forecast Accuracy Improvements.} \small{\textit{Test for total exports series. Points indicate p-values of Diebold-Mariano test for greater accuracy of reconciled versus unreconciled forecasts. Lines indicate locally estimated scatterplot smoothed (loess) p-values.}}} \label{fig:dmtest}
 \end{figure}
 
 
 \noindent\textbf{Implications for Data Characteristics.} Another way to dissect the results is to see the characteristics of time series that see the greatest gains in forecast accuracy from using reconciliation. Figure \ref{fig:eval_regions} provides an overview of the relative forecast accuracy by geographical classification, using the Bayesian reconciliation framework. It is again obvious that reconciled forecasts are on average more accurate than in the unreconciled case, but not in every instance. It appears that series with a larger export volume benefit most from reconciliation. Forecasts of exports to countries in Europe, North America and East Asia are almost entirely better off than in the unreconciled case, whereas forecasts of exports to countries with a lower share, such as the islands in Oceania, tend to be worse off. In addition, time series at higher levels in a hierarchy do not necessarily profit more from reconciliation than their corresponding subcategories.
  \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_regions}
-	\caption[Relative Accuracy of Reconciliation Methods by Regions]{\textbf{Relative Accuracy of Reconciliation Methods by Regions.} \textit{Higher points indicate better forecasts. Zero line shows the accuracy of unreconciled predictions. Reconciliation using unweighted BSR.}}\label{fig:eval_regions}
+	\caption[Relative Accuracy of Reconciliation Methods by Regions]{\textbf{Relative Accuracy of Reconciliation Methods by Regions.} \small{\textit{Higher points indicate better forecasts. Zero line shows the accuracy of unreconciled predictions. Reconciliation using unweighted BSR.}}}\label{fig:eval_regions}
 \end{figure}
 The same results also hold true for the relative forecast accuracy by categories, as shown in figure \ref{fig:eval_categories}. Because the export shares in the categorical hierarchy are more evenly distributed, the pattern of smaller export volumes being worse off due to reconciliation is less pronounced.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_categories}
-	\caption[Relative Accuracy of Reconciliation Methods by Categories]{\textbf{Relative Accuracy of Reconciliation Methods by Categories.} \textit{Higher points indicate better forecasts. Zero line shows the accuracy of unreconciled predictions. Reconciliation using unweighted BSR.}}\label{fig:eval_categories}
+	\caption[Relative Accuracy of Reconciliation Methods by Categories]{\textbf{Relative Accuracy of Reconciliation Methods by Categories.} \small{\textit{Higher points indicate better forecasts. Zero line shows the accuracy of unreconciled predictions. Reconciliation using unweighted BSR.}}}\label{fig:eval_categories}
 \end{figure}
 The category 'energy source`, which exhibits a structural break in the year 2002 with the inclusion of a subcategory 'electrical energy`, is neither on average nor in the year 2002 more accurate than in the unreconciled case. This implies that in the event of misspecified models, the forecast combination improves the accuracy of the remaining hierarchy rather than the misspecified forecast. The results for other optimal combination methods such as weighted least squares and MinT are very similar.\\
 
@@ -296,10 +262,10 @@ The category 'energy source`, which exhibits a structural break in the year 2002
 
 
 \subsection{Benefits of Weighting}\label{sec:resweight}
-An advantage of the general weighting scheme is that selected series can be shrunk towards their base forecast. This is particularly useful if there exists judgmental information for a particular forecast that would require adjustments for all other base forecasts in a hierarchy. An example is the reclassification of electricity as a good instead of a service. Figure \ref{fig:fcex} shows total exports of energy sources for unweighted and weighted reconciliation.
+An advantage of the general weighting scheme is that selected series can be shrunk towards their base forecast. This is particularly useful if there exists judgmental information for a specific forecast that would require adjustments for all other base forecasts in a hierarchy. An example is the reclassification of electricity as a good instead of a service. Figure \ref{fig:fcex} shows total exports of energy sources for unweighted and weighted reconciliation.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_electricity}
-	\caption[Forecast with Bias Weighting]{\textbf{Forecast with Bias Weighting}. \textit{Grey ribbons indicate 90\%, 95\% and 99\% prediction intervals.}}\label{fig:fcex}
+	\caption[Forecast with Bias Weighting]{\small{\textbf{Forecast with Bias Weighting}. \textit{Grey ribbons indicate 90\%, 95\% and 99\% prediction intervals.}}}\label{fig:fcex}
 \end{figure}
 After observing the first value including electric energy in January 2002, a random walk forecast is used for this particular series. Then the series are reconciled with and without an appropriate weighting scheme. For the unweighted model on the right, the other base forecasts assume the structural break to be an outlier and dominate the information from the random walk forecast. Even though the forecaster has prior knowledge that the random walk forecast is accurate, it is overruled in the reconciliation procedure. The only way out would be to adjust the base forecasts for all other series as well, which is very cumbersome.
 
