@@ -10,6 +10,7 @@ library(gridExtra)
 library(tidyverse)
 library(dplyr)
 library(sp)
+library(scales)
 
 # Options
 options(scipen=10)
@@ -23,6 +24,8 @@ tsl <- as.list(aggts(tradegts_reduced2)/1e+9)
 weights <- sapply(tsl, function(x) mean(window(x, start = 1998))/mean(window(tsl$Total, start = 1998)))
 names(weights)[grepl("/",names(weights))] <- sapply(strsplit(names(weights)[grepl("/",names(weights))],"/"),`[`,2)
 rm(tsl)
+
+
 
 
 
@@ -102,6 +105,91 @@ ggplot() +
 
 ggsave("tex/fig/fig_eval_mase.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
+
+
+
+
+
+
+
+# MAPE BY RECONCILIATION METHOD AND LEVEL ---------------------------------
+
+# x = reconciliation methods, y = accuracy
+tab <- tabs$MAPE %>% 
+  gather(key = level, value = accuracy, -c(date,recon,fmethod)) %>% 
+  filter(fmethod == "arima") %>% 
+  group_by(recon,level) %>%
+  summarise(accuracy = mean(accuracy)) %>% 
+  mutate(reg_lvl = factor(case_when(
+    level == "Total" ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 3 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+    nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == T ~ "Region",
+    nchar(level) %in% c(4,5) & grepl("^[A-Za-z]+$", level) == F ~ "Region",
+    nchar(level) == 4 & grepl("^[A-Za-z]+$", level) == T ~ "Country",
+    nchar(level) > 5 & grepl("^[A-Za-z]+$", level) == F ~ "Country"),
+    levels = c("World","Region","Country"), ordered = T),
+    cat_lvl = factor(case_when(
+      level == "Total" ~ "Total",
+      nchar(level) %in% c(2,4) & grepl("^[A-Za-z]+$", level) == T ~ "Total",
+      nchar(level) %in% c(2) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(4,6) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+      nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
+      levels = c("Total","Category","Subcategory"), ordered = T)) %>% 
+  mutate(Reconciliation = factor(recon,
+                                 levels = c("unrecon","bu","mo_cat","mo_reg","tdfp_cat","tdfp_reg",
+                                            "mint","wls","ols","nseries","bsr"),
+                                 labels = c(" Unreconciled "," Bottom-Up "," Middle-Out (Categories) ", 
+                                            " Middle-Out (Regions) ", " Top-Down (Categories)  ",
+                                            " Top-Down (Regions) ", " MinT    "," WLS    ",
+                                            " OLS    "," nseries"," BSR    "),
+                                 ordered = T),
+         Grouping = recode(recon,
+                           "bu" = "Basic",
+                           "mo_cat" = "Basic",
+                           "mo_reg" = "Basic",
+                           "tdgsa_cat" = "Basic",
+                           "tdgsa_reg" = "Basic",
+                           "tdgsf_reg" = "Basic",
+                           "tdgsf_cat" = "Basic",
+                           "tdfp_reg" = "Basic",
+                           "tdfp_cat" = "Basic",
+                           "ols" = "Optimal",
+                           "wls" = "Optimal",
+                           "nseries" = "Optimal",
+                           "mint" = "Optimal",
+                           "bsr" = "Optimal",
+                           "unrecon" = "Basic"))
+tab$accuracy[which(tab$accuracy > 500)] <- NA
+
+tab2 <- tab %>% 
+  add_column(weights = sapply(tab$level, function(x) weights[which(names(weights) == x)])) %>% 
+  mutate(acc_weighted = accuracy*weights) %>% 
+  group_by(Reconciliation,reg_lvl,cat_lvl,Grouping) %>%
+  summarise(Accuracy = sum(acc_weighted, na.rm=T))
+
+
+
+ggplot() +
+  geom_hline(data = filter(tab2, Reconciliation == " Unreconciled "),
+             aes(yintercept=Accuracy), color = "darkgrey") +
+  geom_bar(data = filter(tab2, Reconciliation != " Unreconciled "),
+           aes(x=Grouping, y=Accuracy, fill = Reconciliation),
+           colour="black", lwd = 0.25, stat="identity", position = position_dodge()) +
+  facet_grid(reg_lvl ~ cat_lvl, switch = "y") +
+  # scale_y_continuous(position = "right", breaks = seq(0,100)) +
+  scale_fill_manual(values = c(bpy.colors(11)[-11])) +
+  ylab("Forecast Error (MAPE)") +
+  xlab("Reconciliation Methods") +
+  theme_bw() +
+  # coord_cartesian(ylim = c(1,2.5)) +
+  theme(legend.position="bottom", legend.title = element_blank())  +
+  guides(fill=guide_legend(nrow=2))
+
+ggsave("tex/fig/fig_eval_mape.pdf", device = "pdf",
+       width = 18, height = 12, units = "cm")
+
+
 
 
 
@@ -422,13 +510,14 @@ ggplot(tab_bottom, aes(x=as.numeric(date), y=accuracy, group = Method, size = Me
   scale_x_continuous(breaks = seq(2000, 2015, by = 5),
                      labels = c("2000","2005","2010","2015"),
                      expand = c(0,0)) +
+  scale_y_continuous(labels = scientific) +
   theme_bw() +
   theme(legend.position="bottom",
         panel.grid.minor.x = element_blank())
 
 
 ggsave("tex/fig/fig_eval_methods_bottom.pdf", device = "pdf",
-       width = 18, height = 6, units = "cm")
+       width = 18, height = 10, units = "cm")
 
 
 ggplot(tab_top, aes(x=as.numeric(date), y=accuracy, group = Method, size = Method)) + 
@@ -439,12 +528,13 @@ ggplot(tab_top, aes(x=as.numeric(date), y=accuracy, group = Method, size = Metho
   ylab("Forecast Accuracy") +
   xlab("Forecasted Period") +
   scale_x_continuous(breaks = seq(1998, 2018, by = 4), labels = seq(1998, 2018, by = 4)) +
+  scale_y_continuous(labels = scientific) +
   theme_bw() +
   theme(legend.position="bottom",
         panel.grid.minor.x = element_blank())
 
 ggsave("tex/fig/fig_eval_methods_top.pdf", device = "pdf",
-       width = 18, height = 6, units = "cm")
+       width = 18, height = 10, units = "cm")
 
 
 

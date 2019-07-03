@@ -127,8 +127,7 @@ RunReconciliation <- function(S, forecasts.list, pars){
     alpha <- M %*% Y_mean
     
     # 2. Compute Beta
-    B1  <- solve(pars$n*(t(S) %*% solve(Sigma) %*% S))
-    beta <- B1 %*% (pars$n*(t(S) %*% solve(Sigma) %*% (Y_mean - alpha)))
+    beta <- solve(crossprod(S), crossprod(S, Y_mean - alpha))
 
     # Compute discrete statistics of posterior distribution
     results <- list("beta" = beta)
