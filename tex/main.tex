@@ -54,37 +54,6 @@ The data we consider are an example of {\em hierarchical time series}; as a resu
 	\caption[Simple Example of a Grouped Hierarchy]{\textbf{Simple Example of a Grouped Hierarchy.}}
 	\label{fig:tree}
 \end{figure}
-%In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ to be an $m$-vector that stacks observations at time $t$ from all series, $Y_{k,t}$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$  aggregation matrix.  In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
-%\begin{align*}
-%	\underset{(m\times 1)}{Y_t} = \begin{bmatrix}
-%		\ Y_0\ \ \\
-%		\ Y_A\ \ \\
-%		\ Y_B\ \ \\
-%		\ Y_1\ \ \\
-%		\ Y_2\ \ \\
-%		\ Y_{A1}\ \ \\
-%		\ Y_{A2}\ \ \\
-%		\ Y_{B1}\ \ \\
-%		\ Y_{B2}\ \ 
-%	\end{bmatrix} \quad \underset{(m\times q)}{S} &=
-%	\begin{bmatrix}
-%		\ 1 & 1 & 1 & 1 \ \ \\
-%		\ 1 & 1 & 0 & 0 \ \ \\
-%		\ 0 & 0  & 1 & 1\ \ \\
-%		\ 1 & 0 & 1 & 0 \ \ \\
-%		\ 0 & 1 & 0 & 1\ \ \\
-%		\ 1 & 0 & 0 & 0 \ \ \\
-%		\ 0 & 1 & 0 & 0 \ \ \\
-%		\ 0 & 0 & 1 & 0 \ \ \\
-%		\ 0 & 0 & 0 & 1\ \ 
-%	\end{bmatrix} \quad \underset{(q\times 1)}{Y_{k,t}} = \begin{bmatrix}
-%		\ Y_{A1}\ \ \\
-%		\ Y_{A2}\ \ \\
-%		\ Y_{B1}\ \ \\
-%		\ Y_{B2}\ \ 
-%	\end{bmatrix} 
-%\end{align*}
-%Here, and in general, the matrix $S$ is defined so that $Y_t = S Y_{k,t}$ holds for all realized data. 
 
 Since it is known that all future realisations of the data will adhere to the constraints implied by the aggregation structure, a desirable property of any forecasts is that they also respect these constraints.  Such forecasts are referred to as {\em coherent forecasts}.  In the case of Swiss exports, incoherent forecasts are problematic because they lead to contradictory conclusions, and non-aligned decision making.  
 
@@ -126,9 +95,41 @@ It is evident that there exists a strong correlation between predictability and 
 \section{Forecast Reconciliation}
 \label{sec:methods}
 
-\subsection{Exiting Methods}
+\subsection{Existing Forecast Reconciliation Methods}
 	
-\cite{Hyndman2011} considered a framework whereby forecasts for all $m$ series and at all levels are produced, referring to these as `base forecasts'.  To reconcile these base forecasts, \cite{Hyndman2011} assumed the following regression structure.
+In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ to be an $m$-vector that stacks observations at time $t$ from all series, $Y_{k,t}$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$  aggregation matrix.  In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
+\begin{align*}
+	\underset{(m\times 1)}{Y_t} = \begin{bmatrix}
+		\ Y_0\ \ \\
+		\ Y_A\ \ \\
+		\ Y_B\ \ \\
+		\ Y_1\ \ \\
+		\ Y_2\ \ \\
+		\ Y_{A1}\ \ \\
+		\ Y_{A2}\ \ \\
+		\ Y_{B1}\ \ \\
+		\ Y_{B2}\ \ 
+	\end{bmatrix} \quad \underset{(m\times q)}{S} &=
+	\begin{bmatrix}
+		\ 1 & 1 & 1 & 1 \ \ \\
+		\ 1 & 1 & 0 & 0 \ \ \\
+		\ 0 & 0  & 1 & 1\ \ \\
+		\ 1 & 0 & 1 & 0 \ \ \\
+		\ 0 & 1 & 0 & 1\ \ \\
+		\ 1 & 0 & 0 & 0 \ \ \\
+		\ 0 & 1 & 0 & 0 \ \ \\
+		\ 0 & 0 & 1 & 0 \ \ \\
+		\ 0 & 0 & 0 & 1\ \ 
+	\end{bmatrix} \quad \underset{(q\times 1)}{Y_{k,t}} = \begin{bmatrix}
+		\ Y_{A1}\ \ \\
+		\ Y_{A2}\ \ \\
+		\ Y_{B1}\ \ \\
+		\ Y_{B2}\ \ 
+	\end{bmatrix} 
+\end{align*}
+Here, and in general, the matrix $S$ is defined so that $Y_t = S Y_{k,t}$ holds for all realized data. 
+	
+\cite{Hyndman2011} considered a framework whereby forecasts for all $m$ series and at all levels are produced, referring to these as `base forecasts'.  To reconcile these base forecasts, the following regression structure was assumed.
 \begin{align}
 	Y_t(h) &= S\beta_{h} + e_t(h)
 	\label{eq:regstruct}
@@ -144,7 +145,10 @@ This choice minimizes the generalized Euclidean distance between $Y_t(h)$ and th
 
 \subsection{Bayesian Framework}
 \label{sec:model}
-Recent years have seen an increase in the use of model combinations also for probabilistic forecasts. Besides providing additional information about the uncertainty surrounding a measure of central tendency, density forecasts allow for the use of this uncertainty for weighting purposes. In the spirit of \cite{Kapetanios2015} or \cite{Cesur2016}, the predictive distributions of the $m$ base forecast models are approximated by drawing samples of size $n$. Possible sources for obtaining these draws are posterior predictive distributions from Bayesian forecasting models, bootstrap aggregating, model pooling or simply by sampling from a fitted model. This results in $n$ vectors $\hat{y}_{i}$, each of length $m$, that contain a draw $i$ from each predictive distribution.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} The error term consists of two components, a prediction error $e_{i}$ and a reconciliation bias $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
+
+We now propose a new methodology for forecast reconciliation.  The main insight is to recognise that additional information about the uncertainty surrounding a measure of central tendency, can be provided by generating base forecasts from density forecasts.   In the spirit of \cite{Kapetanios2015} or \cite{Cesur2016}, the predictive distributions of the $m$ base forecast models are approximated by drawing samples of size $n$. Possible sources for obtaining these draws are posterior predictive distributions from Bayesian forecasting models, bootstrap aggregating, model pooling or simply by sampling from a fitted model. This results in $n$ vectors $\hat{y}_{i}$, each of length $m$, that contain a draw $i$ from each predictive distribution.\footnote{Since every forecast horizon is reconciled independently, the time subscripts are dropped from now on to simplify notation.} 
+
+This allows the regression model from Equation~\ref{eq:regstruct} to be recast as a panel regression.  The error term consists of two components, a prediction error $e_{i}$ and a reconciliation bias $\alpha$. The latter can be interpreted as a fixed effect that is unique to each forecasted variable. In other terms, $\alpha$ is the difference between the unreconciled forecast mean $\hat{y}$ and the reconciled forecast mean $\tilde{y}$. The interpretation of $\beta$ depends on the definition of $S$, but in general it estimates the mean of the bottom level reconciled forecasts. The following equation can then be used to model the forecast reconciliation.
 \begin{align}
 \label{eq:main}
 \begin{tabular}{ccccccccc}
