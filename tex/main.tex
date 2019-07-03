@@ -126,9 +126,9 @@ It is evident that there exists a strong correlation between predictability and 
 \section{Forecast Reconciliation}
 \label{sec:methods}
 
-\subsection{Conventional Methods}
+\subsection{Exiting Methods}
 	
-As an alternative, \cite{Hyndman2011} considered a framework whereby forecasts for all $m$ series and at all levels are produced, referring to these as `base forecasts'.  However, since different, potentially misspecified models are used for individual series, forecasts produced in this fashion are typically incoherent. To reconcile these base forecasts, \cite{Hyndman2011} assumed the following regression structure.
+\cite{Hyndman2011} considered a framework whereby forecasts for all $m$ series and at all levels are produced, referring to these as `base forecasts'.  To reconcile these base forecasts, \cite{Hyndman2011} assumed the following regression structure.
 \begin{align}
 	Y_t(h) &= S\beta_{h} + e_t(h)
 	\label{eq:regstruct}
