@@ -54,37 +54,46 @@ The data we consider are an example of hierarchical time series; as a result of 
 	\caption[Simple Example of a Grouped Hierarchy]{\textbf{Simple Example of a Grouped Hierarchy.}}
 	\label{fig:tree}
 \end{figure}
-In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ to be an $m$-vector that stacks observations at time $t$ from all series, $Y_{k,t}$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$  aggregation matrix.  In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
-\begin{align*}
-	\underset{(m\times 1)}{Y_t} = \begin{bmatrix}
-		\ Y_0\ \ \\
-		\ Y_A\ \ \\
-		\ Y_B\ \ \\
-		\ Y_1\ \ \\
-		\ Y_2\ \ \\
-		\ Y_{A1}\ \ \\
-		\ Y_{A2}\ \ \\
-		\ Y_{B1}\ \ \\
-		\ Y_{B2}\ \ 
-	\end{bmatrix} \quad \underset{(m\times q)}{S} &=
-	\begin{bmatrix}
-		\ 1 & 1 & 1 & 1 \ \ \\
-		\ 1 & 1 & 0 & 0 \ \ \\
-		\ 0 & 0  & 1 & 1\ \ \\
-		\ 1 & 0 & 1 & 0 \ \ \\
-		\ 0 & 1 & 0 & 1\ \ \\
-		\ 1 & 0 & 0 & 0 \ \ \\
-		\ 0 & 1 & 0 & 0 \ \ \\
-		\ 0 & 0 & 1 & 0 \ \ \\
-		\ 0 & 0 & 0 & 1\ \ 
-	\end{bmatrix} \quad \underset{(q\times 1)}{Y_{k,t}} = \begin{bmatrix}
-		\ Y_{A1}\ \ \\
-		\ Y_{A2}\ \ \\
-		\ Y_{B1}\ \ \\
-		\ Y_{B2}\ \ 
-	\end{bmatrix} 
-\end{align*}
-Here, and in general, the matrix $S$ is defined so that $Y_t = S Y_{k,t}$ holds for all realized data. Forecasts typically do not fulfill these hierarchical constraints. In the case of Swiss exports, incoherent forecasts are problematic because they lead to contradictory conclusions, especially in the presence of multiple seasonalities, and create problems in further processing. Earlier literature such as \cite{Gross1990} solved this problem by forecasting only a single level in a hierarchy and subsequently constructing the remaining forecasts according to the hierarchical structure. \cite{Hyndman2011} forecast all series in a hierarchy and perform an ex-post adjustment to ensure coherence with these constraints. They show that this combination of predictions from all levels can lead to significant improvements in forecast accuracy~\citep[see][and references therein]{Wickramasuriya2015}. Despite these successes, existing methodologies for making this adjustment, hereafter referred to as `forecast reconciliation', suffer from some shortcomings.  First, an important theoretical assumption to ensure the optimality of forecast reconciliation is that forecasts are unbiased prior to reconciliation.  Often this assumption will fail to hold in practice.  Second, existing reconciliation methods combine forecasts of different series in a way that is backwards looking - depending on past in-sample forecast errors.  However, in some cases, practitioners may have information that forecasting models may break down even though they have performed well in the past. In this case, some judgmental adjustment of reconciliation methods may be desirable.  The backwards-looking nature of existing reconciliation methods also makes it difficult to exploit information from the entire predictive density of a forecast target. Third, reconciliation may lead to negative predictions which is highly undesirable in applications such as export forecasts.\\
+%In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ to be an $m$-vector that stacks observations at time $t$ from all series, $Y_{k,t}$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$  aggregation matrix.  In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
+%\begin{align*}
+%	\underset{(m\times 1)}{Y_t} = \begin{bmatrix}
+%		\ Y_0\ \ \\
+%		\ Y_A\ \ \\
+%		\ Y_B\ \ \\
+%		\ Y_1\ \ \\
+%		\ Y_2\ \ \\
+%		\ Y_{A1}\ \ \\
+%		\ Y_{A2}\ \ \\
+%		\ Y_{B1}\ \ \\
+%		\ Y_{B2}\ \ 
+%	\end{bmatrix} \quad \underset{(m\times q)}{S} &=
+%	\begin{bmatrix}
+%		\ 1 & 1 & 1 & 1 \ \ \\
+%		\ 1 & 1 & 0 & 0 \ \ \\
+%		\ 0 & 0  & 1 & 1\ \ \\
+%		\ 1 & 0 & 1 & 0 \ \ \\
+%		\ 0 & 1 & 0 & 1\ \ \\
+%		\ 1 & 0 & 0 & 0 \ \ \\
+%		\ 0 & 1 & 0 & 0 \ \ \\
+%		\ 0 & 0 & 1 & 0 \ \ \\
+%		\ 0 & 0 & 0 & 1\ \ 
+%	\end{bmatrix} \quad \underset{(q\times 1)}{Y_{k,t}} = \begin{bmatrix}
+%		\ Y_{A1}\ \ \\
+%		\ Y_{A2}\ \ \\
+%		\ Y_{B1}\ \ \\
+%		\ Y_{B2}\ \ 
+%	\end{bmatrix} 
+%\end{align*}
+%Here, and in general, the matrix $S$ is defined so that $Y_t = S Y_{k,t}$ holds for all realized data. 
+
+Since it is known that all future realisations of the data will adhere to the constraints implied by the aggregation structure, a desirable property of any forecasts is that they also respect these constraints.  Such forecasts are referred to as {\em coherent forecasts}.  In the case of Swiss exports, incoherent forecasts are problematic because they lead to contradictory conclusions, especially in the presence of multiple seasonalities, and create problems in further processing.  
+
+There are a number of strategies that can be employed to ensure coherent forecasts.  Earlier literature such as \cite{Gross1990} forecast only a single level in a hierarchy and subsequently constructing the remaining forecasts according to the hierarchical structure.  For instance the bottom up approach will produce forecasts of the most disaggregate series and then add these up to produce forecasts of the full hierarchy.  A major shortcoming of this approach is that disaggregate series tend to be very noisy and there is a high risk of model mis-specification.  For example features such as seasonality may be difficult to identify in the bottom level series, despite being clearly present in the aggregate series.  To address this shortcoming the top-down method forecasts the most aggregate series with disaggregate series obtained by dividing this total forecast according to either historical or forecast proportions.  The middle-out method represents a compromise between these two approaches, producing forecasts at some middle level and using the bottom-up approach to obtain forecasts of all higher levels in the hierarchy and top-down to forecast lower levels in the hierarchy.  A major shortcoming of the top-down and middle-out methods is that they involve some information loss by ignoring bottom level series.  Furthermore they are not easily applied to the grouped hierarchical structure present in our data.
+
+Over the past decade there has been a tendency towards producing forecasts for all series in the hierarchy.  Depending on how these are produced they may no longer adhere to aggregation constraints.  Forecast reconciliation, introduced by \cite{Hyndman2011} performs an ex-post adjustment to ensure forecasts are coherent. This adjustment effectively combines predictions from all levels and in doing so `hedges' against misspecification error when producing forecasts at all levels.  There is now substantial theoretical and empirical evidence that forecast reconciliation can significantly improvements forecast accuracy~\citep[see][and references therein]{Wickramasuriya2015}. The first contribution of our own paper is therefore to apply existing reconciliation methods to the problem of forecasting Swiss export data.
+
+
+Despite these successes, existing methodologies for making this adjustment, hereafter referred to as `forecast reconciliation', suffer from some shortcomings.  First, an important theoretical assumption to ensure the optimality of forecast reconciliation is that forecasts are unbiased prior to reconciliation.  Often this assumption will fail to hold in practice.  Second, existing reconciliation methods combine forecasts of different series in a way that is backwards looking - depending on past in-sample forecast errors.  However, in some cases, practitioners may have information that forecasting models may break down even though they have performed well in the past. In this case, some judgmental adjustment of reconciliation methods may be desirable.  The backwards-looking nature of existing reconciliation methods also makes it difficult to exploit information from the entire predictive density of a forecast target. Third, reconciliation may lead to negative predictions which is highly undesirable in applications such as export forecasts.\\
 
 We propose an approach for forecast reconciliation that extends the existing methodology, detailed in Section \ref{sec:methods}. The main innovation is to convert the general reconciliation equation into a panel regression. Rather than using a single vector of point forecasts as the dependent variable, we draw samples from the predictive densities of the base forecast models. This panel regression is estimated using Bayesian Markov Chain Monte Carlo algorithms. Our approach has a number of benefits relative to the existing methodology. First, reconciliation biases in the base forecasts are made explicit by introducing fixed effects into the panel regression structure. This overcomes a major weakness of existing approaches which require base forecasts to be unbiased to ensure that reconciliation is optimal. Second, we propose a mechanism for down-weighting the influence of particular series irrespective of past forecasting performance. This is valuable if forecasters have strong judgmental reasons for believing that a particular model will work particularly well in the future and other base forecasts will be less reliable. Third, under our approach, the weights used in reconciliation can depend on the variances of the predictive density rather than in-sample forecast errors. Existing approaches essentially determine weights based on estimates of the unconditional variance. Our innovation is therefore particularly promising for forecasting models that allow for conditional heteroskedasticity. Fourth, the Bayesian estimation procedure conveniently allows the incorporation of prior information to solve issues such as the occurrence of negative reconciled forecasts. Section \ref{sec:appl} provides a detailed comparison of the method with existing reconciliation techniques using a comprehensive hierarchical dataset of Swiss goods exports. Section~\ref{sec:conc} concludes.
 
