@@ -3,7 +3,7 @@
 
 \pagenumbering{Roman}
 
-\title{\huge Bayesian Forecast Reconciliation}
+\title{\huge Forecasting Swiss Exports using Bayesian Forecast Reconciliation}
 
 \author[$\dagger$]{Florian Eckert}
 \author[$\ddagger$]{Rob J. Hyndman}
@@ -14,7 +14,7 @@
 
 \maketitle
 \begin{abstract}
-This paper contributes to the literature on optimal hierarchical forecast combination by introducing a Bayesian reconciliation framework. It allows for an explicit estimation of the reconciliation biases, which leads to several innovations: It is possible to use prior judgment to assign weights to specific forecasts, the occurence of negative reconciled forecasts can be ruled out and prediction intervals can be easily computed. The method is compared to existing reconciliation techniques using a comprehensive hierarchical dataset of Swiss goods exports, grouped by geographical and categorical characteristics.\\
+This paper conducts an extensive forecasting study on 13,118 time series measuring Swiss exports grouped by export destination and product category.  Due to the fact that some series are aggregates of others, to ensure that economic agents make aligned decisions, it is critical that forecasts cohere with known constraints.  To achieve this we apply existing state of the art methods in forecast reconciliation.  In addition, we also introduce a novel Bayesian reconciliation framework. The Bayesian approach allows for explicit estimation of reconciliation biases, leading to several innovations: It is possible to use prior judgment to assign weights to specific forecasts and the occurrence of negative reconciled forecasts can be ruled out. Overall we find strong evidence that in addition to producing coherent forecasts, forecast reconciliation also leads to improvements in forecast accuracy.  Forecast reconciliation also outperform alternative approaches such as the simple aggregation of bottom level forecasts.\\
 
 \noindent \textbf{JEL Classification:} C32, C53, E17 \\
 \noindent \textbf{Keywords}: Hierarchical Forecasting, Aggregation, Regularization, Forecast Reconciliation, Optimal Forecast Combination.
