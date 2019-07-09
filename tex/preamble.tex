@@ -9,7 +9,7 @@
 \usepackage{amsmath,amssymb,epsfig,amsthm,amsfonts,bbm,textcomp}
 
 % Grafiken
-\usepackage[font=normalsize,aboveskip=0pt,belowskip=0pt,labelfont=bf]{caption}
+\usepackage[font=small,aboveskip=0pt,belowskip=0pt,labelfont=bf,textfont=bf]{caption}
 \captionsetup{justification=justified,singlelinecheck=false}
 \usepackage[edges]{forest}
 \usepackage{tikz}
@@ -55,5 +55,7 @@
 % Spacing around headings
 \usepackage[compact]{titlesec}
 
+% Captions
+\def\captionab#1#2{\caption[#1]{#1. \normalfont\textit{#2}}}
 
 
