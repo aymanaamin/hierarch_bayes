@@ -93,7 +93,7 @@ It is evident that there exists a strong correlation between predictability and 
 
 \subsection{Existing Forecast Reconciliation Methods}
 
-In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ to be an $m$-vector that stacks observations at time $t$ from all series, $Y_{k,t}$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$ aggregation matrix. In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
+In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ to be an $m$-vector that stacks observations at time $t$ from all series, $B_t$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$ aggregation matrix. In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
 \begin{align*}
 	\underset{(m\times 1)}{Y_t} = \begin{bNiceMatrix}
 		Y_0    \\
@@ -124,7 +124,7 @@ In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ t
 		Y_{B2}
 	\end{bNiceMatrix}
 \end{align*}
-Here, and in general, the matrix $S$ is defined so that $Y_t = S Y_{k,t}$ holds for all realized data.
+Here, and in general, the matrix $S$ is defined so that $Y_t = S B_{t}$ holds for all realized data.
 
 \cite{Hyndman2011} considered a framework whereby forecasts for all $m$ series and at all levels are produced, referring to these as `base forecasts'. To reconcile these base forecasts, the following regression structure was assumed.
 \begin{align}
