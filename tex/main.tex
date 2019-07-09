@@ -95,33 +95,34 @@ It is evident that there exists a strong correlation between predictability and 
 
 In order to encode the aggregation constraints in a hierarchy, we define $Y_t$ to be an $m$-vector that stacks observations at time $t$ from all series, $Y_{k,t}$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$ aggregation matrix. In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
 \begin{align*}
-	\underset{(m\times 1)}{Y_t} = \begin{bmatrix}
-		\ Y_0\ \ \\
-		\ Y_A\ \ \\
-		\ Y_B\ \ \\
-		\ Y_1\ \ \\
-		\ Y_2\ \ \\
-		\ Y_{A1}\ \ \\
-		\ Y_{A2}\ \ \\
-		\ Y_{B1}\ \ \\
-		\ Y_{B2}\ \
-	\end{bmatrix} \quad \underset{(m\times q)}{S} &=
-	\begin{bmatrix}
-		\ 1 & 1 & 1 & 1 \ \ \\
-		\ 1 & 1 & 0 & 0 \ \ \\
-		\ 0 & 0 & 1 & 1\ \ \\
-		\ 1 & 0 & 1 & 0 \ \ \\
-		\ 0 & 1 & 0 & 1\ \ \\
-		\ 1 & 0 & 0 & 0 \ \ \\
-		\ 0 & 1 & 0 & 0 \ \ \\
-		\ 0 & 0 & 1 & 0 \ \ \\
-		\ 0 & 0 & 0 & 1\ \
-	\end{bmatrix} \quad \underset{(q\times 1)}{Y_{k,t}} = \begin{bmatrix}
-		\ Y_{A1}\ \ \\
-		\ Y_{A2}\ \ \\
-		\ Y_{B1}\ \ \\
-		\ Y_{B2}\ \
-	\end{bmatrix}
+	\underset{(m\times 1)}{Y_t} = \begin{bNiceMatrix}
+		Y_0    \\
+		Y_A    \\
+		Y_B    \\
+		Y_1    \\
+		Y_2    \\
+		Y_{A1} \\
+		Y_{A2} \\
+		Y_{B1} \\
+		Y_{B2}
+	\end{bNiceMatrix} \quad \underset{(m\times q)}{S} &=
+	\begin{bNiceMatrix}[columns-width=5mm]
+		1 & 1 & 1 & 1 \\
+		1 & 1 & 0 & 0 \\
+		0 & 0 & 1 & 1 \\
+		1 & 0 & 1 & 0 \\
+		0 & 1 & 0 & 1 \\
+		1 & 0 & 0 & 0 \\
+		0 & 1 & 0 & 0 \\
+		0 & 0 & 1 & 0 \\
+		0 & 0 & 0 & 1
+	\end{bNiceMatrix} \quad \underset{(q\times 1)}{B_{t}} =
+  \begin{bNiceMatrix}
+		Y_{A1} \\
+		Y_{A2} \\
+		Y_{B1} \\
+		Y_{B2}
+	\end{bNiceMatrix}
 \end{align*}
 Here, and in general, the matrix $S$ is defined so that $Y_t = S Y_{k,t}$ holds for all realized data.
 
