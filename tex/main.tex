@@ -152,19 +152,19 @@ This allows the regression model from Equation~\ref{eq:regstruct} to be recast a
 \end{align}
 where $e$ follows a normal distribution with mean zero and covariance matrix $\Sigma$. The reconciliation problem in (\ref{eq:main}) can be expressed as a system of seemingly unrelated regressions (SUR) to account for cross-equation correlations. Since the explanatory variables are the same for each equation, it is a special case of the SUR model in \cite{Zellner1962}. However, the parameters are impossible to estimate directly because of perfect multicollinearity in the regressors $I_m$ and $S$. This is quite intuitive since there is more than one unique way to reconcile incoherent forecasts. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity and they are estimated in separate Gibbs sampling steps. The distribution of the reconciled forecasts can be obtained by sampling from the posterior predictive distribution conditional on $\alpha$ being equal to zero.
 \begin{align*}
-p(\tilde{y}\ |\ \alpha = 0,\hat{y}, S) &= \iint p(\tilde{y}\ |\ \alpha = 0,\beta,\Sigma,\hat{y},S)\ p(\alpha = 0,\beta,\Sigma\ |\ \hat{y},S)\ d\beta\ d\Sigma
+p(\tilde{y} \mid \alpha = 0,\hat{y}, S) &= \iint p(\tilde{y} \mid \alpha = 0,\beta,\Sigma,\hat{y},S)\ p(\alpha = 0,\beta,\Sigma\mid \hat{y},S)\ d\beta\ d\Sigma
 \end{align*}
 The joint posterior distribution of $\alpha$, $\beta$ and $\Sigma$ is obtained by combining a prior belief on the parameters with the likelihood according to Bayes' theorem.
 \begin{align}
-p(\alpha, \beta, \Sigma\ |\ \hat{y}, S) \propto p(\hat{y}, S\ |\ \alpha, \beta, \Sigma) \times p(\alpha, \beta, \Sigma)
+p(\alpha, \beta, \Sigma \mid\hat{y}, S) \propto p(\hat{y}, S \mid \alpha, \beta, \Sigma) \times p(\alpha, \beta, \Sigma)
 \end{align}
 The likelihood function of the data is given by
 \begin{align*}
-p(\hat{y},S\ &|\ \alpha,\beta,\Sigma) \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right]
+p(\hat{y},S \mid \alpha,\beta,\Sigma) \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right]
 \end{align*}
 The joint posterior distribution is accordingly given by
 \begin{align*}
-p(\alpha,\beta,\Sigma\ |\ \hat{y},S) & \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right] \\
+p(\alpha,\beta,\Sigma \mid \hat{y},S) & \propto \frac{1}{|\Sigma|} \exp\left[-\frac{1}{2} \sum_i (\hat{y}_i - \alpha - S\beta)'\Sigma^{-1}(\hat{y}_i - \alpha - S\beta)\right] \\
 &\times \exp \left[-\frac{1}{2}(\alpha - a_0)'A_0^{-1}(\alpha - a_0)\right] \\
 &\times \exp \left[-\frac{1}{2}(\beta - b_0)'B_0^{-1}(\beta - b_0)\right] \\
 &\times \frac{1}{|\Sigma|(v_0 - m - 1)} \exp \left[-\frac{1}{2} tr(R_0^{-1}\Sigma^{-1}) \right]
