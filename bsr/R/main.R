@@ -1,58 +1,70 @@
 
-#' Run Bayesian Hierarchichal Reconciliation
+#' Run Hierarchichal Reconciliation with Bayesian Shrinkage
 #'
-#' Creates predictions and reconciles them using
+#' BSR description
 #' @param object gts or hts object.
 #' @param h integer, forecasting horizon.
 #' @param fmethod character, forecasting method to use ("arima", "ets" or "rw").
-#' @param series_to_be_shrunk vector of integers, indicating which reconciled
 #' to shrink towards its base forecast.
-#' @param nser_shr numerical, shrinks top level towards base forecasts.
-#' @param xser_shr numerical, shrinks selected forecasts towards base forecasts.
+#' @param burn_in integer, number of initial iterations to be discarded.
+#' @param length_sample integer, sample size from joint posterior.
+#' @param shrinkage character or numeric, indicates type shrinkage prior. Defaults to null.
 #' @return A list containing parameters for each horizon and gts output
-#' @import hts Matrix forecast coda MCMCpack MASS
+#' @import hts forecast Matrix
 #' @export
-#' @examples out <- RunBSR(tradegts_red, h = 3, fmethod = "arima")
-RunBSR <- function(object, h, fmethod = "arima",
-                   series_to_be_shrunk = NULL,
-                   shrinkage = "none", sparse = FALSE){
-
-  start.time = Sys.time() # Tic
+bsr <- function(object,
+                h,
+                fmethod = "arima",
+                burn_in = 10,
+                length_sample = 100,
+                shrinkage = NULL){
 
   # Step 1: Define Summation Matrix & Parameters
   S <- hts:::SmatrixM(object$groups)
-  pars <- list("sparse" = sparse,
-               "length_sample" = 1000,
-               "length_max" = 1e+5,
+  pars <- list("length_sample" = length_sample,
+               "burn_in" = burn_in,
                "fmethod" = fmethod,
+               "S" = S,
                "h" = h,
                "n" = 1000,
                "m" = nrow(S),
                "q" = ncol(S),
-               "shrinkage" = shrinkage,
-               "xser_shr" = 1e+5,
-               "series_to_be_shrunk" = series_to_be_shrunk)
+               "shrinkage" = shrinkage)
 
-  if(!is.null(series_to_be_shrunk)) if(max(series_to_be_shrunk) > pars$m){
-    stop("Series to be shrunk doesn't exist.",
-         call. = FALSE)
+
+  # Step 2: Prior Weights
+  pars$weights <- define_weights(pars)
+
+
+  # Step 3: Forecasting Models
+  print.noquote("Forecasting...")
+  forecasts_list <- create_predictions(object, fmethod, pars)
+
+
+  # Step 4: Reconciliation
+  print.noquote("Reconciling...")
+  results <- run_reconciliation(forecasts_list, pars)
+
+
+  # Step 5: Collect Output and Parameters
+  bfcasts <- ts(as.matrix(results),
+                start = as.numeric(tail(time(object$bts),1)) + 1/frequency(object$bts),
+                frequency = frequency(object$bts))
+  colnames(bfcasts) <- colnames(object$bts)
+  class(bfcasts) <- class(object$bts)
+  attr(bfcasts, "msts") <- attr(object$bts, "msts")
+  out <- list(bts = bfcasts,
+              histy = object$bts,
+              labels = object$labels,
+              fmethod = pars$fmethod,
+              base_forecasts = forecasts_list)
+  if (is.hts(object)) {
+    out$nodes <- object$nodes
+  } else {
+    out$groups <- object$groups
   }
 
 
-  # Step 2: Run Forecasting Model
-  forecasts.list <- CreatePredictions(object, fmethod, pars)
-
-  # Step 3: Create Weighting Matrix
-  pars$lambda <- DefineWeights(S,pars)
-
-  # Step 4: Run Reconciliation
-  results.list <- RunReconciliation(S, forecasts.list, pars)
-
-  # Step 5: Collect Output and Parameters
-  out <- CollectOutput(object, forecasts.list, results.list, pars)
-
-  print(Sys.time() - start.time) # Toc
-
-  return(out)
+  return(structure(out, class = class(object)))
 
 }

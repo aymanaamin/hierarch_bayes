@@ -153,33 +153,65 @@ save(tabs, file = "out/tabs.Rdata")
 
 # DIEBOLD MARIANO STATS ---------------------------------------------------
 
+dsamples <- list("full"= fdates, "moderate" = fdates[1:144], "crisis" = fdates[145:252])
 
-dm <- lapply(recon[-(which(recon == "unrecon"))], function(rx){
+dm <- lapply(dsamples, function(sx){
   
-  horz <- sapply(1:36, function(hx){
+  out <- lapply(recon[-(which(recon == "unrecon"))], function(rx){
     
-    f_unrecon <- sapply(names(fdates), function(dx) t(fcasts[["unrecon"]][[dx]][["arima"]])[1,hx])
-    f_recon <- sapply(names(fdates), function(dx) t(aggts(fcasts[[rx]][[dx]][["arima"]]))[1,hx])
-    realiz <- sapply(names(fdates), function(dx) as.numeric(window(agg_gts[[1]], start = as.numeric(dx))[hx]))
+    horz <- sapply(c(12,24,36), function(hx){
+      
+      f_unrecon <- sapply(sx, function(dx) t(fcasts[["unrecon"]][[as.character(dx)]][["arima"]])[1,hx])
+      f_recon <- sapply(sx, function(dx) t(aggts(fcasts[[rx]][[as.character(dx)]][["arima"]]))[1,hx])
+      realiz <- sapply(sx, function(dx) as.numeric(window(agg_gts[[1]], start = dx)[hx]))
+      
+      # For alternative="greater", the alternative hypothesis is that method 2 is more accurate than method 1.
+      out <- dm.test(e1 = f_unrecon - realiz,
+                     e2 = f_recon - realiz,
+                     alternative = "greater",
+                     h = hx,
+                     power = 1)
+      
+      return(out$p.value)
+      
+    })
     
-    # For alternative="greater", the alternative hypothesis is that method 2 is more accurate than method 1.
-    out <- dm.test(e1 = f_unrecon - realiz,
-                   e2 = f_recon - realiz,
-                   alternative = "greater",
-                   h = hx,
-                   power = 2)
-    
-    return(out$p.value)
+    names(horz) <- c(12,24,36)
+    return(horz)
     
   })
   
-  names(horz) <- 1:36
-  return(horz)
+  names(out) <- recon[-(which(recon == "unrecon"))]
+  return(out)
   
 })
 
-names(dm) <- recon[-(which(recon == "unrecon"))]
+names(dm) <- names(dsamples)
 
 save(dm, file = "out/dm.Rdata")
+
+
+
+tab = cbind(do.call(rbind,dm$full), do.call(rbind,dm$moderate), do.call(rbind,dm$crisis))
+
+sig <- rep(NA,prod(dim(tab)))
+for(jx in 1:length(sig)){
+  
+  if(tab[jx] < 0.001){
+    sig[jx] <- paste0(round(tab[jx],2),"***")
+  } else if(tab[jx] < 0.01){
+    sig[jx] <- paste0(round(tab[jx],2),"**")
+  } else if(tab[jx] < 0.05){
+    sig[jx] <- paste0(round(tab[jx],2),"* ")
+  } else {
+    sig[jx] <- paste0(round(tab[jx],2),"  ")
+  }
+}
+dim(sig) = dim(tab)
+rownames(sig) = rownames(tab)
+
+library(xtable)
+xtable(sig)
+
 
 

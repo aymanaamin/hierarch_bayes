@@ -1,12 +1,13 @@
 Package: bsr
 Type: Package
 Title: Bayesian Forecast Reconciliation
-Version: 0.1.0
+Version: 0.2.0
 Author: Florian Eckert, Rob Hyndman, Anastasios Panagiotelis
 Maintainer: Florian Eckert <eckert@kof.ethz.ch>
-Description: Sample Code for Bayesian Forecast Reconciliation
+Description: This package uses a Bayesian state space model to 
+  perform a joint reconciliation of several forecast horizons.
 License: GPL-3
 Encoding: UTF-8
-Imports: hts, forecast, Matrix, coda, MCMCpack, MASS
+Imports: hts, forecast, Matrix, MASS
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2

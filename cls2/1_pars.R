@@ -10,9 +10,8 @@ library(data.table)
 library(doParallel)
 library(foreach)
 library(Matrix)
+library(bsr)
 
-# Functions
-source("lib/functions_model_lite.R")
 
 # Data
 load("dat/tradehts_reduced.Rdata")
