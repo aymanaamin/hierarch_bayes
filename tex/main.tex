@@ -20,7 +20,7 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-	\noindent This paper conducts an extensive forecasting study on 13,118 time series measuring Swiss goods exports, grouped hierarchically by export destination and product category.  We apply existing state of the art methods in forecast reconciliation and introduce a novel Bayesian reconciliation framework. The novel approach reconciles series based on variation in the predictive distribution rather	than variation in past forecast errors. It is based on a state space representation that allows for explicit estimation of reconciliation biases, leading to several innovations: Prior judgment can be used to assign weights to specific forecasts and the occurrence of negative reconciled forecasts can be ruled out. Overall we find strong evidence that in addition to producing coherent forecasts, reconciliation also leads to improvements in forecast accuracy.\\
+	\noindent This paper proposes a novel forecast reconciliation framework using Bayesian state space methods.  to identify state dependent coherency errors. This leads to several innovations: The model allows for joint reconciliation of all forecast periods, combines information across forecasting periods to improve accuracy and allows for informative priors to assign weights and rule out undesirable behavior. We conduct an extensive forecasting study on a large collection of 13,118 time series measuring Swiss goods exports, grouped hierarchically by export destination and product category. Overall we find strong evidence that in addition to producing coherent forecasts, reconciliation also leads to improvements in forecast accuracy.\\
 	
 	\noindent \textbf{JEL Classification:} C32, C53, E17\\
 	\noindent \textbf{Keywords}: Hierarchical Forecasting, Bayesian State Space Model, Swiss Exports, Optimal Forecast Combination.
@@ -31,11 +31,11 @@
 % 2. Model
 \section{Introduction}\label{sec:intro}
 
-% Intro and teaser
-Export forecasts can support economic policy makers, monetary authorities and exporting firms in making decisions. \todo{This paragraph needs to be framed depending on the target journal} They may be of interest in their own right but also as inputs into projections of other important macroeconomic quantities such as currency reserves, exchange rates and production growth. As exports of goods are usually measured and published on a highly disaggregate basis, many economic agents are interested in forecasts at a more granular level. For instance, a Swiss manufacturer of precision instruments is concerned about exports of Swiss watches into individual countries in order to manage their inventories. The large collection of 13,118 time series on Swiss goods exports is subject to known linear hierarchical constraints. Total exports from Switzerland can be disaggregated geographically by destination into regions such as Europe, North America or Australia. These regional aggregates can then be divided further by country. Total exports can also be disaggregated into product categories such as precision instruments, textiles or vehicles and then further into subcategories such as road, rail, air and water vehicles.
+% teaser
+Forecasting large collections of time series is an important problem in business analytics and economics. If the data is subject to linear hierarchical constraints, an ex post adjustment of forecasts to ensure coherence has been shown to lead to improvements in forecast accuracy \citep[see][and references therein]{Wickramasuriya2015}. We propose a novel approach to explicitly identify state dependent reconciliation errors and conduct a detailed evaluation of existing methods using a comprehensive hierarchical dataset of Swiss merchandise trade. Apart from the unique insights into the effective behavior of reconciliation methods, this application is also of interest to economic policy makers and exporting firms. Export forecasts often serve as inputs into projections of other quantities such as sales, inventories, currency reserves and production growth. 
 
-% Reconciliation and existing methods
-As such, the data has the structure of a so-called grouped hierarchy \citep[see][and references therein]{Hyndman2018}. Figure~\ref{fig:tree} gives a simple example of grouped structure with $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the most disaggregate or `bottom' level.
+% intro to reconciliation
+As exports of goods are usually measured and published on a highly disaggregate basis, many economic agents are interested in forecasts at a more granular level. For instance, total exports from Switzerland can be disaggregated geographically by destination into regions such as Western Europe, North America or Australia. These regional aggregates can then be divided further by country. Total exports can also be disaggregated into product categories such as precision instruments, textiles or vehicles and then further into subcategories such as road, rail, air and water vehicles. As such, the data has the structure of a so-called grouped hierarchy \citep[see][and references therein]{Hyndman2018}. Figure~\ref{fig:tree} gives a simple example of grouped structure with $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the most disaggregate or `bottom' level.
 
 \begin{figure}[H]
 	\centering
@@ -70,15 +70,15 @@ As such, the data has the structure of a so-called grouped hierarchy \citep[see]
 		]
 	\end{forest}
 	\vspace{0.4cm}
-	\captionab{Simple Example of a Grouped Hierarchy}{Data is structured into $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the bottom level.}\label{fig:tree}
+	\captionab{Simple Example of a Grouped Hierarchy}{The data is structured into $k = 3$ levels, $m = 9$ time series in total and $q = 4$ time series at the bottom level.}\label{fig:tree}
 \end{figure}
 Since it is known that all future realizations of the data will adhere to the constraints implied by the aggregation structure, a desirable property of any forecasts is that they also respect these constraints. Such forecasts are referred to as `coherent'. In the case of Swiss exports, incoherent forecasts are problematic because they may lead to contradictory conclusions, non-aligned decision making and are difficult to communicate. Earlier literature reduced the issue of producing coherent forecasts to one of predicting only a specific level of the hierarchy. For example, the `bottom-up' approach \citep{Gross1990} achieves coherence by producing only forecasts for the bottom level series and then summing these up according to the hierarchical structure. A major shortcoming of this approach is that disaggregate series tend to be noisy and there is a high risk of model misspecification. Features such as seasonality may be difficult to identify in the bottom level data, despite being clearly present in the aggregate series. To address this shortcoming a `top-down' approach was proposed \citep[see][and references therein]{Athanasopoulos2009}, where the predicted top level series is disaggregated according to historical or forecasted proportions of lower levels. A compromise is given by the `middle-out' approach, where the forecasts at an intermediate level of the hierarchy are summed up to get the higher levels and disaggregated to obtain lower level predictions. A weakness of these single level methods is information loss because the time series characteristics at other levels are not taken into account. A further shortcoming of the middle-out and top-down methods is that they are not easily applied to grouped hierarchical structures.
 
-In response to these shortcomings, there has been a tendency over the past decade towards producing forecasts for all series in the hierarchy rather than only at a single level. These are referred to as `base' forecasts and they generally do not adhere to aggregation constraints. Forecast reconciliation, introduced by \cite{Hyndman2011}, performs an ex-post adjustment to base forecasts in order to produce a new set of coherent forecasts. This adjustment effectively combines predictions from all levels and in doing so `hedges' against misspecification error across all levels. There is now substantial theoretical and empirical evidence that forecast reconciliation can significantly improve forecast accuracy~\citep[see][and references therein]{Wickramasuriya2015}. 
+In response to these shortcomings, there has been a tendency over the past decade towards producing forecasts for all series in the hierarchy rather than only at a single level. These are referred to as `base' forecasts and they generally do not adhere to aggregation constraints. Forecast reconciliation, introduced by \cite{Hyndman2011}, performs an ex-post adjustment to base forecasts in order to produce a new set of coherent forecasts. This adjustment effectively combines predictions from all levels and in doing so `hedges' against misspecification error across all levels. There is now substantial theoretical and empirical evidence that forecast reconciliation can significantly improve forecast accuracy~\citep[see][and references therein]{Wickramasuriya2015}.
 
-In order to encode the aggregation constraints in a hierarchy, $Y_t$ is defined to be an $m$-vector that stacks observations at time $t$ from all series, $B_t$ to be a subvector of $Y_t$ containing only the $q$ bottom level series at time $t$ and $S$ to be an $m\times q$ aggregation matrix. In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
+In order to encode the aggregation constraints in a hierarchy, $\textbf{y}_t$ is defined to be an $m$-vector that stacks observations at time $t$ from all series, $\textbf{b}_t$ to be a subvector of $\textbf{y}_t$ containing only the $q$ bottom level series at time $t$ and $\textbf{S}$ to be an $m\times q$ aggregation matrix. In the simple grouped hierarchy shown in Figure~\ref{fig:tree}, these are given by
 \begin{align*}
-\underset{(m\times 1)}{Y_t} = \begin{bNiceMatrix}
+\underset{(m\times 1)}{\textbf{y}_t} = \begin{bNiceMatrix}
 Y_0    \\
 Y_A    \\
 Y_B    \\
@@ -88,7 +88,7 @@ Y_{A1} \\
 Y_{A2} \\
 Y_{B1} \\
 Y_{B2}
-\end{bNiceMatrix} \quad \underset{(m\times q)}{S} &=
+\end{bNiceMatrix} \quad \underset{(m\times q)}{\textbf{S}} &=
 \begin{bNiceMatrix}%[columns-width = 5mm]
 1 & 1 & 1 & 1 \\
 1 & 1 & 0 & 0 \\
@@ -99,31 +99,31 @@ Y_{B2}
 0 & 1 & 0 & 0 \\
 0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 1
-\end{bNiceMatrix} \quad \underset{(q\times 1)}{B_{t}} =
+\end{bNiceMatrix} \quad \underset{(q\times 1)}{\textbf{b}_{t}} =
 \begin{bNiceMatrix}
 Y_{A1} \\
 Y_{A2} \\
 Y_{B1} \\
 Y_{B2}
-\end{bNiceMatrix}
+\end{bNiceMatrix}.
 \end{align*}
-Here and in general, the matrix $S$ is defined so that $Y_t = S B_{t}$ holds for all realized data. To reconcile these base forecasts, \cite{Hyndman2011} and later authors assumed the following regression structure,
+Here and in general, the matrix $\textbf{S}$ is defined such that $\textbf{y}_t = \textbf{S} \textbf{b}_{t}$ holds for all realized data. To reconcile these base forecasts, \cite{Hyndman2011} and later authors assumed the following regression structure,
 \begin{align}
-Y_t(h) &= S\beta_{h} + e_t(h),
+\textbf{y}_t(h) &= \textbf{S} \boldsymbol{\beta}_{h} + \textbf{e}_t(h),
 \label{eq:regstruct}
 \end{align}
-where $Y_t(h)$ is an $m$-vector containing the $h$-periods-ahead base forecasts at time $t$ for each level in the hierarchy, $\beta_{h}$ represents the true expected value of the bottom level series, and the error term $e_t(h)$ has mean zero and covariance matrix $\Sigma_h$. Reconciled forecasts are given by $Sb_{h}$, where $b_h$ is an estimate of $\beta_{h}$ that combines information about forecasts at all levels. It can be estimated using the following regression equation,
+where $\textbf{y}_t(h)$ is an $m$-vector containing the $h$-periods-ahead base forecasts at time $t$ for each level in the hierarchy. The error term $\textbf{e}_t(h)$ has mean zero and covariance matrix $\boldsymbol{\Sigma}_h$, and $\boldsymbol{\beta}_{h}$ represents the unknown mean of the bottom level series which combines information about forecasts at all levels. It can be estimated using the following regression equation.
 \begin{align}
 \label{eq:reg}
-b_{h} &= \left(S'W_h^{-1}S \right)^{-1} S'W_h^{-1}Y_t(h).
+\boldsymbol{\beta}_{h} &= \left(\textbf{S}'\textbf{W}_h^{-1}\textbf{S} \right)^{-1} \textbf{S}'\textbf{W}_h^{-1}\textbf{Y}_t(h).
 \end{align}
-A vector of reconciled forecasts is then given by $Sb_{h}$ and will cohere to the aggregation constraints by construction. There are several potential choices for $W_h$. Letting $W_h=I$ corresponds to an ordinary least squares estimate. Alternatively, a high degree of heteroskedasticity in the error terms motivates a diagonal $W_h$ or weighted least squares approach \citep{Hyndman2016}. Under so-called `variance scaling', weights are the variances of in-sample $h$-step ahead forecast variances, and forecasts with less accurate historical performance are down-played in reconciliation. Another alternative is the `nseries' approach due to \cite{Athanasopoulos2017}, whereby weights are based on the number of series aggregated at each node. More recently, the `MinT' approach was developed by \cite{Wickramasuriya2015} to allow for a $W_h$ that is not diagonal and exploits the covariances between the $h$-step-ahead reconciled forecast errors. For the MinT method, $W_h$ is an estimate of the variance-covariance matrix of past base forecast errors.
+A vector of reconciled forecasts is then given by $\textbf{S} \boldsymbol{\beta}_{h}$ and will cohere to the aggregation constraints by construction. There are several potential choices for $\textbf{W}_h$. Letting $\textbf{W}_h = \textbf{I}_m$ corresponds to an ordinary least squares estimate, in the following also referred to as `no scaling'. Alternatively, a high degree of heteroskedasticity in the error terms motivates a diagonal $\textbf{W}_h$ or weighted least squares approach \citep{Hyndman2016}. Under so-called `variance scaling', weights are the variances of in-sample $h$-step ahead forecast variances, and forecasts with less accurate historical performance are down-played in reconciliation. Another alternative is the `structural scaling' approach due to \cite{Athanasopoulos2017}, whereby weights are based on the number of series aggregated at each node. More recently, the `MinT' approach was developed by \cite{Wickramasuriya2015} to allow for a $\textbf{W}_h$ that is not diagonal and exploits the covariances between the $h$-step-ahead reconciled forecast errors. For the MinT method, $\textbf{W}_h$ is a shrinkage estimate of the variance-covariance matrix of past base forecast errors. These methods reconcile each forecasting period independently and sometimes use a scaled version of $\textbf{W}_1$ for each $h$ to simplify computations. 
 
-% Contribution
-This paper contributes to the literature on forecast reconciliation in various ways. First, it introduces an explicit identification of the reconciliation errors and their representation in a state space form. This allows for the joint reconciliation of all forecasting horizons with no restrictions on the process of the bottom level means. While a similar approach has been proposed by \cite{Pennings2017}, they assume state dependency of $\beta_h$. Second, the weights used in the reconciliation are derived from the predictive distribution rather than past variation of the base forecast errors. Our innovation is therefore particularly promising for forecasting models that allow for conditional heteroskedasticity. Third, we propose the use of informative priors to down-weight the influence of particular series irrespective of past forecasting performance. This is valuable if forecasters have strong judgmental reasons for believing that a particular model will work well in the future while other base forecasts will be less reliable. It furthermore uses informative prior distributions to address some issues in the literature, namely the occurrence of negative reconciled forecasts and singular forecast error covariance matrices. Lastly, the proposed model and existing methods are compared using a very comprehensive grouped hierarchy.
+% contribution
+This paper contributes to the literature on forecast reconciliation in various ways. First, it introduces an explicit identification of the reconciliation errors and their representation in a state space form. This allows for the joint reconciliation of all forecasting horizons with no restrictions on the bottom level forecasts. We establish an efficient Bayesian estimation algorithm that allows for the inclusion of prior information. Second, the weights used in the reconciliation are derived from the predictive distribution rather than past variation of the base forecast errors. Our innovation is therefore particularly promising for forecasting models that allow for conditional heteroskedasticity. Third, we propose the use of informative priors to down-weight the influence of particular series irrespective of past forecasting performance. This is valuable if forecasters have strong judgmental reasons for believing that a particular model will work well in the future while other base forecasts will be less reliable. It furthermore uses informative prior distributions to address some issues in the literature, namely the occurrence of negative reconciled forecasts and singular forecast error covariance matrices. Lastly, the proposed model and existing methods are compared using a very comprehensive grouped hierarchy.
 
-% Structure
-The remainder of the paper is structured as follows. Section~\ref{sec:model} introduces both existing forecast reconciliation as well as our novel Bayesian approach.  Section~\ref{sec:datadesc} introduces in detail the data on exports of Swiss goods, using modern techniques for exploring and visualizing high-dimensional time series.  Section~\ref{sec:appl} conducts an extensive forecast evaluation that compares our proposed method with existing reconciliation techniques. Section~\ref{sec:conc} concludes.
+% structure
+The remainder of the paper is structured as follows. Section~\ref{sec:model} introduces our novel Bayesian state space reconciliation framework and an efficient estimation algorithm.  Section~\ref{sec:datadesc} introduces in detail the data on exports of Swiss goods, using modern techniques for exploring and visualizing high-dimensional time series.  Section~\ref{sec:appl} conducts an extensive forecast evaluation that compares our proposed method with existing reconciliation techniques. Section~\ref{sec:conc} concludes.
 
 
 
@@ -135,26 +135,26 @@ The remainder of the paper is structured as follows. Section~\ref{sec:model} int
 This section propose a novel approach to forecast reconciliation. We show how to explicitly identify the reconciliation errors and estimate them as latent states that evolve over the forecasting horizon. Our method involves the use of predictive distributions instead of historical forecast errors and uses prior information to address several issues in the literature. 
 
 \subsection{Model}
-An integrated reconciliation of all forecasted periods has the advantage of combining information across the entire forecasting horizon. If a base forecast in any given forecasted period is revised downwards as a result of the reconciliation, it is likely to be revised downwards as well in the next period. While \cite{Pennings2017} use a state space model to account for this dependency across forecasting periods, they assume the state dependent variable to be the true expected value of the bottom level series $\beta_h$. This however assumes that the state equation is able to capture the dynamics in the underlying base forecasts. We propose the explicit identification of state dependent reconciliation errors $\alpha_h$, which leaves the coherent bottom level forecasts $\beta_h$ completely free of any assumptions or restrictions.
+An integrated reconciliation of all forecasted periods has the advantage of combining information across the entire forecasting horizon. If a base forecast in any given forecasted period is revised downwards as a result of the reconciliation, it is likely to be revised downwards as well in the next period. Taking this dependency into account using state space methods could further improve forecasting accuracy. \cite{Pennings2017} pioneered their use in order to integrate the reconciliation of incoherent information across time periods. They assume the bottom level series to be the underlying states and use elaborate state equations to capture their stochastic properties. While this takes the intertemporal dependencies nicely into account, it requires the estimation of initial states and restricts the number of usable models for the base forecasts. We propose the explicit identification of state dependent reconciliation errors $\boldsymbol{\alpha}_h$, which leaves the coherent bottom level forecasts $\boldsymbol{\beta}_h$ completely free of any assumptions or restrictions.
 
-As in every forecast reconciliation procedure, the predictive distribution of the base forecasts is known beforehand. The base forecast means are given by $\hat{y}_{T}(h)$. The covariance matrices of the base forecast errors $\Sigma_h$ are calculated from a sample of $n$ prediction errors $\hat{e}_{T}(h)$. Possible sources for obtaining these draws are posterior predictive distributions from Bayesian forecasting models \citep{Cesur2016}, bootstrap aggregating \citep{Bergmeir2016}, model pooling \citep{Timmermann2006}, or sampling from a fitted model \citep{Hyndman2018}. The measurement equation is then given by the following equation:
+As in every forecast reconciliation procedure, the predictive distribution of the base forecasts is known beforehand. The base forecast means are given by $\mathbf{\hat{y}}_{T}(h)$. The covariance matrices of the base forecast errors $\boldsymbol{\Sigma}_h$ are calculated from a sample of $n$ prediction errors $\mathbf{\hat{e}}_{T}(h)$. Possible sources for obtaining these draws are posterior predictive distributions from Bayesian forecasting models \citep{Cesur2016}, bootstrap aggregating \citep{Bergmeir2016}, model pooling \citep{Timmermann2006}, or sampling from a fitted model \citep{Hyndman2018}. The measurement equation is then given by the following equation:
 \begin{align}
 \label{eq:main}
-y_{T+h} & = \alpha_h + S \beta_h + \hat{e}_{T}(h), \qquad \hat{e}_{T}(h) \sim N(0, \Sigma_h)
+\textbf{y}_{T+h} & = \boldsymbol{\alpha}_h + \textbf{S} \boldsymbol{\beta}_h + \mathbf{\hat{e}}_{T}(h), \qquad \mathbf{\hat{e}}_{T}(h) \sim \mathcal{N}(\textbf{0}, \boldsymbol{\Sigma}_h)
 \end{align}
-The $m$-vector $\alpha_h$ contains the reconciliation biases at forecasting horizon $h$. In other words, $\alpha_h$ is the difference between the unreconciled forecast mean $\hat{y}_{T+h}$ and the reconciled forecast mean $S \beta_h$. It can be interpreted as a fixed effect that is unique to each forecasted variable. $S$ is a summation matrix of order $m \times q$ and the $q$-vector $\beta_h$ generally estimates the unknown mean of the reconciled bottom level forecasts.  $\hat{e}_{T}(h) = y_{T+h} - \hat{y}_{T}(h)$ is an $m$-vector of $h$-step ahead base forecast errors that follows a normal distribution with mean zero and covariance matrix $\Sigma_h$.
+The $m$-vector $\boldsymbol{\alpha_h}$ contains the reconciliation biases at forecasting horizon $h$. In other words, $\boldsymbol{\alpha_h}$ is the difference between the unreconciled forecast mean $\mathbf{\hat{y}}_{T+h}$ and the reconciled forecast mean $\textbf{S} \boldsymbol{\beta}_h$. It can be interpreted as a fixed effect that is unique to each forecasted variable. $\textbf{S}$ is a summation matrix of order $m \times q$ and the $q$-vector $\boldsymbol{\beta}_h$ generally estimates the unknown mean of the reconciled bottom level forecasts.  $\mathbf{\hat{e}}_{T}(h) = \textbf{y}_{T+h} - \mathbf{\hat{y}}_{T}(h)$ is an $m$-vector of $h$-step ahead base forecast errors that follows a normal distribution with mean zero and covariance matrix $\boldsymbol{\Sigma}_h$.
 
-In order to reconcile all forecasting horizons jointly, the coherency errors $a_h$ are modeled to be state dependent. They are assumed to follow a random walk, which is very common in the literature on time-varying parameters \citep[see for instance][and references therein]{Primiceri2005}. This implies that the best guess for a coherency error in any given forecasting period is the error in the preceding period. The state equation is therefore specified as
+In order to reconcile all forecasting horizons jointly, the coherence errors $\boldsymbol{\alpha_h}$ are modeled to be state dependent. They are assumed to follow a random walk, which is very common in the literature on time-varying parameters \citep[see for instance][and references therein]{Primiceri2005}. This implies that the best guess for a coherence error in any given forecasting period is the error in the preceding period. The state equation is therefore specified as
 \begin{align}
 	\label{eq:state}
-	\alpha_h & = \alpha_{h-1} + v_h, \qquad v_h \sim N(0, \Omega).
+	\boldsymbol{\alpha}_h & = \boldsymbol{\alpha}_{h-1} + \textbf{v}_h, \qquad \textbf{v}_h \sim \mathcal{N}(\textbf{0}, \boldsymbol{\Omega}).
 \end{align}
-The initial state $\alpha_0$ is the coherency error in the last observation $Y_{T}$, which is conveniently known to be zero. It is however necessary to impose some restrictions in order to identify the parameters, which is a result of multicollinearity in equation~\eqref{eq:main}. This is quite intuitive since there is more than one unique way to reconcile incoherent forecasts. To show this formally, the coherency errors $\alpha_h$ can be expressed equivalently by concentrating out $\beta$ using the projection matrix $P_h = S(S'\Sigma_h^{-1} S)^{-1}S'\Sigma_h^{-1}$. See appendix \ref{sec:proofs} for a detailed derivation. This leads to the following identity:
+The initial state $\boldsymbol{\alpha_0}$ is the coherence error in the last observation $\textbf{y}_{T}$, which is conveniently known to be zero. It is however necessary to impose some restrictions in order to identify the parameters, which is a result of multicollinearity in equation~\eqref{eq:main}. This is quite intuitive since there is more than one unique way to reconcile incoherent forecasts. To show this formally, the coherence errors $\boldsymbol{\alpha}_h$ can be expressed equivalently by concentrating out $\boldsymbol{\beta}_h$ using the projection matrix $\textbf{P}_h = \textbf{S}(\textbf{S}'\boldsymbol{\Sigma}_h^{-1} \textbf{S})^{-1}\textbf{S}'\boldsymbol{\Sigma}_h^{-1}$. See appendix \ref{sec:proofs} for a detailed derivation. This leads to the following identity:
 \begin{align}
 	\label{eq:prior2}
-	(I_m - P_h)\, \alpha_h &= (I_m - P_h)\, \hat{y}_T(h).
+	(\textbf{I}_m - \textbf{P}_h)\, \boldsymbol{\alpha}_h &= (\textbf{I}_m - \textbf{P}_h)\, \mathbf{\hat{y}}_T(h).
 \end{align}
-It is useful to define the idempotent residual maker $M_h = I_m - P_h$. Since $M_h$ is not invertible due to the presence of multicollinearity, equation~\eqref{eq:prior2} cannot be solved for $\alpha_h$. Our identifying assumption is that $\alpha_h$ lies in the span of $M_h$, in which case $M\alpha = \alpha$. This solves the identification problem and leaves the reconciliation biases as a function of the data and the residual maker $M_h$. This result is also intuitive since the reconciliation biases are the residuals from a regression of the base forecasts on the aggregation matrix.
+It is useful to define the idempotent residual maker $\textbf{M}_h = \textbf{I}_m - \textbf{P}_h$. Since $\textbf{M}_h$ is not invertible due to the presence of multicollinearity, equation~\eqref{eq:prior2} cannot be solved for $\boldsymbol{\alpha}_h$. Our identifying assumption is that $\boldsymbol{\alpha}_h$ lies in the span of $\textbf{M}_h$, in which case $\textbf{M}\boldsymbol{\alpha_h} = \boldsymbol{\alpha_h}$. This solves the identification problem and leaves the reconciliation biases as a function of the data and the residual maker $\textbf{M}_h$. This result is also intuitive since the reconciliation biases are the residuals from a regression of the base forecasts on the aggregation matrix.
 
 
 \subsection{Estimation}\label{sec:estim}
@@ -163,118 +163,111 @@ The latent states are sampled jointly using the efficient state smoothing and si
 The measurement equation (\ref{eq:meas}) is stacked over the $H$ forecasting periods in order to reconcile all reconciliation error states jointly.
 \begin{align}
 	\label{eq:meas}
-	Y & = X\alpha + Z\beta + E, \quad E \sim N(0, \Sigma),
+	\textbf{Y} & = \textbf{X} \boldsymbol{\alpha} + \textbf{Z} \boldsymbol{\beta} + \textbf{E}, \quad \textbf{E} \sim \mathcal{N}(\textbf{0}, \boldsymbol{\Sigma}),
 \end{align}
 where the parameters of interest are given by 
 \begin{align*}
-		\underset{((H+1)m \times 1)}{\alpha} &= \begin{bNiceMatrix}
-		\alpha_0\\
+		\underset{((H+1)m \times 1)}{\boldsymbol{\alpha}} &= \begin{bNiceMatrix}
+		\boldsymbol{\alpha_0}\\
 		\vdots\\
-		\alpha_H\\
-	\end{bNiceMatrix}, \quad\underset{(Hq \times 1)}{\beta} = \begin{bNiceMatrix}
-	\beta_1\\
+		\boldsymbol{\alpha_H}\\
+	\end{bNiceMatrix}, \quad\underset{(Hq \times 1)}{\boldsymbol{\beta}} = \begin{bNiceMatrix}
+	\boldsymbol{\beta_1}\\
 	\vdots\\
-	\beta_H\\
-\end{bNiceMatrix}, \quad \underset{(Hm\times Hm)}{\Sigma^{-1}} = \begin{bNiceMatrix}
-\Sigma_1^{-1} & & \\
+	\boldsymbol{\beta_H}\\
+\end{bNiceMatrix}, \quad \underset{(Hm\times Hm)}{\boldsymbol{\Sigma}} = \begin{bNiceMatrix}
+\boldsymbol{\Sigma_1} & & \\
 & \ddots & \\
-& & \Sigma_H^{-1} \\
+& & \boldsymbol{\Sigma_H} \\
 \end{bNiceMatrix}.
 \end{align*}
-The unreconciled base forecast means $\hat{y}_{T}(h)$, the summation matrices and some further identities are stacked accordingly into
+The unreconciled base forecast means $\mathbf{\hat{y}}_{T}(h)$, the summation matrices and some further identities are stacked accordingly into
 \begin{align*}
-	\underset{(Hm \times 1)}{Y} &= \begin{bmatrix}
-		\hat{y}_{T}(1)\\
+	\underset{(Hm \times 1)}{\textbf{Y}} = \begin{bmatrix}
+		\mathbf{\hat{y}}_{T}(1)\\
 		\vdots\\
-		\hat{y}_{T}(H)\\
-	\end{bmatrix}, \quad \underset{(Hm \times (H+1)m)}{X} = \begin{bNiceMatrix}
-		  & I_m & & \\
-		0 & & \ddots &\\
-		  & & & I_m \\
-	\end{bNiceMatrix},  \quad \underset{(Hm \times Hq)}{Z} = \begin{bNiceMatrix}
-	\, S & & \\
+		\mathbf{\hat{y}}_{T}(H)\\
+	\end{bmatrix}, \quad \underset{(Hm \times (H+1)m)}{\textbf{X}} = \begin{bNiceMatrix}
+		  & \textbf{I}_m & & \\
+		\textbf{0} & & \ddots &\\
+		  & & & \textbf{I}_m \\
+	\end{bNiceMatrix},  \quad \underset{(Hm \times Hq)}{\textbf{Z}} = \begin{bNiceMatrix}
+	\, \textbf{S} & & \\
 	& \ddots &\\
-	& & S \, \,\\
+	& & \textbf{S} \, \,\\
 \end{bNiceMatrix}.
 \end{align*}
 The state equation (\ref{eq:prior2}) needs to be written correspondingly as
 \begin{align}
 	\label{eq:stackstate}
-	F\alpha &= V, \quad V \sim N(0, Q)
+	\textbf{F}\boldsymbol{\alpha} &= \textbf{V}, \quad \textbf{V} \sim \mathcal{N}(\textbf{0}, \textbf{Q})
 \end{align}
 where
 \begin{align*}
-	\underset{(Hm \times (H+1)m)}{F} &= \begin{bNiceMatrix}
-		 I_m & & & \\
-		 -I_m & I_m & & \\
+	\underset{(Hm \times (H+1)m)}{\textbf{F}} &= \begin{bNiceMatrix}
+		 \textbf{I}_m & & & \\
+		 -\textbf{I}_m & \textbf{I}_m & & \\
 		  & \ddots & \ddots & \\
-		  & & -I_m & I_m\\
-	\end{bNiceMatrix}, \quad \underset{(Hm \times 1)}{Q} = \begin{bNiceMatrix}
-		\Omega_0 & & & \\
-		& \Omega & & \\
+		  & & -\textbf{I}_m & \textbf{I}_m\\
+	\end{bNiceMatrix}, \quad \underset{(Hm \times 1)}{\textbf{Q}} = \begin{bNiceMatrix}
+		\boldsymbol{\Omega}_0 & & & \\
+		& \boldsymbol{\Omega} & & \\
 		& & \ddots & \\
-		& & & \Omega \\
+		& & & \boldsymbol{\Omega} \\
 \end{bNiceMatrix}.
 \end{align*}
-It is sufficient to choose $\Omega_0$ very small in order shrink the initial state $\alpha_0$ towards zero. Furthermore, the stacked residual maker can then be calculated as $M = I_{Hm} - Z(Z'\Sigma^{-1} Z)^{-1} Z' \Sigma^{-1}$. The conditional posterior distribution of $\alpha$ is multivariate normal with
+It is sufficient to choose $\boldsymbol{\Omega}_0$ very small in order shrink the initial state $\boldsymbol{\alpha}_0$ towards zero. Furthermore, the stacked residual maker can then be calculated as $\textbf{M} = \textbf{I}_{Hm} - \textbf{Z}(\textbf{Z}'\boldsymbol{\Sigma}^{-1} \textbf{Z})^{-1} \textbf{Z}' \boldsymbol{\Sigma}^{-1}$. The conditional posterior distribution of $\boldsymbol{\alpha}$ is multivariate normal with
 \begin{align*}
-	\alpha \sim N(a_1, A_1) \quad \text{where} \quad A_1 &= (F'Q^{-1}F + X'X)^{-1} \\
-	a_1 &= A_1 (X'MY)
+	\boldsymbol{\alpha} \sim \mathcal{N}(\textbf{a}_1, \textbf{A}_1) \quad \text{where} \quad \textbf{A}_1 &= (\textbf{F}'\textbf{Q}^{-1}\textbf{F} + \textbf{X}'\textbf{X})^{-1} \\
+	\textbf{a}_1 &= \textbf{A}_1 (\textbf{X}'\textbf{M}\textbf{Y})
 \end{align*}
-This algorithm is computationally very efficient if block-banded matrices and sparse matrix algorithms are used. As has been shown by \cite{Chan2009}, it is even faster to compute the banded Cholesky factor of $A_1$ and solve for $a_1$ by forward- and backward substitution. The bottom-level means $\beta$ are retrieved from
+This algorithm is computationally very efficient if block-banded matrices and sparse matrix algorithms are used. As has been shown by \cite{Chan2009}, it is even faster to compute the banded Cholesky factor of $\textbf{A}_1$ and solve for $\textbf{a}_1$ by forward- and backward substitution. The bottom-level means $\boldsymbol{\beta}$ are retrieved from
 \begin{align*}
-	\beta \sim N(b_1,B_1) \quad \text{where} \quad B_1 &= \left(Z'\Sigma^{-1}Z + B_0^{-1} \right)^{-1}\\
-	 b_1 &= B_1 \left(Z'\Sigma^{-1} (Y - X\alpha) + B_0^{-1} b_0 \right)
+	\boldsymbol{\beta} \sim \mathcal{N}(\textbf{b}_1,\textbf{B}_1) \quad \text{where} \quad \textbf{B}_1 &= \left(\textbf{Z}'\boldsymbol{\Sigma}^{-1}\textbf{Z} + \textbf{B}_0^{-1} \right)^{-1}\\
+	 \textbf{b}_1 &= \textbf{B}_1 \left(\textbf{Z}'\boldsymbol{\Sigma}^{-1} (\textbf{Y} - \textbf{X}\boldsymbol{\alpha}) + \textbf{B}_0^{-1} \textbf{b}_0 \right)
 \end{align*}
-The priors $b_0$ and $B_0$ should be chosen to be as uninformative as possible. An inconvenient effect of most reconciliation methods is the occurrence of negative reconciled bottom level forecasts. This might be a concern since many applications such as sales or exports do not allow for negative observations. Using a truncated normal prior, this issue can be resolved in an uncomplicated fashion by simply discarding draws of $\beta$ that contain negative entries during the sampling process.
+The priors $\textbf{b}_0$ and $\textbf{B}_0$ should be chosen to be as uninformative as possible. An inconvenient effect of most reconciliation methods is the occurrence of negative reconciled bottom level forecasts. This might be a concern since many applications such as sales or exports do not allow for negative observations. Using a truncated normal prior, this issue can be resolved in an uncomplicated fashion by simply discarding draws of $\boldsymbol{\beta}$ that contain negative entries during the sampling process.
 
-The covariance matrix of the state equation errors $\Omega$ is chosen to be diagonal because the reconciliation errors are assumed to be unique for each base forecast model. The diagonal elements $\omega_1, \hdots, \omega_m$ can be retrieved from an inverse-gamma distribution:
+The covariance matrix of the state equation errors $\boldsymbol{\Omega}$ is chosen to be diagonal because the reconciliation errors are assumed to be unique for each base forecast model. The diagonal elements $\omega_1, \hdots, \omega_m$ can be retrieved from an inverse-gamma distribution:
 \begin{align*}
-\omega_i \sim IG(c_1/2,d_1/2), \quad \text{where} \quad c_1 &= c_0 + H\\
-	d_1 &= d_0 + (\alpha_{h,i} - \alpha_{h-1,i})'(\alpha_{h,i} - \alpha_{h-1,i})
+\omega_i \sim \mathcal{IG}(c_1/2,d_1/2), \quad \text{where} \quad c_1 &= c_0 + H\\
+	d_1 &= d_0 + (\boldsymbol{\alpha}_{h,i} - \boldsymbol{\alpha}_{h-1,i})'(\boldsymbol{\alpha}_{h,i} - \boldsymbol{\alpha}_{h-1,i})
 \end{align*}
-where $\alpha_{h,i}$ denotes the reconciliation error of series $i \in [1, \hdots, m]$ at forecasting period $h \in [1, \hdots, H]$. We choose a weakly informative proper prior distribution with $c_0 = 3$ and $d_0 = 0.01$ in order to restrict the movement of the reconciliation biases slightly. 
+where $\boldsymbol{\alpha}_{h,i}$ denotes the reconciliation error of series $i \in [1, \hdots, m]$ at forecasting period $h \in [1, \hdots, H]$. We choose a weakly informative proper prior distribution with $c_0 = 3$ and $d_0 = 0.01$ in order to restrict the movement of the reconciliation biases slightly. 
 
-The covariance matrix of the base forecast errors $\Sigma_h$ is assumed to be diagonal as well since it can be very cumbersome to estimate in large hierarchies and for longer forecasting horizons. The diagonal elements $\sigma_{1,h}, \hdots, \sigma_{m,h}$ of $\Sigma_h$ are therefore drawn from an inverse-gamma distribution according to
+The covariance matrix of the base forecast errors $\boldsymbol{\Sigma}_h$ is assumed to be diagonal as well since it can be very cumbersome to estimate in large hierarchies and for longer forecasting horizons. The diagonal elements $\sigma_{1,h}, \hdots, \sigma_{m,h}$ are therefore drawn from an inverse-gamma distribution according to
 \begin{align*}
-	\sigma_{i,h} \sim IG(k_1/2,l_1/2), \quad \text{where} \quad k_1 &= k_0 + n\\
-	l_1 &= l_0 + \hat{e}_{i,T}(h)'\hat{e}_{i,T}(h)
+	\sigma_{i,h} \sim \mathcal{IG}(k_1/2,l_1/2), \quad \text{where} \quad k_1 &= k_0 + n\\
+	l_1 &= l_0 + \mathbf{\hat{e}}_{i,T}(h)'\mathbf{\hat{e}}_{i,T}(h)
 \end{align*}
-The n-dimensional vector $\hat{e}_{i,T}(h)$ represents the ex-ante known prediction errors for variable $i \in [1, \hdots, m]$, which have been obtained from the predictive distribution of the base forecasts. While this parsimonious approach has advantages when it comes to computational speed and more accurate forecasts at lower levels of the hierarchy, it is possible to draw the full covariance matrix of historical base forecast prediction errors for each forecasting horizon using an inverse-Wishart distribution. This is however likely to require additional shrinkage priors. We choose a weakly informative prior distribution with $k_0 = 3$ and $l_0 = 1$. This has negligible impact on the posterior
-distribution, but ensures that $\Sigma_h$ is nonsingular in the case where a base forecast has no
+The n-dimensional vector $\mathbf{\hat{e}}_{i,T}(h)$ represents the ex-ante known prediction errors for variable $i \in [1, \hdots, m]$, which have been obtained from the predictive distribution of the base forecasts. While this parsimonious approach has advantages when it comes to computational speed and more accurate forecasts at lower levels of the hierarchy, it is possible to draw the full covariance matrix of historical base forecast prediction errors for each forecasting horizon using an inverse-Wishart distribution. This is however likely to require additional shrinkage priors. We choose a weakly informative prior distribution with $k_0 = 3$ and $l_0 = 1$. This has negligible impact on the posterior
+distribution, but ensures that $\boldsymbol{\Sigma}_h$ is nonsingular in the case where a base forecast has no
 variation.
 
 
 \subsection{Bias Shrinkage}\label{sec:weighting}
-It may be of interest to selectively shrink some reconciliation biases towards zero. This is especially useful when there exists some prior knowledge that a particular base forecast contains additional information that is not reflected in other base predictions. Since the covariance matrix of the prediction errors enters the model as a weighting matrix, it can be useful to impose prior restrictions on $\Sigma_h$. This can be achieved using a time-invariant diagonal matrix $\Lambda$ with $m$ weights on its diagonal. For the conjugate inverse-gamma prior described in section \ref{sec:estim}, this implies a parameter choice of $k_0 = n $ and $l_0 = \hat{\sigma}_i n \lambda_i$, where $\lambda_i$ is the weight of the $i$th variable according to the corresponding entry in $\Lambda$ and $\hat{\sigma_i} = \left(\hat{e}_{i,T}(h)'\hat{e}_{i,T}(h)\right)/n$.
+It may be of interest to selectively shrink some reconciliation biases towards zero. This is especially useful when there exists some prior knowledge that a particular base forecast contains additional information that is not reflected in other base predictions. Since the covariance matrix of the prediction errors enters the model as a weighting matrix, it can be useful to impose prior restrictions on $\boldsymbol{\Sigma}_h$. This can be achieved using a time-invariant diagonal matrix $\boldsymbol{\Lambda}$ with $m$ weights on its diagonal. For the conjugate inverse-gamma prior described in section \ref{sec:estim}, this implies a parameter choice of $k_0 = n $ and $l_0 = (\mathbf{\hat{e}}_{i,T}(h)'\mathbf{\hat{e}}_{i,T}(h)) \lambda_i$, where $\lambda_i$ is the weight of the $i$th variable according to the corresponding entry in $\boldsymbol{\Lambda}$.
+This can be interpreted as an empirical Bayes prior because it is defined using the known base forecast errors. In order to shrink the reconciliation bias towards zero, the corresponding weight $\boldsymbol{\Lambda}$ has to be less than one. At the same time, it is necessary to increase the remaining elements above one such that they are able to account for the higher reconciliation biases at their level of the hierarchy. This is achieved by constructing the weights such that the product of the diagonal elements of $\boldsymbol{\Lambda}$ remains constant at unity. As a result, the determinant and therefore the generalized variance of $\boldsymbol{\Lambda} \boldsymbol{\Sigma}_h \boldsymbol{\Lambda}'$ remains the same for each $\boldsymbol{\Lambda}$.
 
-This can be interpreted as an empirical Bayes prior because it is defined using the known base forecast errors. In order to shrink the reconciliation bias towards zero, the corresponding weight $\Lambda$ has to be less than one. At the same time, it is necessary to increase the remaining elements above one such that they are able to account for the higher reconciliation biases at their level of the hierarchy. This is achieved by constructing the weights such that the product of the diagonal elements of $\Lambda$ remains constant at unity. As a result, the determinant and therefore the generalized variance of $\Lambda\Sigma_h\Lambda'$ remains the same for each $\Lambda$.
-
-Figure~\ref{fig:weights} demonstrates the impact of different prior assumptions on the estimated reconciliation biases. It features identical unreconciled forecasts of a simple hierarchy with $m=3$ series, where $Y_A + Y_B = Y_0$. For each series a sample is drawn from the predictive forecasts density, assumed to be $N(4,2)$ for $Y_A$ (shown in blue), $N(6,1)$ for $Y_B$ (shown in purple), and $N(16,3)$ for $Y_0$ (shown in orange). The horizontal axis shows draws from the unreconciled base forecasts, which are clearly incoherent. The vertical axis on the other hand shows the means of the reconciled forecasts. The diagonal line shows values where the means of base and reconciled forecasts are equal. For boxes above this diagonal line, reconciliation adjusts forecasts upwards, for boxes below the diagonal line reconciliation adjusts forecasts downwards.
+Figure~\ref{fig:weights} demonstrates the impact of different prior assumptions on the estimated reconciliation biases. It features identical unreconciled forecasts of a simple hierarchy with $m=3$ series, where $Y_A + Y_B = Y_0$. For each series a sample is drawn from the predictive forecasts density, assumed to be $\mathcal{N}(4,2)$ for $Y_A$ (shown in blue), $\mathcal{N}(6,1)$ for $Y_B$ (shown in purple), and $\mathcal{N}(16,3)$ for $Y_0$ (shown in orange). The horizontal axis shows draws from the unreconciled base forecasts, which are clearly incoherent. The vertical axis on the other hand shows the means of the reconciled forecasts. The diagonal line shows values where the means of base and reconciled forecasts are equal. For boxes above this diagonal line, reconciliation adjusts forecasts upwards, for boxes below the diagonal line reconciliation adjusts forecasts downwards.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_biases}
-	\captionab{Weighting Schemes}{The 45$^{\circ}$ line indicates where the unreconciled base forecasts on the x-axis are equal to reconciled forecast means on the ordinate.}\label{fig:weights}
+	\captionab{Prior Weighting Schemes}{The 45$^{\circ}$ line indicates where the unreconciled base forecasts on the x-axis are equal to reconciled forecast means on the ordinate.}\label{fig:weights}
 \end{figure}
-Each panel corresponds to a different prior choice for $\Sigma_h$. Subfigure~(1) shows that the forecast biases for each margin are treated equally in an ordinary least squares regression, consequently the means of $Y_A$ and $Y_B$ are adjusted upwards while the mean of $Y_0$ is adjusted downwards. Subfigure~(2) shows reconciliation biases that are weighted with the inverse of their corresponding forecast variances. This leads to a smaller adjustment in $Y_B$ (the reconciled and base means are close) relative the others since it is more accurate. Subfigures (3) and (4) shrink the reconciled forecasts of $Y_0$ and $Y_A$ towards their base forecasts. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster. Besides the shrinkage of specific reconciliation biases towards zero, there are several other weighting methods conceivable. Possible approaches include the weighting of each series by its level in the hierarchy or by to the number of series at each node in the hierarchy. This allows for the emulation of the `structural', `bottom-up', `middle-out' and `top-down' results. A convenient feature of this is that the `middle-out' and `top-down' shrinkage work also for grouped time series, which is not the case in the standard approach.
+Each panel corresponds to a different prior choice for $\boldsymbol{\Sigma}_h$. Subfigure~(1) shows that the forecast biases for each margin are treated equally in an ordinary least squares regression, consequently the means of $Y_A$ and $Y_B$ are adjusted upwards while the mean of $Y_0$ is adjusted downwards. Subfigure~(2) shows reconciliation biases that are weighted with the inverse of their corresponding forecast variances. This leads to a smaller adjustment in $Y_B$ (the reconciled and base means are close) relative the others since it is more accurate. Subfigures (3) and (4) shrink the reconciled forecasts of $Y_0$ and $Y_A$ towards their base forecasts. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster. Besides the shrinkage of specific reconciliation biases towards zero, there are several other weighting methods conceivable. Possible approaches include the weighting of each series by its level in the hierarchy or by to the number of series at each node in the hierarchy. This allows for the emulation of the `structural scaling', `bottom-up', `middle-out' and `top-down' results. A convenient feature of this is that the `middle-out' and `top-down' shrinkage work also for grouped time series, which is not the case in the standard approach.
 
 
 \section{Data}\label{sec:datadesc}
 
-We use a comprehensive dataset containing exports of Swiss goods. All time series cover a period from 1988 to 2018 in monthly frequency and are denominated in Swiss francs. They are not adjusted for seasonalities or calendar effects. The data can be grouped by export destination and product category. The geographic hierarchy consists of 8 regions, aggregated from 245 countries and dependent territories. The categorical hierarchy follows a national nomenclature covering 12 main economic groups and 48 subgroups\footnote{Precious metals, precious and semi-precious stones, works of art and antiques are generally omitted in business cycle research due to volatility and structural breaks.}. This leads to a grouped hierarchy with $m = 13,118$ series containing at least one nonzero entry of which $q = 9,483$ series are at the bottom level. Figure~\ref{fig:area} shows the historical development of the regional and categorical hierarchies.
+We use a comprehensive dataset containing exports of Swiss goods. All time series cover a period from 1988 to 2018 in monthly frequency and are denominated in Swiss francs. They are not adjusted for seasonalities or calendar effects and data revisions are usually very insignificant. The data can be grouped by export destination and product category. The geographic hierarchy consists of 8 regions, aggregated from 245 countries and dependent territories. The categorical hierarchy follows a national nomenclature covering 12 main economic groups and 48 subgroups. This leads to a grouped hierarchy with $m = 13,118$ series containing at least one nonzero entry of which $q = 9,483$ series are at the bottom level. Figure~\ref{fig:area} shows the historical development of the regional and categorical hierarchies.\footnote{Precious metals, precious and semi-precious stones, works of art and antiques are generally omitted in business cycle research due to volatility and structural breaks. Further visualizations and a detailed statement of all categorical and geographical classifications can be found in appendix \ref{sec:data}}
+
+As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Western Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia with around 17\% each in 2018. Exports to Africa and the Middle East, Latin America and the Caribbean, Central Asia and Eastern Europe, South Asia, Australia and Oceania account only for about 10\% combined. The hierarchical grouping by categories is more evenly distributed, but has been subject to greater shifts in its composition. The most important categories are `Chemicals and Pharmaceuticals', `Precision Instruments' and `Machines and Electronics'. The two hierarchical groupings are quite different. The geographic hierarchy widens towards the bottom, but with a majority of the export volume going to European countries it is nevertheless highly concentrated. The categorical hierarchy on the other hand has fewer subgroups and therefore remains narrow towards the bottom. Compared to the regional hierarchy, the export volume is however more evenly distributed.
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_area}
-	\captionab{Contribution to Swiss Exports of Goods}{Nominal values, not adjusted for seasonalities or calendar effects. Average export shares of the year 2018 in parentheses.}\label{fig:area}
+	\captionab{Contribution to Swiss Exports of Goods}{Monthly Swiss goods exports, denominated in billion Swiss francs, not adjusted for seasonalities or calendar effects. Average export shares of the year 2018 in parentheses.}\label{fig:area}
 \end{figure}
 
-As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia with around 17\% each in 2018. Exports to Africa and the Middle East, Latin America, Central and South Asia and Australia account only for about 10\% combined. The hierarchical grouping by categories is more evenly distributed, but has been subject to greater shifts in its composition. The most important categories are `Chemicals and Pharmaceuticals', `Precision Instruments' and `Machines and Electronics'. Figure~\ref{fig:treemap} shows the changes in composition between 1988 and 2018.
-
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_treemap}
-	\captionab{Regional and Categorical Composition of Swiss Goods Exports}{}\label{fig:treemap}
-\end{figure}
-
-The two hierarchical groupings are quite different. The geographic hierarchy with 8 groups and 245 subgroups widens towards the bottom, but with a majority of the export volume going to European countries it is nevertheless highly concentrated. The categorical hierarchy on the other hand is rather narrow with 12 groups and 48 subgroups. Compared to the regional hierarchy, the export volume is however more evenly distributed.
 
 A common assumption is that series at the top level of a hierarchy are easier to forecast. Due to the aggregation involved, they are usually less noisy and exhibit more predictable characteristics such as strength of seasonality, trend, spectral entropy and serial correlation. \cite{Kang2017} measure this by extracting a number of time series features from the data that are commonly associated with better predictability. They then construct a measure of predictability for each time series by estimating principal components from these features. Figure~\ref{fig:feature} shows the first principal component, which accounts for a large share of the variation in these predictability features. It is evident that there exists a strong correlation between predictability and export volume.
 
@@ -286,16 +279,14 @@ A common assumption is that series at the top level of a hierarchy are easier to
 
 \section{Reconciliation of Export Forecasts}\label{sec:appl}
 
-This section provides empirical evidence for the benefits of optimal hierarchical combination. It compares the performance of different reconciliation methods and explores which data characteristics profit in particular from hierarchical combination.
-
-\subsection{Setup}
+This section provides empirical evidence for the benefits of optimal hierarchical combination. It compares the performance of different reconciliation methods and explores which data characteristics profit in particular from hierarchical combination. The setup of our comprehensive pseudo-realtime forecasting exercise is described in the following.
 
 A large hierarchy of Swiss goods exports is used to test the Bayesian reconciliation framework and various competing methods. In each month from 1995 to 2015, forecasts for all series in the hierarchy are calculated for the next 36 months. For each of the 13,118 series, we use a few univariate benchmark models to get the base forecasts. It should be noted that these are not necessarily the best model choice since we do not take into account important covariates such as exchange rates, relative prices or global economic developments. Obtaining these predictor variables is challenging and even where such information is available, selecting significant covariates is either infeasible or impractical for the extremely large number of time series that we attempt to forecast. Furthermore, our focus is to show the advantages of reconciliation relative to base forecasts rather than to obtain the best possible base forecasts.  We use an autoregressive integrated moving average model (ARIMA), an exponential smoothing state space model (ETS) and a seasonal random walk model (RW). As described in \cite{Hyndman2008}, the model for each series is parameterized automatically based on the Akaike Information Criterion. In order to get samples from the predictive densities, $n = 1000$ sample paths are simulated from each fitted model using Gaussian errors. With the exception of the volatile period during the Great Recession, the ARIMA and ETS approaches outperform the Random Walk on average for series at every level and forecasting horizon. All results in the following subsection will therefore rely on ARIMA forecasts.\footnote{A detailed description of the methodology and comparisons of forecasting methods, horizons and accuracy measures can be found in Appendix~\ref{sec:robust}.}
 
-These incoherent forecasts are then reconciled using several basic single level and optimal combination methods. The single level techniques include bottom-up, top-down and middle-out methods. The latter two can only be used for non-grouped time series and are therefore tested on the regional and categorical hierarchies separately. The reconciliation methods used are ordinary and weighted least squares with variance scaling (WLS), weighted least sqared with structural scaling (nseries), MinT and the Bayesian state space reconciliation framework (BSR). If aggregation of the prediction errors is necessary, they are weighted with their respective export share.
+These incoherent forecasts are then reconciled using several basic single level and optimal combination methods. The single level techniques include bottom-up, top-down and middle-out methods. The latter two can only be used for non-grouped time series and are therefore tested on the regional and categorical hierarchies separately. The reconciliation methods used are ordinary least squares (no scaling), weighted least squares with variance scaling, weighted least sqared with structural scaling, MinT and the Bayesian state space reconciliation framework (BSR). If aggregation of the prediction errors is necessary, they are weighted with their respective export share.
 
 
-\subsection{Comparison of Methods}
+\subsection{Comparison of Reconciliation Methods}
 
 Figure~\ref{fig:rmse_all} shows the accuracy of all forecasts, defined as the log of the root mean squared forecasting error of the base forecasts relative to the mean squared errors of the coherent forecasts from each method. Values above zero indicate therefore better forecast performance. It is worth noting that reconciliation methods and bottom-up forecasts are the only techniques that allow for coherence across all levels of a grouped hierarchy. Top-down and middle-out reconciliations are not applicable in the case of grouped time series.
 
@@ -304,22 +295,22 @@ Figure~\ref{fig:rmse_all} shows the accuracy of all forecasts, defined as the lo
 	\captionab{Relative Accuracy of Reconciliation Methods}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Average of all forecast dates and horizons.}\label{fig:rmse_all}
 \end{figure}
 
-Figure~\ref{fig:rmse_all} shows that some forecasts do not benefit from reconciliation. Especially for the bottom level series, combination methods appear to decrease forecasting performance. WLS and BSR are less affected by this deterioration of forecast accuracy at lower levels, probably as a result of their parsimonious parameter choice. In order to demonstrate the benefits of hierarchical combination, Figure~\ref{fig:rmse} shows average log relative RMSFEs by weighting the prediction errors at intermediate and lower levels using the corresponding share in total export volume. It is evident that single level methods do not consistently improve forecasting accuracy. The bottom-up and middle out methods fare reasonably well for the top level series, but fail to outperform the unreconciled forecasts at lower levels and are sometimes even significantly worse. Optimal combination on the other hand tends to outperform the base forecasts especially for top and intermediate level series. Especially the methods using variance scaling, such as MinT, WLS and BSR, work well at all levels.
+Figure~\ref{fig:rmse_all} shows that some forecasts do not benefit from reconciliation. Especially for the bottom level series, combination methods appear to decrease forecasting performance. Variance scaling and BSR are less affected by this deterioration of forecast accuracy at lower levels, probably as a result of their parsimonious parameter choice. In order to demonstrate the benefits of hierarchical combination, Figure~\ref{fig:rmse} shows average log relative RMSFEs by weighting the prediction errors at intermediate and lower levels using the corresponding share in total export volume. It is evident that single level methods do not consistently improve forecasting accuracy. The bottom-up and middle out methods fare reasonably well for the top level series, but fail to outperform the unreconciled forecasts at lower levels and are sometimes even significantly worse. Optimal combination on the other hand tends to outperform the base forecasts especially for top and intermediate level series. Especially variance scaling, MinT and BSR, work well at all levels.
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_relative}
 	\captionab{Relative Accuracy of Reconciliation Methods}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast dates and horizons.}\label{fig:rmse}
 \end{figure}
 
-It is also instructive to look at the development of the relative forecasting accuracy over time in Figure~\ref{fig:rmse_time}. Even though the variance scaling methods are more accurate on average, they do not consistently outperform the unreconciled forecasts. It also appears that MinT, WLS and BSR perform fairly similar over time. For the top level series, the benefits of reconciliation accrue mostly during times of global economic distress and corresponding appreciations of the Swiss franc. This is due to the fact that the simpler models at lower levels provide stability at times when the top level model is biased. The biggest gains can be observed during the early 2000s recession following the burst of the dot-com bubble, the global financial crisis and the following sovereign debt crisis in Europe, and the sudden appreciation of the Swiss franc after the Swiss National Bank stopped supporting the currency peg to the Euro in early 2015. Interesting is the forecasting accuracy after January 2002, when electrical energy was reclassified as a good instead of a service. The structural break in the time series leads to misspecified models, but the rigid structure imposed by the hierarchy increases forecast accuracy substantially relative to the unreconciled case.
+It is also instructive to look at the development of the relative forecasting accuracy over time in Figure~\ref{fig:rmse_time}. Even though the combination methods are more accurate on average, they do not consistently outperform the unreconciled forecasts. While the combination using no scaling does not beat the unreconciled benchmark, the remaining methods perform better and fairly similar over time. For the top level series, the benefits of reconciliation accrue mostly during times of global economic distress and corresponding appreciations of the Swiss franc. This is due to the fact that the simpler models at lower levels provide stability at times when the top level model is biased. The biggest gains can be observed during the early 2000s recession following the burst of the dot-com bubble, the global financial crisis and the following sovereign debt crisis in Europe, and the sudden appreciation of the Swiss franc after the Swiss National Bank stopped supporting the currency peg to the Euro in early 2015. Interesting is the forecasting accuracy after January 2002, when electrical energy was reclassified as a good instead of a service. The structural break in the time series leads to misspecified models, but the rigid structure imposed by the hierarchy increases forecast accuracy substantially relative to the unreconciled case.
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_rmse_time}
-	\captionab{Relative Accuracy of Reconciliation Methods over Time}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast horizons.}\label{fig:rmse_time}
+	\captionab{Relative Accuracy of Combination Methods over Time}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast horizons.}\label{fig:rmse_time}
 \end{figure}
 
-\subsection{Significance of Results}
-In order to check whether the accuracy improvements are significant, one-sided Diebold-Mariano tests are used for the top-level series and forecasting horizons of 1, 2 and 3 years. Table~\ref{tab:dmtest} shows the p-values when testing for equality of reconciled and unreconciled forecasts, where the alternative hypothesis is that the accuracy of reconciliation methods is greater. With the exception of the middle-out approaches, single level methods are not significantly more accurate than the unreconciled forecasts at all horizons. Optimal combinations are associated with lower p-values, in particular for the period of increased economic volatility after the Great Recession.
+\subsection{Comparison of Forecasting Horizons}
+In order to check whether the accuracy improvements are significant, one-sided Diebold-Mariano tests are used for the top-level series and forecasting horizons of 1, 2 and 3 years \citep{Diebold1995}. They test for significance in the difference between two squared forecast errors at various forecasting horizons, accounting for serial correlation in the squared error loss. Table~\ref{tab:dmtest} shows the p-values when testing for equality of reconciled and unreconciled forecasts, where the alternative hypothesis is that the accuracy of reconciliation methods is greater. 
 
 \begin{table}[H]
 	\caption{Diebold-Mariano Tests}\label{tab:dmtest}
@@ -343,6 +334,7 @@ In order to check whether the accuracy improvements are significant, one-sided D
 		 \multicolumn{1}{c}{1} & \multicolumn{1}{c}{2} & \multicolumn{1}{c}{3} \\ 
 		\midrule
 		\multicolumn{10}{l}{\textbf{Single Level}}\\
+		\addlinespace
 		Bottom Up & 0.49 & 0.28 & 0.29 & 0.84 & 0.86 & 0.67 & 0.10 & 0.12 & 0.14 \\ 
 		Middle Out (Cat) & 0.14 & 0.05* & 0.17 & 0.28 & 0.13 & 0.09 & 0.19 & 0.16 & 0.33 \\ 
 		Middle Out (Reg) & 0.02* & 0.04* & 0.01* & 0.08 & 0.15 & 0.05 & 0.08 & 0.10 & 0.02* \\ 
@@ -351,29 +343,29 @@ In order to check whether the accuracy improvements are significant, one-sided D
 		\midrule
 		\multicolumn{10}{l}{\textbf{Optimal Combination}}\\
 		\addlinespace
+		No Scaling & 0.00** & 0.00** & 0.01* & 0.05 & 0.08 & 0.03* & 0.01* & 0.01** & 0.02* \\
+		Structural Scaling & 0.05* & 0.04* & 0.09 & 0.37 & 0.40 & 0.19 & 0.00** & 0.02* & 0.06 \\ 
+		Variance Scaling & 0.02* & 0.01* & 0.05* & 0.22 & 0.15 & 0.07 & 0.00** & 0.01** & 0.05* \\ 
+		MinT & 0.03* & 0.01** & 0.08 & 0.14 & 0.10 & 0.13 & 0.04* & 0.03* & 0.11 \\
 		BSR & 0.14 & 0.08 & 0.12 & 0.57 & 0.62 & 0.25 & 0.01** & 0.04* & 0.09 \\ 
-		OLS & 0.00** & 0.00** & 0.01* & 0.05 & 0.08 & 0.03* & 0.01* & 0.01** & 0.02* \\ 
-		WLS & 0.02* & 0.01* & 0.05* & 0.22 & 0.15 & 0.07 & 0.00** & 0.01** & 0.05* \\ 
-		MinT & 0.03* & 0.01** & 0.08 & 0.14 & 0.10 & 0.13 & 0.04* & 0.03* & 0.11 \\ 
-		nseries & 0.05* & 0.04* & 0.09 & 0.37 & 0.40 & 0.19 & 0.00** & 0.02* & 0.06 \\ 
 		\bottomrule
 		\addlinespace
 	\end{tabularx}
-	\scriptsize{Notes: Table shows p-values of one-sided Diebold Mariano tests. They are retrieved by testing the significance of differences between reconciled and unreconciled forecast errors, using the top level series and 1, 2 and 3 year forecasting horizons. Significance indicated by *** p < 0.001, ** p < 0.01 and * p < 0.05.}
+	\scriptsize{Notes: Table shows p-values of one-sided Diebold Mariano tests. They are retrieved by testing differences between reconciled and unreconciled forecast errors, using the top level series and 1, 2 and 3 year forecasting horizons. Significance indicated by *** p < 0.001, ** p < 0.01 and * p < 0.05.}
 \end{table}
-
+With the exception of the middle-out approaches, single level methods are not significantly more accurate than the unreconciled forecasts at all horizons. Optimal combinations are associated with lower p-values, in particular for the period of increased economic volatility after the Great Recession. Parsimonious approaches, in particular no scaling or variance scaling, appear to perform best even at longer forecasting horizons. There is however no evidence that the use of predictive distributions and state dependent reconciliation errors leads to significant gains.
 
 \subsection{Comparison of Hierarchical Levels}
 Another way to dissect the results is to identify which time series see the greatest gains in forecast accuracy from using reconciliation. Figure~\ref{fig:eval_regions} provides an overview of the relative forecast accuracy by geographic classification, using the Bayesian reconciliation framework. It is again obvious that reconciled forecasts are on average more accurate than in the unreconciled case, but not in every instance. It appears that series with a larger export volume benefit most from reconciliation. Forecasts of exports to countries in Europe, North America and East Asia are almost entirely better off than in the unreconciled case, whereas forecasts of exports to countries with a lower share, such as the islands in Oceania, tend to be worse off. In addition, time series at higher levels in a hierarchy do not necessarily profit more from reconciliation than their corresponding subcategories. The same results also hold true for the relative forecast accuracy by categories, as shown in Figure~\ref{fig:eval_categories}. Because the export shares in the categorical hierarchy are more evenly distributed, the pattern of smaller export volumes being worse off due to reconciliation is less pronounced. Results for other variance scaling methods such as weighted least squares and MinT are similar.
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_regions}
-	\captionab{Relative Accuracy of Reconciliation Methods by Regions}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Average of all forecast dates and horizons. Reconciliation using unweighted BSR.}\label{fig:eval_regions}
+	\captionab{Relative Accuracy of Reconciliation Methods by Regions}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Average of all forecast dates and horizons. Reconciliation using unweighted Bayesian state space reconciliation.}\label{fig:eval_regions}
 \end{figure}
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_categories}
-	\captionab{Relative Accuracy of Reconciliation Methods by Categories}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Average of all forecast dates and horizons. Reconciliation using unweighted BSR}\label{fig:eval_categories}
+	\captionab{Relative Accuracy of Reconciliation Methods by Categories}{Values above zero indicate higher forecast accuracy relative to the unreconciled case. Forecast accuracy is given by the log of the root mean squared forecast errors of the unreconciled forecasts relative to the reconciled forecasts. Average of all forecast dates and horizons. Reconciliation using unweighted Bayesian state space reconciliation.}\label{fig:eval_categories}
 \end{figure}
 
 %\subsection{Benefits of Weighting}\label{sec:resweight}
@@ -386,11 +378,11 @@ Another way to dissect the results is to identify which time series see the grea
 
 \section{Conclusion}\label{sec:conc}
 
-This paper extends the existing literature on hierarchical forecast combination by introducing an explicit definition of the reconciliation biases and assuming them to follow a random walk. The Bayesian state space framework leads to several innovations: It allows for the joint reconciliation of all forecast periods and therefore also combines information on the coherency errors across states. It is possible to use subjective judgment of the forecaster to assign weights to the forecast biases and shrink selected reconciled forecasts towards their corresponding base forecasts. It allows for the incorporation of prior information on the parameters. This avoids some issues such as the occurrence of negative reconciled forecasts and singular forecast error covariance matrices. The use of predictive densities allows for greater flexibility in the choice of the base forecast models, taking for instance conditional heteroskedasticity into account when weighting the forecasts at different horizons. However, the approach tends to be slower than established reconciliation techniques because it requires repeated sampling from the joint posterior distribution.
+This paper extends the existing literature on hierarchical forecast combination by introducing an explicit definition of the reconciliation biases, establishing a Bayesian state space framework and providing efficient estimation algorithms. This allows for the joint reconciliation of all forecast periods and therefore also combines information on the coherence errors across states.  It furthermore allows for the incorporation of prior information on the parameters. This enables the forecaster to introduce subjective judgment into the estimation in order to assign weights to the forecast biases and shrink selected reconciled forecasts towards their corresponding base forecasts. In addition, informative priors avoid some issues such as the occurrence of negative reconciled forecasts and singular forecast error covariance matrices. The use of predictive densities allows for greater flexibility in the choice of the base forecast models, taking for instance conditional heteroskedasticity into account when weighting the forecasts at different horizons. However, the approach tends to be slower than established reconciliation techniques because it requires repeated sampling from the joint posterior distribution.
 
-Using a comprehensive dataset of Swiss goods exports, this paper demonstrates that optimal combination methods using variance scaling improve the forecasting accuracy significantly compared to the unreconciled case and simpler reconciliation methods. The results are robust to changes in the forecasting horizon, the underlying base forecast models and the measure used to determine forecasting accuracy. Optimal combination methods are shown to be particularly useful in the case of misspecified models and during periods of high volatility in the time series.
+Using a comprehensive hierarchical dataset of Swiss goods exports, this paper demonstrates that optimal combination methods improve the forecasting accuracy significantly compared to the unreconciled case and simpler reconciliation methods. While the MinT approach shows the most improvements at higher levels, more parsimonious approaches such as variance scaling or Bayesian state space reconciliation improve the accuracy at lower levels. The results are robust to changes in the forecasting horizon, the underlying base forecast models and the measure used to determine forecasting accuracy. Optimal combination methods are shown to be particularly useful in the case of misspecified models and during periods of high volatility in the time series.
 
-Even though the forecasting accuracy is significantly better on average, no reconciliation method consistently outperforms the unreconciled forecasts across the hierarchy or over time. Forecasts at the top of level tend to benefit more from reconciliation than the noisy series at the bottom of a hierarchy. At the same level, forecasts that account for a larger share of the total are on average more accurate after reconciliation. The paper also provides an example where weighting based on subjective judgment can significantly improve forecasting performance.
+Even though the forecasting accuracy is significantly better on average, no reconciliation method consistently outperforms the unreconciled forecasts across the hierarchy or over time. Forecasts at the top of level tend to benefit more from reconciliation than the noisy series at the bottom of a hierarchy. At the same level, forecasts that account for a larger share of the total are on average more accurate after reconciliation.
 
 
 % bibliography

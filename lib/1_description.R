@@ -30,13 +30,13 @@ options(scipen=10)
 # 1. STACKED AREA PLOTS ---------------------------------------------------
 
 tab <- bind_rows(tibble("Date" = time(tsl$`Regions Total/AF`),
-                        "Europe (53.4%)" = tsl$`Regions Total/EU`,
+                        "Western Europe (53.4%)" = tsl$`Regions Total/EU`,
                         "North America (17.8%)" = tsl$`Regions Total/NA`,
                         "East Asia (16.6%)" = tsl$`Regions Total/EA`,
                         "Africa and Middle East (5.3%)"  = tsl$`Regions Total/AF`,
                         "Australia and Oceania (1.3%)" = tsl$`Regions Total/AO`,
-                        "Central Asia (1.5%)" = tsl$`Regions Total/CA`,
-                        "Latin America (3.0%)" = tsl$`Regions Total/LA`,
+                        "Eastern Europe & Central Asia (1.5%)" = tsl$`Regions Total/CA`,
+                        "Latin America & the Caribbean (3.0%)" = tsl$`Regions Total/LA`,
                         "South Asia (1.0%)" = tsl$`Regions Total/SA`) %>% 
                    gather(key = Name, value = Exports, -Date) %>% 
                    add_column("Classification" = factor("by Region",levels = c("by Region","by Category"))),
@@ -61,12 +61,12 @@ tab2 <- tab %>%
   add_row(Date = 2000, Name = "Categories", Exports = 0, Classification = "by Category") %>% 
   add_row(Date = 2000, Name = " ", Exports = 0, Classification = "by Category") %>% 
   mutate(Name = factor(Name,levels = c("Regions",
-                                       "Europe (53.4%)",
+                                       "Western Europe (53.4%)",
                                        "North America (17.8%)",
                                        "East Asia (16.6%)" ,
                                        "Africa and Middle East (5.3%)" ,
-                                       "Latin America (3.0%)" ,
-                                       "Central Asia (1.5%)" ,
+                                       "Latin America & the Caribbean (3.0%)" ,
+                                       "Eastern Europe & Central Asia (1.5%)" ,
                                        "South Asia (1.0%)",
                                        "Australia and Oceania (1.3%)",
                                        " ",
@@ -96,6 +96,7 @@ ggplot(tab2, aes(x = Date, y = Exports)) +
                                "white","white",colorRampPalette(rev(brewer.pal(9,"Blues")))(13)[-13])) +
   theme_bw(base_size = 9) +
   theme(legend.position="right",
+        text = element_text(size = 10),
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank()) +
@@ -117,34 +118,36 @@ reg_exports <- sapply(as.list(aggts(tradehts$reg)),
                       function(x) mean(tail(x,12)))
 rgroup <- recode(substr(names(reglist),1,2),
                  "To" = "World",
-                 "AF" = "Africa and Middle East",
-                 "AO" = "Australia and Oceania",
+                 "AF" = "Africa & Middle East",
+                 "AO" = "Australia & Oceania",
                  "EA" = "East Asia",
-                 "EU" = "Europe",
-                 "CA" = "Central Asia",
-                 "LA" = "Latin America",
+                 "EU" = "Western Europe",
+                 "CA" = "Eastern Europe & Central Asia",
+                 "LA" = "Latin America & Caribbean",
                  "NA" = "North America",
                  "SA" = "South Asia")
 regfeatures <- tsfeatures(aggts(tradehts$reg)) %>% 
-  select("trend","spike","linearity","curvature","e_acf1",
+  dplyr::select("trend","spike","linearity","curvature","e_acf1",
          "e_acf10","seasonal_strength","peak","trough",         
          "entropy","x_acf1","x_acf10","diff1_acf1","diff1_acf10","diff2_acf1",       
          "diff2_acf10","seas_acf1") %>% 
-  prcomp(scale=TRUE) %$% 
-  x %>% 
+  prcomp(scale=TRUE)
+
+regfeatures <- regfeatures$x %>% 
   as_tibble() %>%
-  select(PC1) %>% 
+  dplyr::select(PC1) %>% 
   add_column(Region = rgroup,
              Level = c(rep(1:length(rlvl), rlvl),rep(3,245)),
              Exports = reg_exports) %>% 
   arrange(sample(x = length(reglist),size = length(reglist),replace = F)) %>% 
-  mutate(Region = factor(Region, levels = c("Europe",
+  mutate(Region = factor(Region, levels = c("Western Europe",
                                             "North America",
                                             "East Asia",
-                                            "Africa and Middle East",
-                                            "Latin America",
-                                            "Central Asia","South Asia",
-                                            "Australia and Oceania",
+                                            "Africa & Middle East",
+                                            "Latin America & Caribbean",
+                                            "Eastern Europe & Central Asia",
+                                            "South Asia",
+                                            "Australia & Oceania",
                                             "World"))) %>% 
   filter(Exports > 1)
 
@@ -166,10 +169,13 @@ ggplot(regfeatures, aes(x=Exports, y=PC1)) +
   theme(legend.position="bottom",
         legend.box = "horizontal",
         panel.grid.major.x = element_blank()) + 
-  guides(color=guide_legend(nrow=3), size=guide_legend(nrow=3))
+  guides(color=guide_legend(nrow=3,override.aes = list(size=2)),
+         size=guide_legend(nrow=3))
+
+
 
 ggsave("tex/fig/fig_confetti.pdf", device = "pdf",
-       width = 18, height = 10, units = "cm")
+       width = 18.5, height = 10, units = "cm")
 
 
 

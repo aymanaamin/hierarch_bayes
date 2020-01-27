@@ -3,29 +3,39 @@
 \pagenumbering{arabic}
 \def\thepage{A\arabic{page}}
 
-\subsection{Identification of $\alpha_h$}
+\subsection{Identification of the Reconciliation Errors}
 \label{sec:proofs}
-Because the reconciliation regression is an ill-posed problem, it is necessary to impose additional restrictions on the reconciliation biases $\alpha_h$ in order to achieve identification. Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity. The conditional distribution of $\alpha_h$ can be expressed equivalently by concentrating out $\beta_h$ in the following reconciliation identity.
+The regression in equation \ref{eq:main} is essentially an ill-posed problem since the predictor variables are multicollinear design matrices constructed from ones and zeros. It is therefore necessary to impose additional restrictions on the reconciliation biases $\boldsymbol{\alpha}_h$ in order to achieve identification. 
+
+Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity. The conditional distribution of $\boldsymbol{\alpha}_h$ can be expressed equivalently by concentrating out $\boldsymbol{\beta}_h$ in the following reconciliation identity.
 \begin{align}
 	\label{eq:prior1}
-	\alpha_h &= \hat{y}_{T}(h) - S\beta_h.
+	\boldsymbol{\alpha}_h &= \mathbf{\hat{y}}_{T}(h) - \textbf{S}\boldsymbol{\beta}_h.
 \end{align}
-In order to eliminate $\beta$ from equation~\eqref{eq:prior1}, both sides are multiplied by the projection matrix $P_h = S(S'\Sigma_h^{-1} S)^{-1}S'\Sigma_h^{-1}$. This implies an orthogonal projection onto the coherent subspace subject to the weighting matrix $\Sigma_h$. The resulting terms are then subtracted from both sides of equation~\eqref{eq:prior1}:
+In order to eliminate $\boldsymbol{\beta_h}$ from equation~\eqref{eq:prior1}, both sides are multiplied by the standard generalized least squares projection matrix $\textbf{P}_h = \textbf{S}(\textbf{S}'\boldsymbol{\Sigma}_h^{-1} \textbf{S})^{-1}\textbf{S}'\boldsymbol{\Sigma}_h^{-1}$. This implies an orthogonal projection onto the coherent subspace subject to the weighting matrix $\boldsymbol{\Sigma_h}$. The resulting terms are then subtracted from both sides of equation~\eqref{eq:prior1}:
 \begin{align}
 	\label{eq:prior3}
-	(I_m - P_h)\, \alpha_h &= (I_m - P_h)\, \hat{y}_{T}(h).
+	(\textbf{I}_m - \textbf{P}_h)\, \alpha_h &= (\textbf{I}_m - \textbf{P}_h)\, \mathbf{\hat{y}}_{T}(h).
 \end{align}
-It is useful to define the idempotent residual maker $M_h = I_m - P_h$. Since $M_h$ is not invertible due to the presence of multicollinearity, equation~\eqref{eq:prior3} cannot be solved for $\alpha_h$. Our identifying assumption is that $\alpha_h$ lies in the span of $M$ in which case $M\alpha_h = \alpha_h$. This solves the identification problem and leaves the reconciliation biases as a function of the data and the residual maker $M_h$:
+It is useful to define the idempotent residual maker $\textbf{M}_h = \textbf{I}_m - \textbf{P}_h$. Since $\textbf{M}_h$ is not invertible due to the presence of multicollinearity, equation~\eqref{eq:prior3} cannot be solved for $\boldsymbol{\alpha}_h$. Our identifying assumption is that $\boldsymbol{\alpha}_h$ lies in the span of $\textbf{M}_h$ in which case $\textbf{M}_h\boldsymbol{\alpha}_h = \boldsymbol{\alpha}_h$. This solves the identification problem and leaves the reconciliation biases as a function of the data and the residual maker $\textbf{M}_h$:
 \begin{align}
-	\alpha_h &= M \hat{y}_{T}(h).
+	\boldsymbol{\alpha}_h &= \textbf{M} \mathbf{\hat{y}}_{T}(h).
 \end{align}
 This result is again intuitive since the reconciliation biases are the residuals from a regression of the base forecasts on the aggregation matrix.
 
+\clearpage
+
 \subsection{Data}\label{sec:data}
 
-The data is compiled by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}}.
+The data is compiled by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}}.  Figure~\ref{fig:treemap} shows the changes in composition between 1988 and 2018.
 
-\begin{footnotesize}
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_treemap}
+	\captionab{Regional and Categorical Composition of Swiss Goods Exports}{}\label{fig:treemap}
+\end{figure}
+
+
+\begin{scriptsize}
 \begin{longtable}{p{1.5cm}p{12cm}}
 \caption{Description of Categorical Hierarchy}\\
 \toprule
@@ -120,9 +130,9 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 \enskip  14.1  &  Works of art  \\
 \enskip  14.2  &  Antiques and collectors' items  \\
 \end{longtable}
-\end{footnotesize}
+\end{scriptsize}
 
-\begin{footnotesize}
+\begin{scriptsize}
 \begin{longtable}{lp{8cm}p{2cm}p{2cm}}
   \caption{Description of Geographical Hierarchy}\\
   \toprule
@@ -137,7 +147,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
   \endfoot
   \bottomrule
   \endlastfoot
-	\multicolumn{3}{l}{Europe}  &  \\
+	\multicolumn{3}{l}{Western Europe}  &  \\
 	DE   &   Germany                          &   01/1988   &   -  \\
 	FR   &   France                           &   01/1988   &   -  \\
 	IT   &   Italy                            &   01/1988   &   -  \\
@@ -194,7 +204,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	LT   &   Lithuania                        &   01/1992   &   -  \\
 	QX   &   Countries not specified          &   01/2002   &   -  \\
   \midrule
-  \multicolumn{3}{l}{Caucasus, Central Asia and Eastern Europe}  &  \\
+  \multicolumn{3}{l}{Eastern Europe and Central Asia}  &  \\
 	RU & Russian Federation   & 01/1992 & -  \\
 	AM & Armenia              & 01/1992 & -  \\
 	AZ & Azerbaijan           & 01/1992 & -  \\
@@ -331,7 +341,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	US & United States          & 01/1988 & -  \\
 	GL & Greenland              & 01/1988 & -  \\
 	\midrule
-	\multicolumn{3}{l}{Latin America and the Carribean}  &  \\
+	\multicolumn{3}{l}{Latin America and the Caribbean}  &  \\
 	MX & Mexico                                   & 01/1988 & -  \\
 	BZ & Belize                                   & 01/1988 & -  \\
 	GT & Guatemala                                & 01/1988 & -  \\
@@ -418,14 +428,22 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	NR & Nauru                           & 01/1988 & -  \\
 	TO & Tonga                           & 01/1988 & -  \\
 \end{longtable}
-\end{footnotesize}
+\end{scriptsize}
 
 
 \subsection{Robustness}
 \label{sec:robust}
 
-Results are evaluated using several accuracy measures such as the root mean squared error (RMSE), mean absolute percentage error (MAPE) and mean absolute scaled error (MASE). The method of \cite{Diebold1995} is used to test whether reconciled forecasts are significantly more accurate than unreconciled forecasts. The Diebold-Mariano test checks for significance in the difference between two squared forecast errors at various forecasting horizons, accounting for serial correlation in the squared error loss. In addition, another significance test is used to compare the mean squared errors directly.
 
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_mase}
+	\captionab{MASE of Reconciliation Methods}{Lower bars indicate more accurate forecasts. Horizontal lines show the mean absolute scaled error of unreconciled predictions. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast dates and horizons.}\label{fig:mase}
+\end{figure}
+
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_mape}
+	\captionab{MAPE of Reconciliation Methods}{Lower bars indicate more accurate forecasts. Horizontal lines show the mean absolute percentage error of unreconciled predictions. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast dates and horizons.}\label{fig:mape}
+\end{figure}
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_methods_top}
@@ -437,15 +455,6 @@ Results are evaluated using several accuracy measures such as the root mean squa
 	\captionab{Accuracy of Forecasting Methods at the Bottom Level}{}
 \end{figure}
 
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_mase}
-	\captionab{Forecast Errors of Reconciliation Methods}{Lower bars indicate better forecasts. Horizontal lines show the mean absolute scaled error of unreconciled predictions. Average of all forecast horizons.}\label{fig:mase}
-\end{figure}
-
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_mape}
-	\captionab{Forecast Errors of Reconciliation Methods}{Lower bars indicate better forecasts. Horizontal lines show the mean absolute percentage error of unreconciled predictions. Average of all forecast horizons.}\label{fig:mape}
-\end{figure}
 
 %\subsection{Scaling Methods}
 %\label{subsec:scaling}
