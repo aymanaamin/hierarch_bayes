@@ -233,7 +233,7 @@ The covariance matrix of the state equation errors $\boldsymbol{\Omega}$ is chos
 \omega_i \sim \mathcal{IG}(c_1/2,d_1/2), \quad \text{where} \quad c_1 &= c_0 + H\\
 	d_1 &= d_0 + (\boldsymbol{\alpha}_{h,i} - \boldsymbol{\alpha}_{h-1,i})'(\boldsymbol{\alpha}_{h,i} - \boldsymbol{\alpha}_{h-1,i})
 \end{align*}
-where $\boldsymbol{\alpha}_{h,i}$ denotes the reconciliation error of series $i \in [1, \hdots, m]$ at forecasting period $h \in [1, \hdots, H]$. We choose a weakly informative proper prior distribution with $c_0 = 3$ and $d_0 = 0.01$ in order to restrict the movement of the reconciliation biases slightly. 
+where $\boldsymbol{\alpha}_{h,i}$ denotes the reconciliation error of series $i \in \{1, \hdots, m \}$ at forecasting period $h \in \{1, \hdots, H\}$. We choose a weakly informative proper prior distribution with $c_0 = 3$ and $d_0 = 0.01$ in order to restrict the movement of the reconciliation biases slightly. 
 
 The covariance matrix of the base forecast errors $\boldsymbol{\Sigma}_h$ is assumed to be diagonal as well since it can be very cumbersome to estimate in large hierarchies and for longer forecasting horizons. The diagonal elements $\sigma_{1,h}, \hdots, \sigma_{m,h}$ are therefore drawn from an inverse-gamma distribution according to
 \begin{align*}
