@@ -15,7 +15,7 @@ Following \cite{Farebrother1978}, the regression is partitioned in order to sepa
 In order to eliminate $\boldsymbol{\beta_h}$ from equation~\eqref{eq:prior1}, both sides are multiplied by the standard generalized least squares projection matrix $\textbf{P}_h = \textbf{S}(\textbf{S}'\boldsymbol{\Sigma}_h^{-1} \textbf{S})^{-1}\textbf{S}'\boldsymbol{\Sigma}_h^{-1}$. This implies an orthogonal projection onto the coherent subspace subject to the weighting matrix $\boldsymbol{\Sigma_h}$. The resulting terms are then subtracted from both sides of equation~\eqref{eq:prior1}:
 \begin{align}
 	\label{eq:prior3}
-	(\textbf{I}_m - \textbf{P}_h)\, \alpha_h &= (\textbf{I}_m - \textbf{P}_h)\, \mathbf{\hat{y}}_{T}(h).
+	(\textbf{I}_m - \textbf{P}_h)\, \boldsymbol{\alpha}_h &= (\textbf{I}_m - \textbf{P}_h)\, \mathbf{\hat{y}}_{T}(h).
 \end{align}
 It is useful to define the idempotent residual maker $\textbf{M}_h = \textbf{I}_m - \textbf{P}_h$. Since $\textbf{M}_h$ is not invertible due to the presence of multicollinearity, equation~\eqref{eq:prior3} cannot be solved for $\boldsymbol{\alpha}_h$. Our identifying assumption is that $\boldsymbol{\alpha}_h$ lies in the span of $\textbf{M}_h$ in which case $\textbf{M}_h\boldsymbol{\alpha}_h = \boldsymbol{\alpha}_h$. This solves the identification problem and leaves the reconciliation biases as a function of the data and the residual maker $\textbf{M}_h$:
 \begin{align}
