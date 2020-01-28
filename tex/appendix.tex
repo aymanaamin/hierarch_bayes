@@ -5,14 +5,19 @@
 
 \subsection{Identification of the Reconciliation Errors}
 \label{sec:proofs}
-The regression in equation \ref{eq:main} is essentially an ill-posed problem since the predictor variables are multicollinear design matrices constructed from ones and zeros. It is therefore necessary to impose additional restrictions on the reconciliation biases $\boldsymbol{\alpha}_h$ in order to achieve identification. 
+The regression in equation~(\ref{eq:main}) is essentially an ill-posed problem since the predictor variables are multicollinear design matrices constructed from ones and zeros. It is therefore necessary to impose additional restrictions on the reconciliation biases $\boldsymbol{\alpha}_h$ in order to achieve identification. 
 
 Following \cite{Farebrother1978}, the regression is partitioned in order to separate the parameters that cause multicollinearity. The conditional distribution of $\boldsymbol{\alpha}_h$ can be expressed equivalently by concentrating out $\boldsymbol{\beta}_h$ in the following reconciliation identity.
 \begin{align}
 	\label{eq:prior1}
 	\boldsymbol{\alpha}_h &= \mathbf{\hat{y}}_{T}(h) - \textbf{S}\boldsymbol{\beta}_h.
 \end{align}
-In order to eliminate $\boldsymbol{\beta_h}$ from equation~\eqref{eq:prior1}, both sides are multiplied by the standard generalized least squares projection matrix $\textbf{P}_h = \textbf{S}(\textbf{S}'\boldsymbol{\Sigma}_h^{-1} \textbf{S})^{-1}\textbf{S}'\boldsymbol{\Sigma}_h^{-1}$. This implies an orthogonal projection onto the coherent subspace subject to the weighting matrix $\boldsymbol{\Sigma_h}$. The resulting terms are then subtracted from both sides of equation~\eqref{eq:prior1}:
+In order to eliminate $\boldsymbol{\beta_h}$ from equation~\eqref{eq:prior1}, both sides are multiplied by the standard generalized least squares projection matrix $\textbf{P}_h = \textbf{S}(\textbf{S}'\boldsymbol{\Sigma}_h^{-1} \textbf{S})^{-1}\textbf{S}'\boldsymbol{\Sigma}_h^{-1}$, which results in 
+\begin{align}
+	\label{eq:app2}
+	\textbf{P}_h\, \boldsymbol{\alpha}_h &= \textbf{P}_h\, \mathbf{\hat{y}}_{T}(h) - \textbf{S}\boldsymbol{\beta}_h.
+\end{align}
+This implies an orthogonal projection onto the coherent subspace subject to the weighting matrix $\boldsymbol{\Sigma_h}$. The resulting terms are then subtracted from both sides of equation~\eqref{eq:prior1}, which gets rid of $\boldsymbol{\beta}_h$:
 \begin{align}
 	\label{eq:prior3}
 	(\textbf{I}_m - \textbf{P}_h)\, \boldsymbol{\alpha}_h &= (\textbf{I}_m - \textbf{P}_h)\, \mathbf{\hat{y}}_{T}(h).
