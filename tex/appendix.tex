@@ -32,19 +32,18 @@ This result is again intuitive since the reconciliation biases are the residuals
 
 \subsection{Data}\label{sec:data}
 
-The data is compiled by the Swiss Federal Customs Administration\footnote{\url{https://www.ezv.admin.ch/ezv/en/home/topics/swiss-foreign-trade-statistics.html}}.  Figure~\ref{fig:treemap} shows the changes in composition between 1988 and 2018.
+Monthly data on Swiss merchandise trade is compiled by the Swiss Federal Customs Administration. Figure~\ref{fig:treemap} shows the changes in hierarchical composition of Swiss merchandise exports between 1988 and 2018. Tables~\ref{tab:geo} and \ref{tab:cat} provide a detailed overview of the regional and categorical dimensions of the dataset on Swiss merchandise trade:
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_treemap}
-	\captionab{Regional and Categorical Composition of Swiss Goods Exports}{}\label{fig:treemap}
+	\captionab{Composition of Swiss Goods Exports}{Treemap shows hierarchical composition of Swiss exports by category and destination in 1988 and 2018.}\label{fig:treemap}
 \end{figure}
 
-
 \begin{scriptsize}
-\begin{longtable}{p{1.5cm}p{12cm}}
-\caption{Description of Categorical Hierarchy}\\
+\begin{longtable}{p{2.2cm}p{12cm}}
+\caption{Description of Categorical Hierarchy}\label{tab:geo}\\
 \toprule
-\normalsize{No.} & \normalsize{Description}\\
+No. & Description\\
 \midrule
 \endfirsthead
 \multicolumn{2}{@{}l}{\ldots continued}\\
@@ -138,8 +137,8 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 \end{scriptsize}
 
 \begin{scriptsize}
-\begin{longtable}{lp{8cm}p{2cm}p{2cm}}
-  \caption{Description of Geographical Hierarchy}\\
+\begin{longtable}{lp{8.8cm}p{2cm}p{2cm}}
+  \caption{Description of Geographical Hierarchy}\label{tab:cat}\\
   \toprule
   \multicolumn{2}{l}{Country} &  valid from  &  valid to  \\
   \midrule
@@ -152,7 +151,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
   \endfoot
   \bottomrule
   \endlastfoot
-	\multicolumn{3}{l}{Western Europe}  &  \\
+	\multicolumn{3}{l}{\textbf{Western Europe}}  &  \\
 	DE   &   Germany                          &   01/1988   &   -  \\
 	FR   &   France                           &   01/1988   &   -  \\
 	IT   &   Italy                            &   01/1988   &   -  \\
@@ -209,7 +208,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	LT   &   Lithuania                        &   01/1992   &   -  \\
 	QX   &   Countries not specified          &   01/2002   &   -  \\
   \midrule
-  \multicolumn{3}{l}{Eastern Europe and Central Asia}  &  \\
+  \multicolumn{3}{l}{\textbf{Eastern Europe and Central Asia}}  &  \\
 	RU & Russian Federation   & 01/1992 & -  \\
 	AM & Armenia              & 01/1992 & -  \\
 	AZ & Azerbaijan           & 01/1992 & -  \\
@@ -223,7 +222,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	UA & Ukraine              & 01/1992 & -  \\
 	UZ & Uzbekistan           & 01/1992 & -  \\
 	\midrule
-	\multicolumn{3}{l}{Africa and Middle East}  &  \\
+	\multicolumn{3}{l}{\textbf{Africa and Middle East}}  &  \\
 	EG & Egypt                                  & 01/1988 & -  \\
 	SD & Sudan                                  & 01/1988 & -  \\
 	SS & South Sudan, Republic of               & 09/2011 & -  \\
@@ -318,7 +317,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	NP & Nepal, Federal Democratic Rep. & 01/1988 & -  \\
 	BT & Bhutan                         & 01/1988 & -  \\
 	\midrule
-	\multicolumn{3}{l}{East Asia}  &  \\
+	\multicolumn{3}{l}{\textbf{East Asia}}  &  \\
 	MM & Myanmar, Union of                      & 01/1988 & -  \\
 	TH & Thailand                               & 01/1988 & -  \\
 	MY & Malaysia                               & 01/1988 & -  \\
@@ -340,13 +339,13 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	TL & East Timor                             & 01/2004 & -  \\
 	TP & East Timor                             & 01/1999 & 12/2003  \\
 	\midrule
-	\multicolumn{3}{l}{North America}  &  \\
+	\multicolumn{3}{l}{\textbf{North America}}  &  \\
 	CA & Canada                 & 01/1988 & -  \\
 	PM & St Pierre and Miquelon & 01/1988 & -  \\
 	US & United States          & 01/1988 & -  \\
 	GL & Greenland              & 01/1988 & -  \\
 	\midrule
-	\multicolumn{3}{l}{Latin America and the Caribbean}  &  \\
+	\multicolumn{3}{l}{\textbf{Latin America and the Caribbean}}  &  \\
 	MX & Mexico                                   & 01/1988 & -  \\
 	BZ & Belize                                   & 01/1988 & -  \\
 	GT & Guatemala                                & 01/1988 & -  \\
@@ -400,7 +399,7 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 	PE & Peru                                     & 01/1988 & -  \\
 	EC & Ecuador                                  & 01/1988 & -  \\
 	\midrule
-	\multicolumn{3}{l}{Australia and Oceania}  &  \\
+	\multicolumn{3}{l}{\textbf{Australia and Oceania}}  &  \\
 	AU & Australia                       & 01/1988 & -  \\
 	PG & Papua New Guinea                & 01/1988 & -  \\
 	CC & Cocos (Keeling) Islands         & 01/1999 & -  \\
@@ -452,12 +451,12 @@ The data is compiled by the Swiss Federal Customs Administration\footnote{\url{h
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_methods_top}
-	\captionab{Accuracy of Forecasting Methods at the Top Level}{}
+	\captionab{Accuracy of Forecasting Methods at the Top Level}{Figure provides several measures of forecast accuracy for the top level series from 1995 to 2015.}
 \end{figure}
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_eval_methods_bottom}
-	\captionab{Accuracy of Forecasting Methods at the Bottom Level}{}
+	\captionab{Accuracy of Forecasting Methods at the Bottom Level}{Figure provides several measures of forecast accuracy for the bottom level series from 1995 to 2015. Prediction errors are weighted using their corresponding export shares.}
 \end{figure}
 
 
