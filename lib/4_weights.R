@@ -64,10 +64,11 @@ colnames(dat2) <- c("Y0","YA","YB")
 dat2 <- dat2 %>% gather(ser,pnts)
 dat <- full_join(dat1,dat2, by = "ser") %>% 
   mutate(ser = factor(ser, levels = c("YA","YB","Y0"))) %>% 
-  mutate(recon = factor(recon, labels = c("`(1) No Scaling (OLS)`",
-                                          "`(2) Variance Scaling (GLS)`",
-                                          "`(3) Variance Scaling & Shrinkage towards Y`[0]",
-                                          "`(4) Variance Scaling & Shrinkage towards Y`[A]")))
+  mutate(recon = factor(recon, levels = c("ols","gls1","gls2","gls3"),
+                        labels = c("`(1) No Scaling (OLS)`",
+                                   "`(2) Variance Scaling (GLS)`",
+                                   "`(3) Variance Scaling & Shrinkage towards Y`[0]",
+                                   "`(4) Variance Scaling & Shrinkage towards Y`[A]")))
 
 
 labs <- c(expression(Y[A] %~% N(4,2)),
@@ -81,9 +82,9 @@ ggplot(dat, aes(x = mean, y = pnts, fill = ser, color = ser)) +
   facet_wrap( ~ recon, ncol=2, labeller = label_parsed) +
   scale_x_continuous(expression("Reconciled Forecast Mean (S"*beta*")"), breaks = seq(4,16,4), minor_breaks = NULL) +
   scale_y_continuous("Unreconciled Forecast Draws", breaks = seq(4,16,4), minor_breaks = NULL) +
-  scale_color_manual("Unreconciled Base Forecasts", values = c(bpy.colors(5)[-c(1,5)]),
+  scale_color_manual("Unreconciled Base Forecasts", values = brewer.pal(4, "Blues")[-1],
                      labels = labs) +
-  scale_fill_manual("Unreconciled Base Forecasts", values = c(bpy.colors(5)[-c(1,5)]),
+  scale_fill_manual("Unreconciled Base Forecasts", values = brewer.pal(4, "Blues")[-1],
                     labels = labs) +
   coord_flip(expand = FALSE, xlim = c(0,20), ylim = c(0,20)) +
   theme_bw() + theme(legend.position="bottom") 
