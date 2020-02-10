@@ -152,12 +152,7 @@ In order to reconcile all forecasting horizons jointly, the coherence errors $\b
 	\label{eq:state}
 	\boldsymbol{\alpha}_h & = \boldsymbol{\alpha}_{h-1} + \textbf{v}_h, \qquad \textbf{v}_h \sim \mathcal{N}(\textbf{0}, \boldsymbol{\Omega}).
 \end{align}
-The initial state $\boldsymbol{\alpha_0}$ is the coherence error in the last observation $\textbf{y}_{T}$, which is conveniently known to be zero. It is however necessary to impose some restrictions in order to identify the parameters, which is a result of multicollinearity in equation~\eqref{eq:main}. This is quite intuitive since there is more than one unique way to reconcile incoherent forecasts. To show this formally, the coherence errors $\boldsymbol{\alpha}_h$ can be expressed equivalently by concentrating out $\boldsymbol{\beta}_h$ using the projection matrix $\textbf{P}_h = \textbf{S}(\textbf{S}'\boldsymbol{\Sigma}_h^{-1} \textbf{S})^{-1}\textbf{S}'\boldsymbol{\Sigma}_h^{-1}$. Please refer to appendix \ref{sec:proofs} for a detailed derivation. This leads to the following identity:
-\begin{align}
-	\label{eq:prior2}
-	(\textbf{I}_m - \textbf{P}_h)\, \boldsymbol{\alpha}_h &= (\textbf{I}_m - \textbf{P}_h)\, \mathbf{\hat{y}}_{T}(h).
-\end{align}
-It is useful to define the idempotent residual maker $\textbf{M}_h = \textbf{I}_m - \textbf{P}_h$. Since $\textbf{M}_h$ is not invertible due to the presence of multicollinearity, equation~\eqref{eq:prior2} cannot be solved for $\boldsymbol{\alpha}_h$. Our identifying assumption is that $\boldsymbol{\alpha}_h$ lies in the span of $\textbf{M}_h$, in which case $\textbf{M}\boldsymbol{\alpha}_h = \boldsymbol{\alpha}_h$. This solves the identification problem and leaves the reconciliation biases as a function of the data and the residual maker $\textbf{M}_h$. This result is also intuitive since the reconciliation biases are the residuals from a regression of the base forecasts on the aggregation matrix.
+The initial state $\boldsymbol{\alpha_0}$ is the coherence error in the last observation $\textbf{y}_{T}$, which is conveniently known to be zero. It is however necessary to impose some restrictions in order to identify the parameters, which is a result of multicollinearity in equation~\eqref{eq:main}. This is quite intuitive since there is more than one unique way to reconcile incoherent forecasts. To show this formally, the coherence errors $\boldsymbol{\alpha}_h$ can be expressed equivalently by concentrating out $\boldsymbol{\beta}_h$ using the projection matrix $\textbf{P}_h = \textbf{S}(\textbf{S}'\boldsymbol{\Sigma}_h^{-1} \textbf{S})^{-1}\textbf{S}'\boldsymbol{\Sigma}_h^{-1}$. This leads to the following identity: $(\textbf{I}_m - \textbf{P}_h)\, \boldsymbol{\alpha}_h = (\textbf{I}_m - \textbf{P}_h)\, \mathbf{\hat{y}}_{T}(h).$ It is useful to define the idempotent residual maker $\textbf{M}_h = \textbf{I}_m - \textbf{P}_h$. Since $\textbf{M}_h$ is not invertible due to the presence of multicollinearity, the identity cannot be solved for $\boldsymbol{\alpha}_h$. Our identifying assumption is that $\boldsymbol{\alpha}_h$ lies in the span of $\textbf{M}_h$, in which case $\textbf{M}\boldsymbol{\alpha}_h = \boldsymbol{\alpha}_h$. This solves the identification problem and leaves the reconciliation biases as a function of the data and the residual maker $\textbf{M}_h$. This result is also intuitive since the reconciliation biases are the residuals from a regression of the base forecasts on the aggregation matrix.\footnote{See Appendix \ref{sec:proofs} for a detailed derivation}
 
 
 \subsection{Estimation}\label{sec:estim}
@@ -200,7 +195,7 @@ The unreconciled base forecast means $\mathbf{\hat{y}}_{T}(h)$, the summation ma
 	& & \textbf{S} \, \,\\
 \end{bNiceMatrix}.
 \end{align*}
-The state equation (\ref{eq:prior2}) needs to be written correspondingly as
+The state equation (\ref{eq:state}) needs to be written correspondingly as
 \begin{align}
 	\label{eq:stackstate}
 	\textbf{F}\boldsymbol{\alpha} &= \textbf{V}, \quad \textbf{V} \sim \mathcal{N}(\textbf{0}, \textbf{Q})
