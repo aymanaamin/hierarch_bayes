@@ -127,14 +127,12 @@ run_reconciliation <- function(forecasts_list, pars){
     G <- cbind(Matrix(0,pars$m*pars$h,pars$m), Diagonal(pars$m*pars$h))
     P <-  K + t(G) %*% G
     C <- chol(forceSymmetric(P))
-
-    alpha <- solve(P, t(G) %*% M %*% Y) + solve(C, rnorm(nrow(C)))
+    alpha <- solve(C, solve(t(C), t(G) %*% M %*% Y, sparse = T), sparse = T) + solve(C, rnorm(nrow(C)))
 
     # 1.2 omega
     alpha_out <- alpha
     dim(alpha_out) <- c(pars$m,pars$h+1)
     alpha_out <- t(alpha_out)
-    test=diag(sigmainv[1:pars$m,1:pars$m])^-1
 
     omega <- Diagonal(x = sapply(1:pars$m, function(mx){
 
@@ -144,9 +142,11 @@ run_reconciliation <- function(forecasts_list, pars){
     }))
 
     # 1.3 beta
-    B1  <- solve(t(Smat) %*% sigmainv %*% Smat)
-    b1 <- B1 %*% (t(Smat) %*% sigmainv %*% (Y - G %*% alpha))
-    beta <- b1 + t(rnorm(nrow(b1),0,1) %*% chol(B1))
+    B1  <- t(Smat) %*% sigmainv %*% Smat
+    C2 <- chol(B1)
+    b1 <- solve(C2, solve(t(C2), t(Smat) %*% sigmainv %*% (Y - G %*% alpha), sparse = T),
+                sparse = T)
+    beta <- b1 + solve(C2, rnorm(nrow(C2)), sparse = T)
 
 
     # 1.4 Sigma
