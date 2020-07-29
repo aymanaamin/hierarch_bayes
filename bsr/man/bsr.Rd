@@ -9,6 +9,7 @@ bsr(
   h,
   fmethod = "arima",
   burn_in = 10,
+  exogen = NULL,
   length_sample = 100,
   shrinkage = NULL
 )
@@ -22,6 +23,8 @@ bsr(
 to shrink towards its base forecast.}
 
 \item{burn_in}{integer, number of initial iterations to be discarded.}
+
+\item{exogen}{named list of h-dimension vectors to replace automatic forecasts}
 
 \item{length_sample}{integer, sample size from joint posterior.}
 

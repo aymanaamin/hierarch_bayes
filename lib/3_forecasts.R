@@ -16,27 +16,104 @@ load("dat/tradehts_reduced.Rdata")
 
 # ELECTRICITY -------------------------------------------------------------
 
-# Data
-training <- window(tradegts_reduced1, end = 2002)
-test <- window(tradegts_reduced1, start = 2002+1/12, end = 2004+11/12)
+# data
+load("dat/tradegts_reduced1.Rdata")
+tradegts_reduced1$bts <- tradegts_reduced1$bts/1e+6
+test <- window(tradegts_reduced1, start = 2002, end = 2003)
+
+# backtest for electricity
+dates <- 0
+bt <- lapply(dates, function(dx){
+  
+  training <- window(tradegts_reduced1, end = 2002+dx/12)
+  
+  hx <- 12
+  ix <- which(colnames(aggts(training)) == "Goods Total Lvl 1/02")
+  fx <- as.numeric(tail(aggts(training)[,"Goods Total Lvl 1/02"],1))
+  
+  fc_bsr_shr <- bsr(object = training, 
+                    h = hx,
+                    exogen = list("Goods Total Lvl 1/02" = rep(fx,hx)),
+                    fmethod = "ets",
+                    shrinkage = which(colnames(aggts(training)) =="Goods Total Lvl 1/02"))
+  
+  fc_bsr_non <- bsr(object = training,
+                    h = hx, 
+                    exogen = list("Goods Total Lvl 1/02" = rep(fx,hx)),
+                    fmethod = "ets")
+  
+  fc_bsr_non2 <- bsr(object = training,
+                     h = hx, 
+                     fmethod = "ets")
+  
+  out <- cbind(aggts(fc_bsr_shr)[,11],
+               aggts(fc_bsr_non)[,11],
+               aggts(fc_bsr_non2)[,11])
+  
+  colnames(out) <- c("shr","rwf","base")
+  
+  return(out)
+  
+}); names(bt) <- 2002+dates/12
 
 
-# BSR with and without shrinkage
-fc_bsr_shr <- bsr(object = training, 
-                  h = 11+24,
-                  fmethod = "rw",
-                  shrinkage = which(colnames(aggts(training)) =="Goods Total Lvl 1/02"))
+# # evaluation
+# acc_bsr_shr <- t(accuracy(fc_bsr_shr, test))
+# acc_bsr_non <- t(accuracy(fc_bsr_non, test))
+# hist(t(log(acc_bsr_shr[,"RMSE"]/acc_bsr_non[,"RMSE"])), breaks = 100)
 
-fc_bsr_non <- bsr(object = training,
-                  h = 11+24, 
-                  fmethod = "rw")
 
-# evaluation
-acc_bsr_shr <- t(accuracy(fc_bsr_shr, test))
-acc_bsr_non <- t(accuracy(fc_bsr_non, test))
-hist(t(log(acc_bsr_shr[,"RMSE"]/acc_bsr_non[,"RMSE"])), breaks = 100)
+tab <- window(cbind(window(aggts(test)[,11], start = 2002),
+                    aggts(window(tradegts_reduced1, end = 2001+11/12))[,11],
+                    bt$`2002`[,1],
+                    bt$`2002`[,2],
+                    bt$`2002`[,3]), start = 2000, end = 2003)
 
-plot(x = log(colMeans(aggts(training))), y = log(acc_bsr_shr[,"RMSE"]/acc_bsr_non[,"RMSE"]))
+tab[which(time(tab) == 2002),] <- tab[which(time(tab) == 2002),1]
+
+tib <- tibble("date" = as.numeric(time(tab)),
+              "true" = tab[,1],
+              "hist" = tab[,2],
+              "bsr" = tab[,3],
+              "rwf" = tab[,4],
+              "no" = tab[,5]) %>% 
+  gather("series","value",-date) %>% 
+  mutate(series = factor(series,
+                         levels = c("hist","true","no","rwf","bsr"),
+                         labels = c("Historical Data",
+                                    "Realization",
+                                    "(1) Uninformed Forecast",
+                                    "(2) Informed Forecast",
+                                    "(3) Informed Forecast & Shrinkage")))
+
+# RColorBrewer::brewer.pal(5,"Blues")
+
+ggplot(tib, aes(x = date)) +
+  geom_rect(mapping=aes(xmin=2002, xmax=Inf, ymin=-Inf, ymax=Inf), fill="grey98", color="grey90", alpha = 0.1) +
+  geom_line(aes(y = value, color = series, linetype = series)) +
+  scale_x_continuous(expand = c(0,0),
+                     breaks = seq(2000,2003,1/12,),
+                     labels = c(rep("",6), "2000", rep("",5),
+                                rep("",6), "2001", rep("",5),
+                                rep("",6), "2002", rep("",6)),
+                     minor_breaks = seq(2001,2003,1/12)) +
+  scale_colour_manual(NULL, values = c("black","black","#6BAED6","#3182BD","#08519C")) +
+  scale_linetype_manual(NULL, values = c("solid","dashed","dotdash","dotdash","dotdash")) +
+  ylab("Export Volume (in Mio. CHF)") +
+  xlab(NULL) +
+  theme_bw() + theme(legend.position = c(0.21,0.75),
+                     legend.title=element_blank(),
+                     legend.key = element_blank(),
+                     legend.text = element_text(size = 10),
+                     legend.background=element_blank(),
+                     panel.grid.major.x = element_blank(),
+                     panel.grid.minor.x = element_blank(),
+                     panel.grid.minor.y = element_blank(),
+                     axis.ticks.x = element_line(color = c("black",rep(NA,11),"black",rep(NA,11),"black",rep(NA,11))))
+
+
+ggsave("tex/fig/fig_electricity.pdf", device = "pdf",
+       width = 18, height = 7, units = "cm")
 
 
 
@@ -113,32 +190,3 @@ plot(x = log(colMeans(aggts(training))), y = log(acc_bsr_shr[,"RMSE"]/acc_bsr_no
 # 
 # ggsave("tex/fig/fig_electricity.pdf", device = "pdf",
 #        width = 18, height = 8, units = "cm")
-
-
-ggplot(dat, aes(x = date)) +
-  geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
-  geom_ribbon(aes(ymin = min1, ymax = max1), fill = "grey70", alpha = 0.2) +
-  geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
-  geom_ribbon(aes(ymin = min2, ymax = max2), fill = "grey70", alpha = 0.3) +
-  geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
-  geom_ribbon(aes(ymin = min3, ymax = max3), fill = "grey70", alpha = 0.4) +
-  geom_line(aes(y = value, color = series, linetype = series)) +
-  scale_x_continuous(expand = c(0,0),
-                     breaks = c(2001.75,2002,2002.25,2002.5,2002.75),
-                     labels = c("Oct","Jan","Apr","Jul","Oct"),
-                     minor_breaks = seq(2001.75,2003,1/12)) +
-  geom_vline(mapping=aes(xintercept=2002), color="grey60", lty = 1, size = 0.5) +
-  scale_colour_manual("Exports of Energy Sources", values = c("blue","blue","black")) +
-  facet_grid(. ~ fct) +
-  scale_linetype_manual("Exports of Energy Sources", values = c("solid","dashed","solid")) +
-  ylab("Volume (in Mio. CHF)") +
-  xlab(NULL) +
-  theme_bw() + theme(legend.position="bottom",
-                     panel.grid.major.x = element_blank(),
-                     panel.grid.minor.x = element_blank(),
-                     panel.grid.minor.y = element_blank())
-
-
-ggsave("tex/fig/fig_electricity_p.pdf", device = "pdf",
-       width = 20, height = 6, units = "cm")
-

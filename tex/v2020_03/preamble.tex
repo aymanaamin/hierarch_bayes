@@ -1,0 +1,66 @@
+%% Packages
+
+% Styling TOC
+\usepackage{tocloft}
+\setlength\cftaftertoctitleskip{1cm}
+\usepackage[nottoc]{tocbibind}
+
+% Mathe Packages
+\usepackage{amsmath,amssymb,epsfig,amsthm,amsfonts,bbm,textcomp}
+
+% Grafiken
+\usepackage[font=small,aboveskip=0pt,belowskip=0pt,labelfont=bf,textfont=bf]{caption}
+\captionsetup{justification=justified,singlelinecheck=false}
+\usepackage[edges]{forest}
+\usepackage{tikz}
+\usetikzlibrary{arrows,intersections,decorations.pathreplacing}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+
+% Seiten Layout
+\usepackage{float}
+\usepackage[top=3cm,bottom=3cm,left=3cm,right=3cm,a4paper]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{color}
+\usepackage{enumitem}
+\usepackage{authblk}
+
+% Fussnoten
+\usepackage[flushmargin,hang]{footmisc}
+\usepackage{listings}
+\usepackage[hyphens]{url}
+\usepackage[hidelinks]{hyperref}
+
+
+% Tabellen
+\usepackage{longtable} 			% Lange, mehrseitige Tabelle
+\usepackage{tabularx}
+\usepackage{array,hhline}
+\usepackage{booktabs}			% Linien zwischen Zeilen
+\usepackage{multirow}			% Verknüpfte Zellen über Zeilen hinweg
+\usepackage{dcolumn}			% Erlaubt variable Orientierung am Decimalpunkt innerhalb einer Zelle
+\usepackage{siunitx}
+
+% Wir brauchen auch
+\usepackage{todonotes}
+
+% References
+\usepackage{natbib}
+
+% Paragraph spacing
+%\setlength{\parskip}{2ex}
+
+% Spacing around headings
+%\usepackage[compact]{titlesec}
+
+% Captions
+\def\captionab#1#2{\caption[#1]{#1. \normalfont\footnotesize{#2}}}
+
+% Better matrix control
+\usepackage{nicematrix}
+%\NiceMatrixOptions{columns-width=6mm}
+
+% Math of zero width
+\def\clap#1{\hbox to 0pt{\hss\scriptsize$#1$\hss}}

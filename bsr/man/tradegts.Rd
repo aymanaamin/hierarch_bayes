@@ -4,7 +4,9 @@
 \name{tradegts}
 \alias{tradegts}
 \title{Data on Exports of Swiss Goods}
-\format{Grouped Time Series}
+\format{
+Grouped Time Series
+}
 \source{
 \href{https://www.ezv.admin.ch/ezv/de/home/themen/schweizerische-aussenhandelsstatistik.html}{Swiss Customs}
 }

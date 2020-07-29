@@ -35,7 +35,7 @@ create_predictions <- function(object, fmethod, pars){
 #' @return vector of weights
 define_weights <- function(pars){
 
-  xser_shr = 1e+5
+  xser_shr = 1e+6
 
   # define global shrinkages
   if(is.null(pars$shrinkage)){
@@ -150,16 +150,16 @@ run_reconciliation <- function(forecasts_list, pars){
 
 
     # 1.4 Sigma
-    sigmainv <- Diagonal(x = matrix(sapply(1:pars$h, function(hx){
+    sigmainv <- Diagonal(x = 1/matrix(sapply(1:pars$h, function(hx){
 
       sapply(1:pars$m, function(mx){
 
         a0 <- pars$n * 1e+5
-        d0 <- sigmas[mx,hx] * pars$weights[mx] * pars$n * 1e+5
+        d0 <- sigmas[mx,hx] * pars$weights[mx] * pars$n * 1e+5 + 1e-9
 
-        rgamma(n = 1,
+        1/rgamma(n = 1,
                shape = (pars$n + a0)/2,
-               rate = (sigmas[mx,hx] * pars$n + d0)/2)
+               rate = (sigmas[mx,hx] * pars$n + d0)/2) + 1e-16
 
 
       })

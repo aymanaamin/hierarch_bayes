@@ -15,7 +15,7 @@ xgts <- tradegts_reduced1;xgts$bts <- xgts$bts/1e+6 # large gts
 # xgts <- infantgts # small gts
 
 # define training sample
-h <-  36 # forecast horizon
+h <- 12 # forecast horizon
 test_date = 2000
 xgts_training <- window(xgts, end = test_date)
 xgts_test <- window(xgts, start = test_date+1/frequency(xgts$bts), end = test_date+h/frequency(xgts$bts))
