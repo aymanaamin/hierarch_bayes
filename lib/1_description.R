@@ -20,6 +20,7 @@ load("dat/countries.rda")
 load("dat/countries.rda")
 load("dat/tradegts.Rdata")
 load("dat/tradehts.Rdata")
+load("dat/tradehts_reduced.Rdata")
 load("dat/tradegts_reduced2.Rdata")
 tsl <- as.list(aggts(tradegts_reduced2))
 
@@ -57,9 +58,18 @@ tab <- bind_rows(tibble("Date" = time(tsl$`Regions Total/AF`),
                    add_column("Classification" = factor("by Category",levels = c("by Region","by Category"))))
 
 tab2 <- tab %>% 
-  add_row(Date = 2000, Name = "Regions", Exports = 0, Classification = "by Region") %>% 
-  add_row(Date = 2000, Name = "Categories", Exports = 0, Classification = "by Category") %>% 
-  add_row(Date = 2000, Name = " ", Exports = 0, Classification = "by Category") %>% 
+  add_row(Date = 2000,
+          Name = "Regions",
+          Exports = 0,
+          Classification = factor("by Region", levels = c("by Region","by Category"))) %>% 
+  add_row(Date = 2000,
+          Name = "Categories",
+          Exports = 0,
+          Classification = factor("by Category",levels = c("by Region","by Category"))) %>% 
+  add_row(Date = 2000,
+          Name = " ", 
+          Exports = 0,
+          Classification = factor("by Category",levels = c("by Region","by Category"))) %>% 
   mutate(Name = factor(Name,levels = c("Regions",
                                        "Western Europe (53.4%)",
                                        "North America (17.8%)",
@@ -85,18 +95,20 @@ tab2 <- tab %>%
                                        "Stones and Earth (0.4%)"), ordered = T)) %>% 
   mutate(Exports = Exports/1e+9)
 
+
+
 ggplot(tab2, aes(x = Date, y = Exports)) + 
   geom_area(aes(fill = Name)) +
   scale_x_continuous(breaks = seq(1990,2015,5)) +
   coord_cartesian(expand = FALSE) +
   scale_y_continuous() +
-  facet_grid(Classification ~ ., switch = "y") +
+  facet_grid(Classification ~ .) +
   labs(x = NULL, y = "Monthly Exports (in billion CHF)") +
   scale_fill_manual(values = c("white",colorRampPalette(rev(brewer.pal(9,"Blues")))(9)[-9],
                                "white","white",colorRampPalette(rev(brewer.pal(9,"Blues")))(13)[-13])) +
-  theme_bw(base_size = 9) +
+  theme_minimal(base_size = 9) +
   theme(legend.position="right",
-        text = element_text(size = 10),
+        text = element_text(size = 11),
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank()) +
@@ -128,9 +140,9 @@ rgroup <- recode(substr(names(reglist),1,2),
                  "SA" = "South Asia")
 regfeatures <- tsfeatures(aggts(tradehts$reg)) %>% 
   dplyr::select("trend","spike","linearity","curvature","e_acf1",
-         "e_acf10","seasonal_strength","peak","trough",         
-         "entropy","x_acf1","x_acf10","diff1_acf1","diff1_acf10","diff2_acf1",       
-         "diff2_acf10","seas_acf1") %>% 
+                "e_acf10","seasonal_strength","peak","trough",         
+                "entropy","x_acf1","x_acf10","diff1_acf1","diff1_acf10","diff2_acf1",       
+                "diff2_acf10","seas_acf1") %>% 
   prcomp(scale=TRUE)
 
 regfeatures <- regfeatures$x %>% 
@@ -163,7 +175,7 @@ ggplot(regfeatures, aes(x=Exports, y=PC1)) +
                      labels = c("1e+1","1e+2","1e+3","1e+4","1e+5","1e+6","1e+7",
                                 "1e+8","1e+9","1e+10")) +
   scale_y_continuous(breaks = seq(-4,8,2), minor_breaks = NULL, limits = c(-4,7)) +
-  theme_bw() +
+  theme_minimal() +
   xlab("Export Volume (in CHF, log scale)") +
   ylab("Predictability") +
   theme(legend.position="bottom",
@@ -276,7 +288,7 @@ dat_cat <- inner_join(dat_cat,goods, by = "code") %>%
 
 dat <- bind_rows(dat_reg,dat_cat) %>% 
   mutate(date = as.character(date)) %>% 
-  mutate(date = recode(date,"1988" = "in 1988","2018" = "in 2018"))
+  mutate(date = recode(date,"1988" = "in 1988","2019" = "in 2019"))
 
 ggplot(dat, aes(area = share2, fill = share1, label = lvl2, subgroup = lvl1)) +
   geom_treemap(colour = "dark grey") +
@@ -287,7 +299,8 @@ ggplot(dat, aes(area = share2, fill = share1, label = lvl2, subgroup = lvl1)) +
   geom_treemap_subgroup_border(colour = "black", lwd = 1) +
   geom_treemap_subgroup_text(colour = "white", size = 10, min.size = 10, 
                              place = "centre", reflow = T, grow = F) +
-  theme_bw() + theme(legend.position="bottom")  +
+  theme_minimal() + 
+  theme(legend.position="bottom", axis.text = element_text(size = ))  +
   guides(fill=guide_colourbar(barwidth=10,barheight = 0.3))
 
 ggsave("tex/fig/fig_treemap.pdf", device = "pdf",
@@ -299,73 +312,131 @@ ggsave("tex/fig/fig_treemap_pres.pdf", device = "pdf",
 
 
 
-# PRESENTATION ------------------------------------------------------------
 
-tab_reg <- tibble("Date" = time(tsl$`Regions Total/AF`),
-                  "Europe" = tsl$`Regions Total/EU`,
-                  "North America" = tsl$`Regions Total/NA`,
-                  "East Asia" = tsl$`Regions Total/EA`,
-                  "Africa and Middle East"  = tsl$`Regions Total/AF`,
-                  "Australia and Oceania" = tsl$`Regions Total/AO`,
-                  "Central Asia" = tsl$`Regions Total/CA`,
-                  "Latin America" = tsl$`Regions Total/LA`,
-                  "South Asia" = tsl$`Regions Total/SA`) %>%
-  gather(key = Region, value = Exports, -Date) %>%
-  mutate(Exports = as.numeric(Exports)/1e+9) %>% 
-  mutate(Region = fct_reorder(factor(Region), Exports, last, .desc = T))
+# SUMMARY TABLE -----------------------------------------------------------
 
-tab_cat <- tibble("Date" = time(tsl$`Goods Total Lvl 1/01`),
-                  "Agricultural Products" = tsl$`Goods Total Lvl 1/01`,
-                  "Energy Source" = tsl$`Goods Total Lvl 1/02`,
-                  "Textiles" = tsl$`Goods Total Lvl 1/03`,
-                  "Graphical Products" = tsl$`Goods Total Lvl 1/04`,
-                  "Leather, Rubber, Plastics" = tsl$`Goods Total Lvl 1/05`,
-                  "Chemicals and Pharmaceuticals" = tsl$`Goods Total Lvl 1/06`,
-                  "Stones and Earth" = tsl$`Goods Total Lvl 1/07`,
-                  "Metals" = tsl$`Goods Total Lvl 1/08`,
-                  "Machines and Electronics" = tsl$`Goods Total Lvl 1/09`,
-                  "Vehicles" = tsl$`Goods Total Lvl 1/10`,
-                  "Precision Instruments" = tsl$`Goods Total Lvl 1/11`,
-                  "Various Goods" = tsl$`Goods Total Lvl 1/12`) %>%
-  gather(key = Categories, value = Exports, -Date) %>%
-  mutate(Exports = as.numeric(Exports)/1e+9) %>% 
-  mutate(Categories = fct_reorder(factor(Categories), Exports, last, .desc = T))
+library(tidyverse)
+library(xtable)
 
-tot <- tab_cat %>% spread(key = Categories, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
-round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
-tot <- tab_reg %>% spread(key = Region, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
-round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
+level <- unname(sapply(names(tsl), function(x){
+  
+  if(grepl("/",x)) strsplit(x, "/", fixed = T)[[1]][2] else x
+  
+}))
 
-ggplot(tab_reg, aes(x = Date, y = Exports)) +
-  geom_area(aes(fill = Region), alpha=0.75) +
-  scale_x_continuous(breaks = seq(1990,2015,5)) +
-  coord_cartesian(expand = FALSE) +
-  scale_y_continuous() +
-  labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
-  scale_fill_manual(values = bpy.colors(9)[-9]) +
-  theme_bw(base_size = 9) +
-  theme(legend.position="right",
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank()) +
-  guides(fill = guide_legend(title = NULL))
 
-ggsave("tex/fig/fig_area_reg_pres.pdf", device = "pdf",
-       width = 18, height = 8, units = "cm")
+reg_lvl <- factor(case_when(
+  level == "Total" ~ "World",
+  nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+  nchar(level) == 3 & grepl("^[A-Za-z]+$", level) == F ~ "World",
+  nchar(level) == 2 & grepl("^[A-Za-z]+$", level) == T ~ "Region",
+  nchar(level) %in% c(4,5) & grepl("^[A-Za-z]+$", level) == F ~ "Region",
+  nchar(level) == 4 & grepl("^[A-Za-z]+$", level) == T ~ "Country",
+  nchar(level) > 5 & grepl("^[A-Za-z]+$", level) == F ~ "Country"),
+  levels = c("World","Region","Country"), ordered = T)
 
-ggplot(tab_cat, aes(x = Date, y = Exports)) +
-  geom_area(aes(fill = Categories), alpha=0.75) +
-  scale_x_continuous(breaks = seq(1990,2015,5)) +
-  scale_y_continuous() +
-  coord_cartesian(expand = FALSE) +
-  labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
-  scale_fill_manual(values = bpy.colors(12)) +
-  theme_bw(base_size = 9) +
-  theme(legend.position="right",
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank()) +
-  guides(fill = guide_legend(title = NULL))
+cat_lvl <- factor(case_when(
+  level == "Total" ~ "Total",
+  nchar(level) %in% c(2,4) & grepl("^[A-Za-z]+$", level) == T ~ "Total",
+  nchar(level) %in% c(2) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+  nchar(level) %in% c(4,6) & grepl("^[A-Za-z]+$", level) == F ~ "Category",
+  nchar(level) %in% c(3,5,7) & grepl("^[A-Za-z]+$", level) == F ~ "Subcategory"),
+  levels = c("Total","Category","Subcategory"), ordered = T)
 
-ggsave("tex/fig/fig_area_cat_pres.pdf", device = "pdf",
-       width = 18, height = 8, units = "cm")
+tab <- tibble("level" = level,
+              "region" = reg_lvl,
+              "category" = cat_lvl)
+
+matrix(t(table(tab[,-1])))
+
+grid <- expand.grid(unique(tab$category),unique(tab$region))
+out <- do.call(rbind,lapply(1:nrow(grid), function(ix){
+  
+  ser <- tsl[which(tab$category == grid[ix,1] & tab$region == grid[ix,2])]
+  ser_mn <- sapply(ser, mean)
+  round(c("n" = length(ser_mn),
+          "mean" = mean(ser_mn)/1e+6,
+          "sd" = sd(ser_mn)/1e+6,
+          "min" = min(ser_mn)/1e+6,
+          "max" = max(ser_mn)/1e+6,
+          "iqr" = IQR(ser_mn)/1e+6))
+  
+}))
+
+print(xtable(cbind(as.data.frame(grid)[,c(2,1)],out),
+             type = "latex", digits = 0), include.rownames = F)
+
+
+
+
+
+# # PRESENTATION ------------------------------------------------------------
+# 
+# tab_reg <- tibble("Date" = time(tsl$`Regions Total/AF`),
+#                   "Europe" = tsl$`Regions Total/EU`,
+#                   "North America" = tsl$`Regions Total/NA`,
+#                   "East Asia" = tsl$`Regions Total/EA`,
+#                   "Africa and Middle East"  = tsl$`Regions Total/AF`,
+#                   "Australia and Oceania" = tsl$`Regions Total/AO`,
+#                   "Central Asia" = tsl$`Regions Total/CA`,
+#                   "Latin America" = tsl$`Regions Total/LA`,
+#                   "South Asia" = tsl$`Regions Total/SA`) %>%
+#   gather(key = Region, value = Exports, -Date) %>%
+#   mutate(Exports = as.numeric(Exports)/1e+9) %>% 
+#   mutate(Region = fct_reorder(factor(Region), Exports, last, .desc = T))
+# 
+# tab_cat <- tibble("Date" = time(tsl$`Goods Total Lvl 1/01`),
+#                   "Agricultural Products" = tsl$`Goods Total Lvl 1/01`,
+#                   "Energy Source" = tsl$`Goods Total Lvl 1/02`,
+#                   "Textiles" = tsl$`Goods Total Lvl 1/03`,
+#                   "Graphical Products" = tsl$`Goods Total Lvl 1/04`,
+#                   "Leather, Rubber, Plastics" = tsl$`Goods Total Lvl 1/05`,
+#                   "Chemicals and Pharmaceuticals" = tsl$`Goods Total Lvl 1/06`,
+#                   "Stones and Earth" = tsl$`Goods Total Lvl 1/07`,
+#                   "Metals" = tsl$`Goods Total Lvl 1/08`,
+#                   "Machines and Electronics" = tsl$`Goods Total Lvl 1/09`,
+#                   "Vehicles" = tsl$`Goods Total Lvl 1/10`,
+#                   "Precision Instruments" = tsl$`Goods Total Lvl 1/11`,
+#                   "Various Goods" = tsl$`Goods Total Lvl 1/12`) %>%
+#   gather(key = Categories, value = Exports, -Date) %>%
+#   mutate(Exports = as.numeric(Exports)/1e+9) %>% 
+#   mutate(Categories = fct_reorder(factor(Categories), Exports, last, .desc = T))
+# 
+# tot <- tab_cat %>% spread(key = Categories, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
+# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
+# tot <- tab_reg %>% spread(key = Region, value = Exports) %>% filter(Date >= 2018 & Date < 2019)
+# round(colSums(tot[,-1])/sum(tot[,-1])*100,1)
+# 
+# ggplot(tab_reg, aes(x = Date, y = Exports)) +
+#   geom_area(aes(fill = Region), alpha=0.75) +
+#   scale_x_continuous(breaks = seq(1990,2015,5)) +
+#   coord_cartesian(expand = FALSE) +
+#   scale_y_continuous() +
+#   labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
+#   scale_fill_manual(values = bpy.colors(9)[-9]) +
+#   theme_bw(base_size = 9) +
+#   theme(legend.position="right",
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank()) +
+#   guides(fill = guide_legend(title = NULL))
+# 
+# ggsave("tex/fig/fig_area_reg_pres.pdf", device = "pdf",
+#        width = 18, height = 8, units = "cm")
+# 
+# ggplot(tab_cat, aes(x = Date, y = Exports)) +
+#   geom_area(aes(fill = Categories), alpha=0.75) +
+#   scale_x_continuous(breaks = seq(1990,2015,5)) +
+#   scale_y_continuous() +
+#   coord_cartesian(expand = FALSE) +
+#   labs(x = NULL, y = "Exports (nominal, in billion CHF)") +
+#   scale_fill_manual(values = bpy.colors(12)) +
+#   theme_bw(base_size = 9) +
+#   theme(legend.position="right",
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank()) +
+#   guides(fill = guide_legend(title = NULL))
+# 
+# ggsave("tex/fig/fig_area_cat_pres.pdf", device = "pdf",
+#        width = 18, height = 8, units = "cm")

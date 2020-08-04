@@ -98,13 +98,23 @@ run_reconciliation <- function(forecasts_list, pars){
   sigmas <- t(do.call(cbind,lapply(forecasts_list, function(x) apply(x,2,var))))
   Smat <- kronecker(Diagonal(pars$h), pars$S)
 
-  # preallocation & starting values
+  # preallocate vectors tovalues
   alpha_save <- vector(mode = "list", length = pars$length_sample)
   beta_save <- vector(mode = "list", length = pars$length_sample)
+
+  # starting values
   alpha = Matrix(0,(pars$h+1)*pars$m,1)
   beta = solve(crossprod(Smat), crossprod(Smat,Y))
   omega = Diagonal(x = 1e+9,n = pars$m)
   sigmainv = Diagonal(x = 1,n = pars$m*pars$h)
+
+  # preallocation of fixed variables
+  F1 <- Diagonal(pars$m*(pars$h+1),1)
+  F2 <- cbind(rbind(Matrix(0,pars$m,pars$m*(pars$h)),
+                    Diagonal(pars$m*(pars$h),-1)),
+              Matrix(0,pars$m*(pars$h+1),pars$m))
+  FF <- F1+F2
+  X <- cbind(Matrix(0,pars$m*pars$h,pars$m), Diagonal(pars$m*pars$h))
 
   # initialize progress bar
   pb <- txtProgressBar(style = 3)
@@ -116,18 +126,13 @@ run_reconciliation <- function(forecasts_list, pars){
 
     # 1.1 alpha
     M <- Diagonal(n = pars$m*pars$h) - (Smat %*% solve(t(Smat) %*% sigmainv %*% Smat) %*% t(Smat) %*% sigmainv)
-    H1 <- Diagonal(pars$m*(pars$h+1),1)
-    H2 <- cbind(rbind(Matrix(0,pars$m,pars$m*(pars$h)),
-                      Diagonal(pars$m*(pars$h),-1)),
-                Matrix(0,pars$m*(pars$h+1),pars$m))
-    H <- H1+H2
-    SS <- kronecker(Diagonal(pars$h+1), omega)
-    SS[1:pars$m,1:pars$m] <- Diagonal(pars$m, 1e-16)
-    K <- t(H) %*% solve(SS) %*% H
-    G <- cbind(Matrix(0,pars$m*pars$h,pars$m), Diagonal(pars$m*pars$h))
-    P <-  K + t(G) %*% G
+
+    G <- kronecker(Diagonal(pars$h+1), omega)
+    G[1:pars$m,1:pars$m] <- Diagonal(pars$m, 1e-16)
+    K <- t(FF) %*% solve(G) %*% FF
+    P <-  K + t(X) %*% sigmainv %*% X
     C <- chol(forceSymmetric(P))
-    alpha <- solve(C, solve(t(C), t(G) %*% M %*% Y, sparse = T), sparse = T) + solve(C, rnorm(nrow(C)))
+    alpha <- solve(C, solve(t(C), t(X) %*% sigmainv %*% M %*% Y)) + solve(C, rnorm(nrow(C)))
 
     # 1.2 omega
     alpha_out <- alpha
@@ -144,9 +149,8 @@ run_reconciliation <- function(forecasts_list, pars){
     # 1.3 beta
     B1  <- t(Smat) %*% sigmainv %*% Smat
     C2 <- chol(B1)
-    b1 <- solve(C2, solve(t(C2), t(Smat) %*% sigmainv %*% (Y - G %*% alpha), sparse = T),
-                sparse = T)
-    beta <- b1 + solve(C2, rnorm(nrow(C2)), sparse = T)
+    b1 <- solve(C2, solve(t(C2), t(Smat) %*% sigmainv %*% (Y - X %*% alpha)))
+    beta <- b1 + solve(C2, rnorm(nrow(C2)))
 
 
     # 1.4 Sigma
@@ -181,8 +185,6 @@ run_reconciliation <- function(forecasts_list, pars){
   close(pb)
 
   beta_out <- Reduce("+", beta_save)/pars$length_sample
-  # alpha_out <- Reduce("+", alpha_save)/pars$length_sample
-  # cbind(apply(forecasts_list[[1]],2,mean), (alpha_out[-1,] + beta_out %*% t(pars$S))[,1])
 
   return(beta_out)
 

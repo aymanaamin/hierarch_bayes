@@ -8,6 +8,7 @@ library(hts)
 library(tidyverse)
 library(sp)
 library(Matrix)
+library(RColorBrewer)
 
 
 source("lib/functions_model_subspace.R")
@@ -87,13 +88,37 @@ ggplot(dat, aes(x = mean, y = pnts, fill = ser, color = ser)) +
   scale_fill_manual("Unreconciled Base Forecasts", values = brewer.pal(4, "Blues")[-1],
                     labels = labs) +
   coord_flip(expand = FALSE, xlim = c(0,20), ylim = c(0,20)) +
-  theme_bw() + theme(legend.position="bottom") 
+  theme_minimal() +
+  theme(legend.position="bottom", 
+        strip.text = element_text(size = 11)) 
 
 ggsave("tex/fig/fig_biases.pdf", device = "pdf",
        width = 18, height = 12, units = "cm")
 
 
 
+
+
+# COMPARE BSR TO OUTCOMES OF OTHER METHODS --------------------------------
+
+load("dat/tradehts_reduced1.Rdata")
+load("dat/tradegts_reduced1.Rdata")
+
+# parameters
+h <- 12
+date <- 2018+11/12
+
+
+# comparison models
+pred_mint <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "mint", fmethod = "arima")
+pred_wls <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "wls", fmethod = "arima")
+pred_ols <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "ols", fmethod = "arima")
+pred_nser <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "nseries", fmethod = "arima")
+pred_bu_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "bu" , fmethod = "arima")
+pred_mo_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "bu" , fmethod = "arima")
+pred_mo_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "bu" , fmethod = "arima")
+pred_td_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "tdgsa" , fmethod = "arima")
+pred_td_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "tdgsa" , fmethod = "arima")
 
 
 

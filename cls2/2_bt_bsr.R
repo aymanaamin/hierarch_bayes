@@ -22,6 +22,8 @@ for(ix in 1:length(chunks)){
         # Run forecasting methods
         bsr(object = window(tradegts_reduced2, end = dx-1/12),
             fmethod = fx,
+            burn_in = 3,
+            length_sample = 10,
             h = horizon)
         
         

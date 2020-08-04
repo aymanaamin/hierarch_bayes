@@ -46,14 +46,6 @@ tradegts <- gts(y = dat_exp,
                            "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
                 characters = list(c(2,2), c(2,1,1,2,2)))
 
-# tradegts_imp <- gts(y = dat_imp,
-                # gnames = c("Regions Total", "Countries Total" ,"Goods Total Lvl 1","Goods Total Lvl 2",
-                #            "Goods Total Lvl 3","Goods Total Lvl 4","Goods Total Lvl 5","Goods Lvl 1 per Region",
-                #            "Goods Lvl 2 per Region","Goods Lvl 3 per Region","Goods Lvl 4 per Region",
-                #            "Goods Lvl 5 per Region","Goods Lvl 1 per Country","Goods Lvl 2 per Country",
-                #            "Goods Lvl 3 per Country","Goods Lvl 4 per Country"),
-                # characters = list(c(2,2), c(2,1,1,2,2)))
-
 # define categories and countries hierarchies
 tradehts <- list(cat = hts(y = dat_exp_cat, characters = c(2,1,1,2,2)),
                  reg = hts(y = dat_exp_reg, characters = c(2,2)))
@@ -62,8 +54,8 @@ tradehts <- list(cat = hts(y = dat_exp_cat, characters = c(2,1,1,2,2)),
 agggts_red1 <- aggts(tradegts, levels = 8)
 colnames(agggts_red1) <- substr(colnames(agggts_red1), 24,40)
 tradegts_reduced1 <- gts(y = agggts_red1,
-                        gnames = c("Regions Total", "Goods Total Lvl 1"),
-                        characters = list(2, 2))
+                         gnames = c("Regions Total", "Goods Total Lvl 1"),
+                         characters = list(2, 2))
 
 # define reduced hierarchies, only until level 2
 agggts_red2 <- aggts(tradegts, levels = 14)
@@ -74,19 +66,14 @@ tradegts_reduced2 <- gts(y = agggts_red2,
                                     "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
                          characters = list(c(2,2), c(2,1)))
 
-# agggts_red2_imp <- aggts(tradegts_imp, levels = 14)
-# colnames(agggts_red2_imp) <- substr(colnames(agggts_red2_imp), 25,40)
-# tradegts_reduced2_imp <- gts(y = agggts_red2_imp,
-#                          gnames = c("Regions Total", "Countries Total",
-#                                     "Goods Total Lvl 1","Goods Total Lvl 2","Goods Lvl 1 per Region",
-#                                     "Goods Lvl 2 per Region","Goods Lvl 1 per Country"),
-#                          characters = list(c(2,2), c(2,1)))
+tradehts_reduced2 <- list(cat = hts(y = aggts(tradehts$cat, levels = 2), characters = c(2,1)),
+                          reg = hts(y = aggts(tradehts$reg, levels = 2), characters = c(2,2)))
 
-tradehts_reduced <- list(cat = hts(y = aggts(tradehts$cat, levels = 2), characters = c(2,1)),
-                         reg = hts(y = aggts(tradehts$reg, levels = 2), characters = c(2,2)))
+tradehts_reduced1 <- list(cat = hts(y = aggts(tradehts$cat, levels = 1)),
+                          reg = hts(y = aggts(tradehts$reg, levels = 1)))
 
-rm(dat_exp,dat_imp,dat_exp_reg,dat_exp_cat,total_exp,total_exp_reg,
-   total_exp_cat,agggts_red1,agggts_red2,total,agggts_red2_imp)
+rm(dat_exp,dat_exp_reg,dat_exp_cat,total_exp,total_exp_reg,
+   total_exp_cat,agggts_red1,agggts_red2,total)
 
 
 # 3. INSPECT DATA ----------------------------------------------------------
@@ -120,9 +107,8 @@ rm(agg_hts_reg,agg_hts_cat,agg_gts_red1,agg_gts_red2)
 # 4. SAVE DATA ------------------------------------------------------------
 
 save(tradegts, file = "dat/tradegts.Rdata")
-save(tradegts_imp, file = "dat/tradegts_imp.Rdata")
 save(tradehts, file = "dat/tradehts.Rdata")
 save(tradegts_reduced1, file = "dat/tradegts_reduced1.Rdata")
 save(tradegts_reduced2, file = "dat/tradegts_reduced2.Rdata")
-save(tradegts_reduced2_imp, file = "dat/tradegts_reduced2_imp.Rdata")
-save(tradehts_reduced, file = "dat/tradehts_reduced.Rdata")
+save(tradehts_reduced1, file = "dat/tradehts_reduced1.Rdata")
+save(tradehts_reduced2, file = "dat/tradehts_reduced2.Rdata")

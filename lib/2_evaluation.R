@@ -109,9 +109,10 @@ ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +
   scale_fill_manual(values = c(bpy.colors(11)[-11])) +
   ylab("log relative RMSFE (weighted average)") +
   xlab("Reconciliation Methods") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position="bottom",
         legend.title = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank(),
         legend.key.size = unit(0.2, 'cm'),
@@ -189,8 +190,9 @@ ggplot(tab3, aes(x=Reconciliation, y=Accuracy)) +
   scale_color_manual(values = c(bpy.colors(11)[-11])) +
   ylab("log relative RMSFE") +
   xlab("Reconciliation Methods") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position="bottom",
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
         legend.title = element_blank(),
         legend.text = element_text(size = 10),
         legend.key.size = unit(0.2, 'cm'),
@@ -269,9 +271,10 @@ ggplot(tab4, aes(x=as.numeric(date), y=Accuracy, group = Reconciliation, size = 
   scale_color_manual(values = bpy.colors(11)[c(6:10)]) +
   ylab("log relative RMSFE") +
   xlab(NULL) +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position="bottom",
         legend.title = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
         legend.text = element_text(size = 10),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank())
