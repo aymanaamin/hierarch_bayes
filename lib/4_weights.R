@@ -7,6 +7,7 @@ library(MCMCpack)
 library(hts)
 library(tidyverse)
 library(sp)
+library(bsr)
 library(Matrix)
 library(RColorBrewer)
 
@@ -105,20 +106,46 @@ load("dat/tradehts_reduced1.Rdata")
 load("dat/tradegts_reduced1.Rdata")
 
 # parameters
+dates <- 1998:2018
+tests <- c("top_level", "bottom_level", "mixed")
 h <- 12
-date <- 2018+11/12
+out <- lapply(tests, function(tx){
+  
+  dx = 1998
+  
+  pred_bu_cat <- forecast(window(tradegts_reduced1, end = dx), h = h, method = "bu" , fmethod = "arima")
+  pred_td_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "tdgsa" , fmethod = "arima")
+  pred_td_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "tdgsa" , fmethod = "arima")
+  
+  pred_bsr_bu <- bsr(object = window(tradegts_reduced1, end = date), h = h, shrinkage = "bu", fmethod = "arima")
+  pred_bsr_mo <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "mo", fmethod = "arima")
+  pred_bsr_td <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "td", fmethod = "arima")
+  
+  
+})
+
 
 
 # comparison models
-pred_mint <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "mint", fmethod = "arima")
-pred_wls <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "wls", fmethod = "arima")
-pred_ols <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "ols", fmethod = "arima")
-pred_nser <- forecast(window(tradegts_reduced1, end = date), h = h, method = "comb", weights = "nseries", fmethod = "arima")
 pred_bu_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "bu" , fmethod = "arima")
 pred_mo_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "bu" , fmethod = "arima")
 pred_mo_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "bu" , fmethod = "arima")
 pred_td_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "tdgsa" , fmethod = "arima")
 pred_td_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "tdgsa" , fmethod = "arima")
 
+pred_bsr_bu <- bsr(object = window(tradegts_reduced1, end = date), h = h, shrinkage = "bu", fmethod = "arima")
+pred_bsr_mo <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "mo", fmethod = "arima")
+pred_bsr_td <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "td", fmethod = "arima")
+pred_bsr_nser <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "nseries", fmethod = "arima")
+
+tsl_bsr_td <- as.list(aggts(pred_bsr_td))
+tsl_td <- as.list(aggts(pred_td_cat))
+tsl_nser <- as.list(aggts(pred_nser))
+
+
+plot.ts(cbind(tsl_bsr_td$Total,
+              tsl_td$Total,
+              tsl_nser$Total),
+        plot.type="single", col = c(1,2,3))
 
 

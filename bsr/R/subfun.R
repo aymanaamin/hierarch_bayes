@@ -35,41 +35,38 @@ create_predictions <- function(object, fmethod, pars){
 #' @return vector of weights
 define_weights <- function(pars){
 
-  xser_shr = 1e+6
-
+  xser_shr = 1e-4
+  lambda <- rep(1,pars$m)
+  
   # define global shrinkages
-  if(is.null(pars$shrinkage)){
-
-    lambda <- rep(1,pars$m)
-
-  } else if(pars$shrinkage == "nseries"){
+  if(pars$shrinkage == "nseries"){
 
     lvec <- (1/rowSums(pars$S))
     lambda <- lvec/prod(lvec)^(1/pars$m)
 
   } else if(pars$shrinkage == "td"){
 
-    lvec <- rep(1,pars$m)
-    lvec[1] <- lvec[1]/xser_shr
-    lambda <- lvec/prod(lvec)^(1/pars$m)
+    target <- 1
+    lambda[target] <- xser_shr
+    lambda[-target] <- (1/xser_shr^length(target))^(1/(pars$m-length(target)))
 
   } else if(pars$shrinkage == "mo"){
 
-    lvec <- rep(1,pars$m)
-    lvec[-c(1,seq(pars$m-pars$q+1,pars$m))] <- lvec[-c(1,seq(pars$m-pars$q+1,pars$m))]/(xser_shr*(1+pars$q))
-    lambda <- lvec/prod(lvec)^(1/pars$m)
+    target <- seq(2,pars$m-pars$q)
+    lambda[target] <- xser_shr
+    lambda[-target] <- (1/xser_shr^length(target))^(1/(pars$m-length(target)))
 
   } else if(pars$shrinkage == "bu"){
 
-    lvec <- rep(1,pars$m)
-    lvec[seq(pars$m-pars$q+1,pars$m)] <- lvec[seq(pars$m-pars$q+1,pars$m)]/(xser_shr*pars$q)
-    lambda <- lvec/prod(lvec)^(1/pars$m)
+    target <- seq(pars$m-pars$q+1,pars$m)
+    lambda[target] <- xser_shr
+    lambda[-target] <- (1/xser_shr^length(target))^(1/(pars$m-length(target)))
 
   } else if(is.numeric(pars$shrinkage)){
 
-    lambda <- rep(1,pars$m)
-    lambda[pars$shrinkage] <- lambda[pars$shrinkage]/(xser_shr*(1/length(pars$shrinkage)))
-    lambda <- lambda/prod(lambda)^(1/pars$m)
+    target <- pars$shrinkage
+    lambda[target] <- xser_shr
+    lambda[-target] <- (1/xser_shr^length(target))^(1/(pars$m-length(target)))
 
   } else {
 

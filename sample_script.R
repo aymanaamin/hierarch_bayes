@@ -29,7 +29,7 @@ start.time = Sys.time()
 results <- bsr(object = xgts_training, 
                fmethod = "arima",
                h = h,
-               shrinkage = NULL) # try shrinkage = "bu" or "td"
+               shrinkage = "nseries") # try shrinkage = "bu" or "td"
 print(Sys.time() - start.time)
 
 
