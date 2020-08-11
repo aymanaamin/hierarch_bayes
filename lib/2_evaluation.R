@@ -112,6 +112,7 @@ ggplot(tab4, aes(x=Grouping, y=Accuracy, fill = Reconciliation)) +
   theme_minimal() +
   theme(legend.position="bottom",
         legend.title = element_blank(),
+        strip.text = element_text(size = 10),
         panel.border = element_rect(colour = "black", fill = NA, size=0.2),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -193,6 +194,7 @@ ggplot(tab3, aes(x=Reconciliation, y=Accuracy)) +
   theme_minimal() +
   theme(legend.position="bottom",
         panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         legend.title = element_blank(),
         legend.text = element_text(size = 10),
         legend.key.size = unit(0.2, 'cm'),
@@ -221,6 +223,7 @@ tab <- tabs$RMSE %>%
   gather(key = level, value = accuracy, -c(date,recon,fmethod)) %>%
   mutate(accuracy = accuracy^2)
 
+# this takes a while
 tab2 <- tab %>% 
   add_column(weights = sapply(tab$level, function(x) weights[which(names(weights) == x)])) %>% 
   mutate(acc_weighted = (accuracy*weights)^0.5)
@@ -275,12 +278,13 @@ ggplot(tab4, aes(x=as.numeric(date), y=Accuracy, group = Reconciliation, size = 
   theme(legend.position="bottom",
         legend.title = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         legend.text = element_text(size = 10),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank())
 
 ggsave("tex/fig/fig_eval_rmse_time.pdf", device = "pdf",
-       width = 20, height = 14, units = "cm")
+       width = 18, height = 12, units = "cm")
 
 
 
@@ -382,8 +386,10 @@ ggplot(tab_bottom, aes(x=as.numeric(date), y=accuracy, group = Method, size = Me
                      labels = c("2000","2005","2010","2015"),
                      expand = c(0,0)) +
   scale_y_continuous(labels = scientific) +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position="bottom",
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank())
 
@@ -399,10 +405,14 @@ ggplot(tab_top, aes(x=as.numeric(date), y=accuracy, group = Method, size = Metho
   scale_size_manual(values = c(0.5,0.5,0.5)) +
   ylab("Forecast Accuracy") +
   xlab("Forecasted Period") +
-  scale_x_continuous(breaks = seq(1998, 2018, by = 4), labels = seq(1998, 2018, by = 4)) +
+  scale_x_continuous(breaks = seq(2000, 2015, by = 5),
+                     labels = c("2000","2005","2010","2015"),
+                     expand = c(0,0)) +
   scale_y_continuous(labels = scientific) +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position="bottom",
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank())
 
@@ -455,9 +465,11 @@ ggplot(tab2, aes(Regions, relacc)) +
   scale_y_continuous(breaks = seq(-0.05,0.2,0.05), limits = c(-0.05,0.2)) + 
   ylab("log relative RMSFE") +
   xlab(NULL) +
-  theme_bw() +
+  theme_minimal() +
   guides(shape = guide_legend(order = 1),  size = guide_legend(order = 2)) +
   theme(legend.position="bottom",
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         panel.grid.major.x = element_blank(),
         panel.grid.minor.y = element_blank())
 
@@ -512,9 +524,11 @@ ggplot(tab2, aes(Categories, relacc)) +
   scale_y_continuous(breaks = seq(-0.05,0.2,0.05), limits = c(-0.05,0.2)) + 
   ylab("log relative RMSFE") +
   xlab(NULL) +
-  theme_bw() +
+  theme_minimal() +
   guides(shape = guide_legend(order = 1),  size = guide_legend(order = 2)) +
   theme(legend.position="bottom",
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         panel.grid.major.x = element_blank(),
         panel.grid.minor.y = element_blank())
 
@@ -593,12 +607,14 @@ ggplot() +
   scale_fill_manual(values = c(bpy.colors(11)[-11])) +
   ylab("Forecast Error (MASE)") +
   xlab("Reconciliation Methods") +
-  theme_bw() +
+  theme_minimal() +
   coord_cartesian(ylim = c(1,2.5)) +
   theme(legend.position="bottom",
         legend.title = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         legend.key.size = unit(0.2, 'cm'),
         legend.text = element_text(size = 10))  +
   guides(fill=guide_legend(nrow=2, override.aes = list(color="white")))
@@ -674,11 +690,13 @@ ggplot() +
   scale_x_continuous(breaks = c(1,2),labels = c("Single\nLevel","Optimal\nCombination")) +
   ylab("Forecast Error (MAPE)") +
   xlab("Reconciliation Methods") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position="bottom",
         legend.title = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA, size=0.2),
+        strip.text = element_text(size = 10),
         legend.key.size = unit(0.2, 'cm'),
         legend.text = element_text(size = 10))  +
   guides(fill=guide_legend(nrow=2, override.aes = list(color="white")))

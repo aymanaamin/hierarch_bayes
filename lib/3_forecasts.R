@@ -57,6 +57,9 @@ bt <- lapply(dates, function(dx){
 }); names(bt) <- 2002+dates/12
 
 
+save(bt, file = "out/forecast_shrinkage.Rdata")
+
+
 # # evaluation
 # acc_bsr_shr <- t(accuracy(fc_bsr_shr, test))
 # acc_bsr_non <- t(accuracy(fc_bsr_non, test))
@@ -89,8 +92,10 @@ tib <- tibble("date" = as.numeric(time(tab)),
 # RColorBrewer::brewer.pal(5,"Blues")
 
 ggplot(tib, aes(x = date)) +
-  geom_rect(mapping=aes(xmin=2002, xmax=Inf, ymin=-Inf, ymax=Inf), fill="grey98", color="grey90", alpha = 0.1) +
+  geom_rect(mapping=aes(xmin=2002, xmax=Inf, ymin=-Inf, ymax=Inf), fill="grey98", alpha = 0.1) +
   geom_line(aes(y = value, color = series, linetype = series)) +
+  geom_hline(aes(yintercept = 0), color = "black", lwd = 0.2) +
+  scale_y_continuous(limits = c(0,NA), expand = c(0,0)) +
   scale_x_continuous(expand = c(0,0),
                      breaks = seq(2000,2003,1/12,),
                      labels = c(rep("",6), "2000", rep("",5),
@@ -101,15 +106,16 @@ ggplot(tib, aes(x = date)) +
   scale_linetype_manual(NULL, values = c("solid","dashed","dotdash","dotdash","dotdash")) +
   ylab("Export Volume (in Mio. CHF)") +
   xlab(NULL) +
-  theme_bw() + theme(legend.position = c(0.21,0.75),
-                     legend.title=element_blank(),
-                     legend.key = element_blank(),
-                     legend.text = element_text(size = 10),
-                     legend.background=element_blank(),
-                     panel.grid.major.x = element_blank(),
-                     panel.grid.minor.x = element_blank(),
-                     panel.grid.minor.y = element_blank(),
-                     axis.ticks.x = element_line(color = c("black",rep(NA,11),"black",rep(NA,11),"black",rep(NA,11))))
+  theme_minimal() + 
+  theme(legend.position = c(0.21,0.75),
+        legend.title=element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(size = 10),
+        legend.background=element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.ticks.x = element_line(color = c("black",rep(NA,11),"black",rep(NA,11),"black",rep(NA,11))))
 
 
 ggsave("tex/fig/fig_electricity.pdf", device = "pdf",

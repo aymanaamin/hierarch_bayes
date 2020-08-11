@@ -212,7 +212,7 @@ where
 		& & & \boldsymbol{\Omega} \\
 \end{bNiceMatrix}.
 \end{align*}
-The initial state $\boldsymbol{\alpha_0}$ is known to be zero since it corresponds to the coherence error in the last observation $\textbf{y}_{T}$. It is sufficient to choose $\boldsymbol{\Omega}_0$ very small in order shrink the initial state $\boldsymbol{\alpha}_0$ towards zero. Furthermore, the stacked residual maker can then be calculated as $\textbf{M} = \textbf{I}_{Hm} - \textbf{Z}(\textbf{Z}'\boldsymbol{\Sigma}^{-1} \textbf{Z})^{-1} \textbf{Z}' \boldsymbol{\Sigma}^{-1}$. Following the identification described in section \ref{sec:model}, it is then straightforward to rewrite the stacked measurement equation~(\ref{eq:meas}) as
+The initial state $\boldsymbol{\alpha_0}$ is known to be zero since it corresponds to the coherence error in the last observation $\textbf{y}_{T}$. It is sufficient to choose $\boldsymbol{\Omega}_0$ very small in order shrink the initial state $\boldsymbol{\alpha}_0$ towards zero. Furthermore, the stacked residual maker can then be calculated as $\textbf{M} = \textbf{I}_{Hm} - \textbf{Z}(\textbf{Z}'\boldsymbol{\Sigma}^{-1} \textbf{Z})^{-1} \textbf{Z}' \boldsymbol{\Sigma}^{-1}$. Using the identification described in section \ref{sec:model}, it is then straightforward to rewrite the stacked measurement equation~(\ref{eq:meas}) as
 \begin{align}
 	\label{eq:meas2}
 	\textbf{M}\textbf{y} & = \textbf{X} \boldsymbol{\alpha} + \textbf{e}, \quad \textbf{e} \sim \mathcal{N}(\textbf{0}, \boldsymbol{\Sigma}).
@@ -259,10 +259,38 @@ Each panel corresponds to a different prior choice for $\boldsymbol{\Sigma}_h$. 
 
 Possible approaches include the weighting of each series by its level in the hierarchy or by to the number of series at each node in the hierarchy. This allows for the emulation of the `structural scaling', `bottom-up', `middle-out' and `top-down' results. A convenient feature of this is that the `middle-out' and `top-down' shrinkage work also for grouped time series, which is not the case in the standard approach.
 
+\begin{table}[H]
+	\caption{Scenarios for Deviations from Base Forecasts}\label{tab:base_deviation}
+	\small
+	\begin{tabularx}{\textwidth}{p{2cm}p{3cm} XXX}
+		\toprule
+		%		\multicolumn{2}{c}{Levels} & \multirow{3}{*}{\shortstack{No. of\\ Series}} & \multirow{3}{*}{Mean} & \multirow{3}{*}{Std. Dev.}& \multirow{3}{*}{Min} & \multirow{3}{*}{Max}& \multirow{3}{*}{IQR}\\
+		%		\cmidrule(lr{.5em}){1-2}
+		\multirow{2}{*}{Target Level} & \multirow{2}{*}{Evaluation Level}  & \multicolumn{3}{c}{Methods}\\
+				\cmidrule(lr{.5em}){3-5}
+		& & Top-Down & Bottom-Up & Shrinkage  \\ 
+		\midrule
+		\multirow{4}{*}{Top Level} & Total / World & 1 & 12,129 & - \\
+		& Total / Region & & & - \\ 
+		& Category / World & & &  - \\ 
+		& Category / Region & & & - \\ 
+		\midrule
+		\multirow{4}{*}{Bottom Level} & Total / World & 1 & 12,129 & - \\
+		& Total / Region & & & - \\ 
+		& Category / World & & &  - \\ 
+		& Category / Region & & & - \\ 
+		\bottomrule
+		\addlinespace
+	\end{tabularx}
+	\footnotesize{Notes: Summary statistics refer to the average monthly export volume in million Swiss francs of each series between 1988 and 2018.}
+\end{table}
+
+
+
 
 \section{Data}\label{sec:datadesc}
 
-We use a comprehensive dataset containing exports of Swiss goods. All time series cover a period from 1988 to 2018 in monthly frequency and are denominated in Swiss francs. They are not adjusted for seasonalities or calendar effects and data revisions are usually very insignificant. The data can be grouped by export destination and product category. The geographic hierarchy consists of 8 regions, aggregated from 245 countries and dependent territories. The categorical hierarchy follows a national nomenclature covering 12 main economic groups and 48 subgroups. This leads to a grouped hierarchy with $m = 13,118$ series containing at least one nonzero entry of which $q = 9,483$ series are at the bottom level. Table \ref{tab:sumstat} provides summary statistics on the series at each level. Further visualizations on the change in composition and a detailed statement of all categorical and geographical classifications can be found in Appendix \ref{sec:data}
+We use a comprehensive dataset containing exports of Swiss goods. All time series cover a period from 1988 to 2018 in monthly frequency and are denominated in Swiss francs. They are not adjusted for seasonalities or calendar effects and data revisions are usually very insignificant. The data can be grouped by export destination and product category. The geographic hierarchy consists of 8 regions, aggregated from 245 countries and dependent territories. The categorical hierarchy follows a national nomenclature covering 12 main economic groups and 48 subgroups. This leads to a grouped hierarchy with $m = 13,118$ series containing at least one nonzero entry of which $q = 9,483$ series are at the bottom level. Table \ref{tab:sumstat} provides summary statistics on the series at each level. Further visualizations on the change in composition and a detailed statement of all categorical and geographical classifications can be found in Appendix \ref{sec:data}.
 
 \begin{table}[H]
 	\caption{Summary Statistics for Hierarchical Levels}\label{tab:sumstat}
@@ -271,7 +299,7 @@ We use a comprehensive dataset containing exports of Swiss goods. All time serie
 		\toprule
 		\multicolumn{2}{c}{Levels} & \multirow{3}{*}{\shortstack{No. of\\ Series}} & \multirow{3}{*}{Mean} & \multirow{3}{*}{Std. Dev.}& \multirow{3}{*}{Min} & \multirow{3}{*}{Max}& \multirow{3}{*}{IQR}\\
 		\cmidrule(lr{.5em}){1-2}
-		Geographical & Categorical & & & & & &\\
+		geographical & categorical & & & & & &\\
 		\midrule
 World & Total & 1 & 12,129 & - & - & - & - \\ 
 World & Category & 12 & 1,011 & 1,340 & 66 & 4,292 & 1,023 \\ 
@@ -289,7 +317,7 @@ Country & Subcategory & 9,483 & 1 & 13 & 0 & 567 & 0 \\
 \end{table}
 
 
-Figure~\ref{fig:area} shows the historical development of the regional and categorical hierarchies. As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Western Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia, with around 17\% each in 2018. Exports to Africa and the Middle East, Latin America and the Caribbean, Central Asia and Eastern Europe, South Asia, Australia and Oceania account only for about 10\% combined. The hierarchical grouping by categories is more evenly distributed, but has been subject to greater shifts in its composition. The most important categories are `Chemicals and Pharmaceuticals', `Precision Instruments' and `Machines and Electronics'. The two hierarchical groupings are quite different. The geographic hierarchy widens towards the bottom, but with a majority of the export volume going to European countries it is nevertheless highly concentrated. The categorical hierarchy, on the other hand, has fewer subgroups and therefore remains narrow towards the bottom. Compared to the regional hierarchy, the export volume is however more evenly distributed.
+Figure~\ref{fig:area} shows the historical development of the regional and categorical hierarchies. As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Western Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia, with around 17\% each in 2018. Exports to Africa and the Middle East, Latin America and the Caribbean, Central Asia and Eastern Europe, South Asia, Australia and Oceania account only for about 10\% combined. The hierarchical grouping by categories is more evenly distributed, but has been subject to greater shifts in its composition. The most important categories are `Chemicals and Pharmaceuticals', `Precision Instruments' and `Machines and Electronics'. The two hierarchical groupings are quite different. The geographic hierarchy widens towards the bottom, but with a majority of the export volume going to European countries it is nevertheless highly concentrated. The categorical hierarchy, on the other hand, has fewer subgroups and therefore remains narrow towards the bottom. Compared to the regional hierarchy, the export volume is however more evenly distributed. 
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_area}
@@ -309,7 +337,7 @@ A common assumption is that series at the top level of a hierarchy are easier to
 
 This section provides empirical evidence for the benefits of forecast reconciliation. It compares the performance of different reconciliation methods and explores which data characteristics profit in particular from hierarchical combination. The setup of our comprehensive pseudo-realtime forecasting exercise is described in the following.
 
-A large hierarchy of Swiss goods exports is used to test the Bayesian reconciliation framework and various competing methods. In each month from 1995 to 2015, forecasts for all series in the hierarchy are calculated for the next 36 months. For each of the 13,118 series, we use a few univariate benchmark models to get the base forecasts. It should be noted that these are not necessarily the best model choice since we do not take into account important covariates such as exchange rates, relative prices or global economic developments. Our focus is to show the advantages of reconciliation relative to base forecasts rather than to obtain the best possible base forecasts. We use an autoregressive integrated moving average model (ARIMA), an exponential smoothing state-space model (ETS), and a seasonal random walk model (RW). As described in \cite{Hyndman2008}, the model for each series is parameterized automatically based on the Akaike Information Criterion. In order to get samples from the predictive densities, $n = 1000$ sample paths are simulated from each fitted model using Gaussian errors. With the exception of the volatile period during the Great Recession, the ARIMA and ETS approaches outperform the random walk on average for series at every level and forecasting horizon. All results in the following subsection will, therefore, rely on ARIMA forecasts.\footnote{A detailed description of the methodology and comparisons of forecasting methods, horizons and accuracy measures can be found in Appendix~\ref{sec:robust}.}
+A large hierarchy of Swiss goods exports is used to test the Bayesian reconciliation framework and various competing methods. In each month from 1995 to 2015, forecasts for all series in the hierarchy are calculated for the next 36 months. For each of the 13,118 series, we use a few univariate benchmark models to get the base forecasts. It should be noted that this is not necessarily the best model choice since we do not take into account important explanatory variables such as exchange rates, relative prices or global economic developments. Our focus is to show the advantages of reconciliation for forecasting accuracy, which we do by comparing reconciled predictions to unreconciled base forecasts. Therefore, the method used to create the base forecast is not of importance. We use an autoregressive integrated moving average model (ARIMA), an exponential smoothing state-space model (ETS), and a seasonal random walk model (RW). As described in \cite{Hyndman2008}, the model for each series is parameterized automatically based on the Akaike Information Criterion. In order to get samples from the predictive densities, $n = 1000$ sample paths are simulated from each fitted model using Gaussian errors. With the exception of the volatile period during the Great Recession, the ARIMA and ETS approaches outperform the random walk on average for series at every level and forecasting horizon. All results in the following subsection will, therefore, rely on ARIMA forecasts.\footnote{A detailed description of the methodology and comparisons of forecasting methods, horizons and accuracy measures can be found in Appendix~\ref{sec:robust}.}
 
 These incoherent forecasts are then reconciled using several basic single-level and optimal combination methods. The single-level techniques include bottom-up, top-down and middle-out methods. The latter two can only be used for non-grouped time series and are, therefore, tested on the regional and categorical hierarchies separately. The combination methods used are ordinary least squares (no scaling), weighted least squares with variance scaling, weighted least sqared with structural scaling, MinT and the Bayesian state-space reconciliation framework (BSR). If aggregation of the prediction errors is necessary, they are weighted with their respective export share. The reconciled forecasts are then compared to the corresponding unreconciled predictions using log relative root mean squared forecast errors \citep{Hyndman2006}.
 
@@ -338,28 +366,17 @@ It is also instructive to look at the development of the relative forecasting ac
 \end{figure}
 
 \subsection{Comparison of Forecasting Horizons}
-In order to check whether the accuracy improvements are significant, one-sided Diebold-Mariano tests are used for the top-level series and forecasting horizons of 1, 2 and 3 years \citep{Diebold1995}. They test for significance in the difference between two squared forecast errors at various forecasting horizons, accounting for serial correlation in the squared error loss. Table~\ref{tab:dmtest} shows the p-values when testing for equality of reconciled and unreconciled forecasts, where the alternative hypothesis is that the accuracy of reconciliation methods is greater. 
+In order to check whether the accuracy improvements are significant, we test for equality of the mean squared errors of reconciled and unreconciled forecasts. Since it is not possible to get unreconciled forecasts by constraining the parameter space of the reconciliation procedure, the comparison involves non-nested models. Following \cite{Clark2013}, we therefore rely on the test statistic proposed by \cite{Diebold1995}, using the variance correction suggested by \cite{Harvey1997}. It accounts for serial correlation in the squared error loss while testing for significance in the difference between two squared forecast errors at various forecasting horizons. Table~\ref{tab:dmtest} shows the p-values for the one-sided test, where the alternative hypothesis is that the accuracy of reconciliation methods is greater. 
 
 \begin{table}[H]
-	\caption{Diebold-Mariano Tests}\label{tab:dmtest}
+	\caption{Test for Predictive Ability}\label{tab:dmtest}
 	\small
-	\begin{tabularx}{\textwidth}{X
-		S[table-format=2.2]
-		S[table-format=2.2]
-		S[table-format=2.2]
-		S[table-format=2.2]
-		S[table-format=2.2]
-		S[table-format=2.2]
-		S[table-format=2.2]
-		S[table-format=2.2]
-		S[table-format=2.2]}
+	\begin{tabularx}{\textwidth}{X *{9}{S[table-format=2.2]}}
 		\toprule
 		 & \multicolumn{3}{c}{Entire Sample} & \multicolumn{3}{c}{Moderate Period} & \multicolumn{3}{c}{Crisis and Recovery}\\
-		 & \multicolumn{3}{c}{1998 - 2018} & \multicolumn{3}{c}{1998 - 2007} & \multicolumn{3}{c}{2008 - 2018}\\
+		 & \multicolumn{3}{c}{1998 - 2018} & \multicolumn{3}{c}{1998 - 2006} & \multicolumn{3}{c}{2007 - 2018}\\
 		\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
-		 & \multicolumn{1}{c}{1} & \multicolumn{1}{c}{2} & \multicolumn{1}{c}{3} & 
-		 \multicolumn{1}{c}{1} & \multicolumn{1}{c}{2} & \multicolumn{1}{c}{3} & 
-		 \multicolumn{1}{c}{1} & \multicolumn{1}{c}{2} & \multicolumn{1}{c}{3} \\ 
+		 & {12} & {24} & {36} & {12} & {24} & {36} &  {12} & {24} & {36} \\ 
 		\midrule
 		\multicolumn{10}{l}{\textbf{Single-Level}}\\
 		\addlinespace
@@ -379,7 +396,7 @@ In order to check whether the accuracy improvements are significant, one-sided D
 		\bottomrule
 		\addlinespace
 	\end{tabularx}
-	\footnotesize{Notes: Table shows p-values of one-sided Diebold Mariano tests. They are retrieved by testing differences between reconciled and unreconciled forecast errors, using the top level series and 1-year, 2-years and 3-years forecasting horizons. Significance indicated by *** p < 0.001, ** p < 0.01 and * p < 0.05.}
+	\footnotesize{Notes: Table shows p-values of one-sided Diebold Mariano tests. They are retrieved by testing differences between reconciled and unreconciled forecast errors, using the top level series and forecasting horizons of 12, 24 and 36 months. Significance indicated by *** p < 0.001, ** p < 0.01 and * p < 0.05.}
 \end{table}
 With the exception of the middle-out approaches, single-level methods are not significantly more accurate than the unreconciled forecasts at all horizons. Optimal combinations are associated with lower p-values, in particular for the period of increased economic volatility after the Great Recession. Parsimonious approaches, in particular no scaling or variance scaling, appear to perform best even at longer forecasting horizons. There is however no evidence that the use of predictive distributions and state-dependent reconciliation errors leads to significant gains.
 

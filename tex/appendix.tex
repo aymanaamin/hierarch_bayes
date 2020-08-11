@@ -30,6 +30,49 @@ This result is again intuitive since the reconciliation biases are the residuals
 
 \clearpage
 
+
+
+\subsection{Robustness}
+\label{sec:robust}
+
+This section provides additional robustness checks and contrasts the results found in the main part with the results obtained from different base forecast models and other forecasting metrics, as suggested in \cite{Hyndman2006}.
+
+Figure \ref{fig:mase} shows the mean absolute scaled forecast errors (MASE) for all methods, averaged across all forecast dates and horizons. It mirrors several results obtained from relative RMSFEs seen in the main part. For instance, optimal combination methods seem to have, on average, lower forecast errors than the unreconciled benchmark, indicated by the horizontal line. This holds true especially for higher levels. Single-level methods are often less accurate than the benchmark. In addition, top-down and middle-out methods are not able to reconcile grouped hierarchies. At the bottom level, optimal combination methods are, on average, not as accurate as the unreconciled forecasts when using the MASE as a metric for forecasting accuracy. This stands in contrast with the results obtained from the RMSFE, where most combination methods improve upon the accuracy of unreconciled forecasts at the lowest level.
+
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_mase}
+	\captionab{Mean Absolute Scaled Error of Reconciliation Methods}{Lower bars indicate more accurate forecasts. Horizontal lines show the mean absolute scaled error of unreconciled predictions. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast dates and horizons.}\label{fig:mase}
+\end{figure}
+
+Figure \ref{fig:mape} evaluates the mean absolute percentage error (MAPE) of reconciled forecasts and compares the results to the unreconciled benchmark, again highlighted using a horizontal line. While the results are here less obvious than in the RMSFE or MASE case, they still point towards the same conclusions: Single-level methods, on average, do not outperform the accuracy of unreconciled predictions. Combination methods on the other hand, and in particular Mint and BSR, have lower forecast errors. 
+
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_mape}
+	\captionab{Mean Absolute Percentage Error of Reconciliation Methods}{Lower bars indicate more accurate forecasts. Horizontal lines show the mean absolute percentage error of unreconciled predictions. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast dates and horizons.}\label{fig:mape}
+\end{figure}
+
+As the forecasting exercises in Section~\ref{sec:appl} rely on base forecasts from ARIMA models, it is necessary to also consider alternative forecasting methods. However, as the focus of this paper is on the advantages of reconciliation rather than export forecasts, the quality of the underlying base forecasts is not of great importance. We use a few established methods that are already implemented in the `hts' and 'forecast' packages for R \citep[see for instance]{Hyndman2008,Hyndman2011}.
+
+Figure \ref{fig:eval_methods_top} shows the forecast accuracy of ARIMA models as well as exponential smoothing state-space models (ETS) and seasonal random walk models (RW). It shows the average accuracy at each forecasted periods from 1995 to 2015 for the top level series, measured using all previously established metrics. While there are some differences in the accuracy of the different forecasting methods, the accuracy measures show a very similar picture. The random walk forecast is very volatile and generally doesn't outperform the ARIMA and ETS predictions, with the notable exception of the period during the Great Recession. ARIMA and ETS perform very similarly.
+
+Figure \ref{fig:eval_methods_bottom} shows the corresponding forecast accuracy measures for the bottom level, where the prediction errors are weighted using their corresponding export shares. There appears to be no significant difference in the accuracy of the forecasting methods, even though the metrics show a very different picture. There is a noticable shift in the root mean squared (weighted) errors, which can be explained with the shifting composition of export volumes at the lowest level. However, this does not pose a problem for the analysis in the main text as we rely on the logarithmized ratio of reconciled and unreconciled RMSFEs. Interestingly, there is no strong deterioration of forecast accuracy noticeable during the Great Recession. This might indicate that prediction of bottom level series are always rather poor and not just during crises.
+
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_methods_top}
+	\captionab{Accuracy of Forecasting Methods at the Top Level}{Figure provides several measures of forecast accuracy for the top-level series from 1995 to 2015. Average of all forecast horizons.}\label{fig:eval_methods_top}
+\end{figure}
+
+
+
+\begin{figure}[H]
+	\includegraphics[width=\textwidth]{fig/fig_eval_methods_bottom}
+	\captionab{Accuracy of Forecasting Methods at the Bottom Level}{Figure provides several measures of forecast accuracy for the bottom-level series from 1995 to 2015. Average of all forecast horizons. Prediction errors are weighted using their corresponding export shares.}\label{fig:eval_methods_bottom}
+\end{figure}
+
+
+
+
+
 \subsection{Data}\label{sec:data}
 
 Monthly data on Swiss merchandise trade is compiled by the Swiss Federal Customs Administration. Trade in precious metals, precious and semi-precious stones, works of art and antiques is generally omitted in business cycle research due to volatility and structural breaks.  Figure~\ref{fig:treemap} shows the changes in hierarchical composition of Swiss merchandise exports between 1988 and 2018. 
@@ -435,31 +478,6 @@ No. & Description\\
 	TO & Tonga                           & 01/1988 & -  \\
 \end{longtable}
 \end{scriptsize}
-
-
-\subsection{Robustness}
-\label{sec:robust}
-
-
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_mase}
-	\captionab{MASE of Reconciliation Methods}{Lower bars indicate more accurate forecasts. Horizontal lines show the mean absolute scaled error of unreconciled predictions. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast dates and horizons.}\label{fig:mase}
-\end{figure}
-
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_mape}
-	\captionab{MAPE of Reconciliation Methods}{Lower bars indicate more accurate forecasts. Horizontal lines show the mean absolute percentage error of unreconciled predictions. Errors at intermediate and bottom levels are weighted using their corresponding share in total export volume. Average of all forecast dates and horizons.}\label{fig:mape}
-\end{figure}
-
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_methods_top}
-	\captionab{Accuracy of Forecasting Methods at the Top Level}{Figure provides several measures of forecast accuracy for the top-level series from 1995 to 2015.}
-\end{figure}
-
-\begin{figure}[H]
-	\includegraphics[width=\textwidth]{fig/fig_eval_methods_bottom}
-	\captionab{Accuracy of Forecasting Methods at the Bottom Level}{Figure provides several measures of forecast accuracy for the bottom-level series from 1995 to 2015. Prediction errors are weighted using their corresponding export shares.}
-\end{figure}
 
 
 %\subsection{Scaling Methods}

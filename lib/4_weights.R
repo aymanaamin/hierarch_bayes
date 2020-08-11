@@ -6,7 +6,6 @@ rm(list = ls())
 library(MCMCpack)
 library(hts)
 library(tidyverse)
-library(sp)
 library(bsr)
 library(Matrix)
 library(RColorBrewer)
@@ -100,52 +99,122 @@ ggsave("tex/fig/fig_biases.pdf", device = "pdf",
 
 
 
-# COMPARE BSR TO OUTCOMES OF OTHER METHODS --------------------------------
+# COMPARE BSR SHRINKAGE TO OUTCOMES OF OTHER METHODS ------------------
 
 load("dat/tradehts_reduced1.Rdata")
 load("dat/tradegts_reduced1.Rdata")
 
 # parameters
 dates <- 1998:2018
-tests <- c("top_level", "bottom_level", "mixed")
+tests <- c("top_level", "bottom_level")
 h <- 12
-out <- lapply(tests, function(tx){
+out <- lapply(dates, function(dx){
   
-  dx = 1998
+  # run reconciliations
+  estim <- list("pred_bu" = forecast(window(tradegts_reduced1, end = dx-1/12), h = h, method = "bu" , fmethod = "arima"),
+                "pred_td_cat" = forecast(window(tradehts_reduced1$cat, end = dx-1/12), h = h, method = "tdgsa" , fmethod = "arima"),
+                "pred_td_reg" = forecast(window(tradehts_reduced1$reg, end = dx-1/12), h = h, method = "tdgsa" , fmethod = "arima"),
+                "pred_bsr_bu" = bsr(window(tradegts_reduced1, end = dx-1/12), length_sample = 300, h = h, shrinkage = "bu", fmethod = "arima"),
+                "pred_bsr_td" = bsr(window(tradegts_reduced1, end = dx-1/12), length_sample = 300, h = h, shrinkage = "td", fmethod = "arima"))
   
-  pred_bu_cat <- forecast(window(tradegts_reduced1, end = dx), h = h, method = "bu" , fmethod = "arima")
-  pred_td_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "tdgsa" , fmethod = "arima")
-  pred_td_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "tdgsa" , fmethod = "arima")
+  # get base forecast
+  base <- sapply(estim$pred_bsr_bu$base_forecasts, function(x) colMeans(x))
+  colnames(base) <- unname(sapply(colnames(base), function(x){
+    
+    if(grepl("/",x)) strsplit(x, "/", fixed = T)[[1]][2] else x
+    
+  }))
+  tab_base <- as_tibble(base) %>% 
+    add_column("model" = "base", "horizon" = 1:12) %>% 
+    pivot_longer(-c(model,horizon))
   
-  pred_bsr_bu <- bsr(object = window(tradegts_reduced1, end = date), h = h, shrinkage = "bu", fmethod = "arima")
-  pred_bsr_mo <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "mo", fmethod = "arima")
-  pred_bsr_td <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "td", fmethod = "arima")
+  
+  # td
+  td_mat <- matrix(NA, nrow(base), ncol(base))
+  colnames(td_mat) <- colnames(base)
+  td_mat[,colnames(aggts(estim$pred_td_cat))] <- aggts(estim$pred_td_cat)
+  td_mat[,colnames(aggts(estim$pred_td_reg))] <- aggts(estim$pred_td_reg)
+  tab_td <- as_tibble(td_mat) %>% 
+    add_column("model" = "td", 
+               "horizon" = 1:12) %>% 
+    pivot_longer(-c(model,horizon)) %>% 
+    add_column("base" = tab_base$value)
+  
+  
+  # bu
+  bu_mat <- aggts(estim$pred_bu)
+  colnames(bu_mat) <- colnames(base)
+  tab_bu <- as_tibble(bu_mat) %>% 
+    add_column("model" = "bu", "horizon" = 1:12) %>% 
+    pivot_longer(-c(model,horizon)) %>% 
+    add_column("base" = tab_base$value)
+  
+  # bu bsr
+  bu_bsr_mat <- aggts(estim$pred_bsr_bu)
+  colnames(bu_bsr_mat) <- colnames(base)
+  tab_bu_bsr <- as_tibble(bu_bsr_mat) %>% 
+    add_column("model" = "bu_bsr", "horizon" = 1:12) %>% 
+    pivot_longer(-c(model,horizon))  %>% 
+    add_column("base" = tab_base$value)
+  
+  
+  # td_bsr
+  td_bsr_mat <- aggts(estim$pred_bsr_td)
+  colnames(td_bsr_mat) <- colnames(base)
+  tab_td_bsr <- as_tibble(td_bsr_mat) %>% 
+    add_column("model" = "td_bsr", "horizon" = 1:12) %>% 
+    pivot_longer(-c(model,horizon)) %>% 
+    add_column("base" = tab_base$value)
+  
+  
+  # out
+  rbind(tab_td,tab_bu,tab_bu_bsr,tab_td_bsr)
   
   
 })
 
 
+mat <- do.call(rbind,out) 
 
-# comparison models
-pred_bu_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "bu" , fmethod = "arima")
-pred_mo_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "bu" , fmethod = "arima")
-pred_mo_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "bu" , fmethod = "arima")
-pred_td_cat <- forecast(window(tradehts_reduced1$cat, end = date), h = h, method = "tdgsa" , fmethod = "arima")
-pred_td_reg <- forecast(window(tradehts_reduced1$reg, end = date), h = h, method = "tdgsa" , fmethod = "arima")
-
-pred_bsr_bu <- bsr(object = window(tradegts_reduced1, end = date), h = h, shrinkage = "bu", fmethod = "arima")
-pred_bsr_mo <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "mo", fmethod = "arima")
-pred_bsr_td <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "td", fmethod = "arima")
-pred_bsr_nser <- bsr(window(tradegts_reduced1, end = date), h = h, shrinkage = "nseries", fmethod = "arima")
-
-tsl_bsr_td <- as.list(aggts(pred_bsr_td))
-tsl_td <- as.list(aggts(pred_td_cat))
-tsl_nser <- as.list(aggts(pred_nser))
+save(mat, file = "out/deviations.Rdata")
 
 
-plot.ts(cbind(tsl_bsr_td$Total,
-              tsl_td$Total,
-              tsl_nser$Total),
-        plot.type="single", col = c(1,2,3))
+load("out/deviations.Rdata")
+
+mat <- mat %>% 
+  add_column("err" = abs((mat$value - mat$base)/mat$base)) %>% 
+  group_by(model, name) %>% 
+  # summarize(err = sqrt(mean(se))) %>%
+  summarize(mape = mean(err)*100) %>% 
+  ungroup()
+
+
+reg_lvl <- factor(case_when(
+  mat$name == "Total" ~ "World",
+  nchar(mat$name) == 2 & grepl("^[A-Za-z]+$", mat$name) == F ~ "World",
+  nchar(mat$name) == 3 & grepl("^[A-Za-z]+$", mat$name) == F ~ "World",
+  nchar(mat$name) == 2 & grepl("^[A-Za-z]+$", mat$name) == T ~ "Region",
+  nchar(mat$name) %in% c(4,5) & grepl("^[A-Za-z]+$", mat$name) == F ~ "Region"),
+  levels = c("World","Region"), ordered = T)
+cat_lvl <-  factor(case_when(
+  mat$name == "Total" ~ "Total",
+  nchar(mat$name) %in% c(2,4) & grepl("^[A-Za-z]+$", mat$name) == T ~ "Total",
+  nchar(mat$name) %in% c(2) & grepl("^[A-Za-z]+$", mat$name) == F ~ "Category",
+  nchar(mat$name) %in% c(4,6) & grepl("^[A-Za-z]+$", mat$name) == F ~ "Category"),
+  levels = c("Total","Category"), ordered = T)
+
+mat2 <- mat %>% 
+  add_column(reg_lvl = reg_lvl, cat_lvl = cat_lvl) %>% 
+  group_by(model, reg_lvl, cat_lvl) %>%
+  summarize(mape = mean(mape)) %>% 
+  ungroup()
+
+
+
+
+
+
+
+
 
 

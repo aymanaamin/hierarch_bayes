@@ -288,19 +288,20 @@ dat_cat <- inner_join(dat_cat,goods, by = "code") %>%
 
 dat <- bind_rows(dat_reg,dat_cat) %>% 
   mutate(date = as.character(date)) %>% 
-  mutate(date = recode(date,"1988" = "in 1988","2019" = "in 2019"))
+  mutate(date = recode(date,"1988" = "in 1988","2018" = "in 2018"))
 
 ggplot(dat, aes(area = share2, fill = share1, label = lvl2, subgroup = lvl1)) +
   geom_treemap(colour = "dark grey") +
   facet_grid(hierarchy ~ date, switch = "y") +
-  scale_fill_gradient(name = "Regional or Categorical Share of Exports (in %)" , low = "#6FCBFF", high = "#08306B") +
+  scale_fill_gradient(name = "Regional or Categorical Share of Exports (in %)" , low = "#a2ddff", high = "#08306B") +
   geom_treemap_text(colour = "white", place = "bottomleft", size = 8, 
                     min.size = 8, grow = F, alpha = 0.5) +
   geom_treemap_subgroup_border(colour = "black", lwd = 1) +
   geom_treemap_subgroup_text(colour = "white", size = 10, min.size = 10, 
                              place = "centre", reflow = T, grow = F) +
   theme_minimal() + 
-  theme(legend.position="bottom", axis.text = element_text(size = ))  +
+  theme(legend.position="bottom", 
+        strip.text = element_text(size = 10))  +
   guides(fill=guide_colourbar(barwidth=10,barheight = 0.3))
 
 ggsave("tex/fig/fig_treemap.pdf", device = "pdf",
