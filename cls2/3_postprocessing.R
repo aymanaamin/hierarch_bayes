@@ -12,6 +12,7 @@ library(foreach)
 library(multDM)
 library(dplyr)
 library(tidyr)
+library(tsutils)
 
 load("dat/tradegts_reduced2.Rdata")
 load("dat/tradehts_reduced.Rdata")
@@ -153,7 +154,9 @@ save(tabs, file = "out/tabs.Rdata")
 
 # DIEBOLD MARIANO STATS ---------------------------------------------------
 
-dsamples <- list("full"= fdates, "moderate" = fdates[1:144], "crisis" = fdates[145:252])
+dsamples <- list("full"= fdates,
+                 "moderate" = fdates[1:144], # 1995 - 2006
+                 "crisis" = fdates[145:252]) # 2007 - 2018
 
 dm <- lapply(dsamples, function(sx){
   
@@ -216,90 +219,45 @@ xtable(sig)
 
 
 
+# FRIEDMAN NEMENYI TESTS --------------------------------------------------
+
+dsamples <- list("full"= fdates,
+                 "moderate" = fdates[1:144], # 1995 - 2006
+                 "crisis" = fdates[145:252]) # 2007 - 2018
+
+names(recon) <- c("Bayesian Reconciliation","Bottom-UP", 
+                  "Middle-Out (by Category)","Middle-Out (by Region)",
+                  "Top-Down (by Category)","Top-Down (by Region)","OLS","Variance Scaling",
+                  "MinT","Structural Scaling","Unreconciled Forecasts")
+
+fn <- lapply(dsamples, function(sx){
+
+  hx = 24
+  
+  mat <- do.call(cbind, lapply(recon, function(rx){
+    
+    if(rx == "unrecon"){
+      pred <- sapply(sx, function(dx) t(fcasts[["unrecon"]][[as.character(dx)]][["arima"]])[1,hx])
+    } else {
+      pred <- sapply(sx, function(dx) t(aggts(fcasts[[rx]][[as.character(dx)]][["arima"]]))[1,hx])
+    }
+    
+    realiz <- sapply(sx, function(dx) as.numeric(window(agg_gts[[1]], start = dx)[hx]))
+    
+     c(pred - realiz)
+    
+  }))
+  
+  colnames(mat) <- names(recon)
+
+  mat
+
+})
 
 
-# # CLARK WEST STATS ---------------------------------------------------
-# 
-# cw.test <- function(y1,y2,y){
-#   
-#   # https://github.com/martinbaumgaertner/Clarkwest/blob/master/Clarkwest.R
-#   
-#   #H0 is that y1 <= y2 and H1 y1>y2
-#   e1     = (y-y1)^2;
-#   e2     = (y-y2)^2;
-#   e3     = (y1-y2)^2;
-#   f_hat = (e1 - e2 + e3);
-#   
-#   P<-length(f_hat)
-#   f_mean<-mean(f_hat)
-#   t.stat<-sqrt(P)*f_mean/(var(f_hat-f_mean))^0.5
-#   p.val<-1-pt(t.stat,df = 1)
-#   
-#   result<-data.frame(t.stat,p.val)
-#   colnames(result)<-c("t.stat","p.val")
-#   return(result)
-# }
-# 
-# 
-# 
-# dsamples <- list("full"= fdates, "moderate" = fdates[1:144], "crisis" = fdates[145:252])
-# 
-# cw <- lapply(dsamples, function(sx){
-#   
-#   out <- lapply(recon[-(which(recon == "unrecon"))], function(rx){
-#     
-#     horz <- sapply(c(12,24,36), function(hx){
-#       
-#       f_unrecon <- sapply(sx, function(dx) t(fcasts[["unrecon"]][[as.character(dx)]][["arima"]])[1,hx])
-#       f_recon <- sapply(sx, function(dx) t(aggts(fcasts[[rx]][[as.character(dx)]][["arima"]]))[1,hx])
-#       realiz <- sapply(sx, function(dx) as.numeric(window(agg_gts[[1]], start = dx)[hx]))
-#       
-#       #H0 is that y1 <= y2 and H1 y1>y2
-#       out <- cw.test(y1 = f_recon,
-#                      y2 = f_unrecon,
-#                      y = realiz)
-#       
-#       return(out$p.val)
-#       
-#     })
-#     
-#     names(horz) <- c(12,24,36)
-#     return(horz)
-#     
-#   })
-#   
-#   names(out) <- recon[-(which(recon == "unrecon"))]
-#   return(out)
-#   
-# })
-# 
-# names(cw) <- names(dsamples)
-# 
-# save(cw, file = "out/cw.Rdata")
-# 
-# 
-# 
-# tab = cbind(do.call(rbind,cw$full), do.call(rbind,cw$moderate), do.call(rbind,cw$crisis))
-# 
-# sig <- rep(NA,prod(dim(tab)))
-# for(jx in 1:length(sig)){
-#   
-#   if(tab[jx] < 0.001){
-#     sig[jx] <- paste0(round(tab[jx],2),"***")
-#   } else if(tab[jx] < 0.01){
-#     sig[jx] <- paste0(round(tab[jx],2),"**")
-#   } else if(tab[jx] < 0.05){
-#     sig[jx] <- paste0(round(tab[jx],2),"* ")
-#   } else {
-#     sig[jx] <- paste0(round(tab[jx],2),"  ")
-#   }
-# }
-# dim(sig) = dim(tab)
-# rownames(sig) = rownames(tab)
-# 
-# library(xtable)
-# xtable(sig)
-# 
+nemenyi(fn$full, conf.level = 0.95, plottype = "vline", xlab = "Full Sample")
+nemenyi(fn$moderate, conf.level = 0.95, plottype = "vline", xlab = "Moderate Period")
+nemenyi(fn$crisis, conf.level = 0.95, plottype = "vline", xlab = "Crisis and Recovery")
 
 
 

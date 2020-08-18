@@ -45,15 +45,15 @@ bsr <- function(object,
   # Step 3.1: Replace Exogenous Forecasts
   if(!is.null(exogen)){
 
-    for(ix in names(exogen)) forecasts_list[[ix]] <- forecasts_list[[ix]] -
-        matrix(rep(colMeans(forecasts_list[[ix]]),pars$n),pars$n,pars$h,byrow = T) +
+    for(ix in names(exogen)) forecasts_list$samples[[ix]] <- forecasts_list$samples[[ix]] -
+        matrix(rep(colMeans(forecasts_list$samples[[ix]]),pars$n),pars$n,pars$h,byrow = T) +
         matrix(rep(exogen[[ix]],pars$n),pars$n,pars$h,byrow = T)
 
   }
 
   # Step 4: Reconciliation
   print.noquote("Reconciling...")
-  results <- run_reconciliation(forecasts_list, pars)
+  results <- run_reconciliation(forecasts_list$samples, pars)
 
 
   # Step 5: Collect Output and Parameters
@@ -67,7 +67,7 @@ bsr <- function(object,
               histy = object$bts,
               labels = object$labels,
               fmethod = pars$fmethod,
-              base_forecasts = forecasts_list)
+              base_forecasts = forecasts_list$means)
   if (is.hts(object)) {
     out$nodes <- object$nodes
   } else {

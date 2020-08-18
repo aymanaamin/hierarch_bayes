@@ -9,6 +9,8 @@ library(tidyverse)
 library(bsr)
 library(Matrix)
 library(RColorBrewer)
+library(foreach)
+library(doParallel)
 
 
 source("lib/functions_model_subspace.R")
@@ -105,17 +107,34 @@ load("dat/tradehts_reduced1.Rdata")
 load("dat/tradegts_reduced1.Rdata")
 
 # parameters
-dates <- 1998:2018
-tests <- c("top_level", "bottom_level")
+dates <- seq(1998,2018,1/12)
 h <- 12
-out <- lapply(dates, function(dx){
+
+cl <- makeCluster(4)
+registerDoParallel(cl)
+
+out <- foreach(dx = dates, .packages = c("bsr",
+                                         "hts",
+                                         "forecast","tidyverse")) %dopar% {
   
   # run reconciliations
-  estim <- list("pred_bu" = forecast(window(tradegts_reduced1, end = dx-1/12), h = h, method = "bu" , fmethod = "arima"),
-                "pred_td_cat" = forecast(window(tradehts_reduced1$cat, end = dx-1/12), h = h, method = "tdgsa" , fmethod = "arima"),
-                "pred_td_reg" = forecast(window(tradehts_reduced1$reg, end = dx-1/12), h = h, method = "tdgsa" , fmethod = "arima"),
-                "pred_bsr_bu" = bsr(window(tradegts_reduced1, end = dx-1/12), length_sample = 300, h = h, shrinkage = "bu", fmethod = "arima"),
-                "pred_bsr_td" = bsr(window(tradegts_reduced1, end = dx-1/12), length_sample = 300, h = h, shrinkage = "td", fmethod = "arima"))
+  estim <- list("pred_bu" = forecast(window(tradegts_reduced1, end = dx-1/12), 
+                                     h = h, method = "bu" , fmethod = "rw"),
+                "pred_td_cat" = forecast(window(tradehts_reduced1$cat, end = dx-1/12), 
+                                         h = h, method = "tdgsa" , fmethod = "rw"),
+                "pred_td_reg" = forecast(window(tradehts_reduced1$reg, end = dx-1/12), 
+                                         h = h, method = "tdgsa" , fmethod = "rw"),
+                "pred_mint" = forecast(window(tradegts_reduced1, end = dx-1/12), 
+                                     h = h, method = "comb", weights = "mint", fmethod = "rw"),
+                "pred_bsr_bu" = bsr(window(tradegts_reduced1, end = dx-1/12), 
+                                    length_sample = 1000, h = h, shrinkage = "bu", 
+                                    fmethod = "rw"),
+                "pred_bsr_td" = bsr(window(tradegts_reduced1, end = dx-1/12), 
+                                    length_sample = 1000, h = h, shrinkage = "td",
+                                    fmethod = "rw"),
+                "pred_bsr_no" = bsr(window(tradegts_reduced1, end = dx-1/12), 
+                                    length_sample = 1000, h = h,
+                                    fmethod = "rw"))
   
   # get base forecast
   base <- sapply(estim$pred_bsr_bu$base_forecasts, function(x) colMeans(x))
@@ -166,12 +185,31 @@ out <- lapply(dates, function(dx){
     pivot_longer(-c(model,horizon)) %>% 
     add_column("base" = tab_base$value)
   
+  # no_bsr
+  no_bsr_mat <- aggts(estim$pred_bsr_no)
+  colnames(no_bsr_mat) <- colnames(base)
+  tab_no_bsr <- as_tibble(no_bsr_mat) %>% 
+    add_column("model" = "no_bsr", "horizon" = 1:12) %>% 
+    pivot_longer(-c(model,horizon)) %>% 
+    add_column("base" = tab_base$value)
+  
+  
+  # mint
+  mint_mat <- aggts(estim$pred_mint)
+  colnames(mint_mat) <- colnames(base)
+  tab_mint <- as_tibble(mint_mat) %>% 
+    add_column("model" = "mint", "horizon" = 1:12) %>% 
+    pivot_longer(-c(model,horizon)) %>% 
+    add_column("base" = tab_base$value)
+  
   
   # out
-  rbind(tab_td,tab_bu,tab_bu_bsr,tab_td_bsr)
+  rbind(tab_td,tab_bu,tab_bu_bsr,tab_td_bsr,tab_mint,tab_no_bsr)
   
   
-})
+}
+
+stopCluster(cl)
 
 
 mat <- do.call(rbind,out) 
@@ -209,6 +247,7 @@ mat2 <- mat %>%
   summarize(mape = mean(mape)) %>% 
   ungroup()
 
+mat2 %>% print(n=30)
 
 
 
