@@ -21,7 +21,7 @@
 
 \begin{abstract}
 	\noindent This paper proposes a novel forecast reconciliation framework using Bayesian state-space methods. It allows for the joint reconciliation at all forecast horizons and uses predictive distributions rather than past variation of forecast errors. Informative priors are used to assign weights to specific predictions, which makes it possible to reconcile forecasts such that they accommodate specific judgmental predictions or managerial decisions. The reconciled forecasts adhere to hierarchical constraints, which facilitates communication and supports aligned decision-making at all levels of complex hierarchical structures. An extensive forecasting study is conducted on a large collection of 13,118 time series that measure Swiss merchandise exports, grouped hierarchically by export destination and product category. We find strong evidence that in addition to producing coherent forecasts, reconciliation also leads to substantial improvements in forecast accuracy. The use of state-space methods is particularly promising for optimal decision-making under conditions with increased model uncertainty and data volatility. \\
-	
+
 	\noindent \textbf{JEL Classification:} C32, C53, E17\\
 	\noindent \textbf{Keywords}: Forecasting, Hierarchical Reconciliation, Optimal Combination, Decision-making.
 \end{abstract}
@@ -35,7 +35,7 @@
 Forecasts are essential to the decision-making process in business analytics and macroeconomics. At an aggregate level, they are often strategic and, therefore, subject to judgmental adjustments and managerial decisions. At more disaggregate operational levels, forecasts usually rely on statistical methods. If the data is subject to linear hierarchical constraints, predictions generated from different methods and information sets are usually not coherent. In some instances, incoherent predictions are problematic because they may lead to contradictory conclusions and non-aligned decision-making. Furthermore, incoherent forecasts are often difficult to communicate. An ex post adjustment of forecasts to ensure coherence resolves these issues and has been shown to lead to substantial improvements in forecast accuracy \citep[see][and references therein]{Wickramasuriya2015}. This paper proposes a novel approach to jointly reconcile all forecasting periods using Bayesian state-space methods. It allows for the identification and shrinkage of coherence errors, which means specific predictions can be assigned weights in the process of reconciliation. It may occur, for instance, that managerial decisions are reflected in scenario forecasts at the strategic level, but not in forecasts at the operational level. If the prediction at the strategic level is believed to be more accurate, the proposed method allows the reconciliation of incoherent forecasts such that the entire hierarchy is consistent with the initial prediction for the strategic level. This supports aligned decision-making across all operational units while maintaining a high degree of flexibility.
 
 % intro to reconciliation
-Hierarchical data can be structured according to various characteristics such as geographical, organizational, societal or temporal features \citep{Kourentzes2019}. Swiss merchandise exports, for example, can be disaggregated geographically into destination regions, such as Western Europe, North America or Australia. These regional aggregates can then be divided further by country. Total exports can also be disaggregated into product categories, such as precision instruments, textiles or vehicles and then further into subcategories, such as road, rail, air and water vehicles. As a result, the data has the structure of a so-called grouped hierarchy \citep[see][and references therein]{Hyndman2018}. Figure~\ref{fig:tree} gives a simple example of grouped structure with $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the most disaggregate or `bottom' level. 
+Hierarchical data can be structured according to various characteristics such as geographical, organizational, societal or temporal features \citep{Kourentzes2019}. Swiss merchandise exports, for example, can be disaggregated geographically into destination regions, such as Western Europe, North America or Australia. These regional aggregates can then be divided further by country. Total exports can also be disaggregated into product categories, such as precision instruments, textiles or vehicles and then further into subcategories, such as road, rail, air and water vehicles. As a result, the data has the structure of a so-called grouped hierarchy \citep[see][and references therein]{Wickramasuriya2015}. Figure~\ref{fig:tree} gives a simple example of grouped structure with $k = 3$ levels, $m = 9$ series in total and $q = 4$ series at the most disaggregate or `bottom' level.
 
 \begin{figure}[H]
 	\centering
@@ -132,7 +132,7 @@ The remainder of the paper is structured as follows. Section~\ref{sec:model} int
 
 \section{Reconciliation using Bayesian State-Space Methods}\label{sec:model}
 
-This section proposes a novel approach to forecast reconciliation. We show how to explicitly identify the reconciliation errors and estimate them as latent states that evolve over the forecasting horizon. Our method involves the use of predictive distributions instead of historical forecast errors and uses prior information to address several issues in the literature. 
+This section proposes a novel approach to forecast reconciliation. We show how to explicitly identify the reconciliation errors and estimate them as latent states that evolve over the forecasting horizon. Our method involves the use of predictive distributions instead of historical forecast errors and uses prior information to address several issues in the literature.
 
 \subsection{Model}
 An integrated reconciliation of all forecasted periods has the advantage of combining information across the entire forecasting horizon. If a base forecast in any given forecasted period is revised downwards as a result of the reconciliation, it is likely to be revised downwards as well in the next period. This dependency can be taken into account using state-space methods, which could further improve forecasting accuracy. \cite{Pennings2017} pioneered their use in order to integrate the reconciliation of incoherent information across time periods. They assume the bottom-level series to be the underlying states and use elaborate state equations to capture their stochastic properties. While this takes the intertemporal dependencies nicely into account, it requires the estimation of initial states and restricts the number of usable models for the base forecasts. We propose the explicit identification of state-dependent reconciliation errors $\boldsymbol{\alpha}_h$, which leaves the coherent bottom-level forecasts $\boldsymbol{\beta}_h$ completely free of any assumptions or restrictions:
@@ -145,7 +145,7 @@ The expected $h$-step-ahead reconciled forecasts are given by $\textbf{S} \bolds
 \label{eq:meas1}
 \mathbf{y}_{T}(h) &  = \boldsymbol{\alpha}_h + \textbf{S} \boldsymbol{\beta}_h + \mathbf{e}_{T}(h), \qquad \mathbf{e}_{T}(h) \sim \mathcal{N}(\textbf{0}, \boldsymbol{\Sigma}_h).
 \end{align}
-The $m$-vector $\mathbf{e}_{T}(h)$ consists of $h$-step ahead base forecast errors that follow a normal distribution with mean zero and covariance matrix $\boldsymbol{\Sigma}_h$. It can be estimated by taking a sample of $n$ prediction errors $\mathbf{\hat{e}}_{T}(h)$ from the predictive distribution of $\mathbf{y}_{T}(h) $. Sampling from the predictive distribution allows also to obtain an estimate for the mean of the incoherent base forecasts $E\left[\mathbf{y}_{T}(h)\right] = \mathbf{\hat{y}}_{T}(h)$.  These draws may originate from posterior predictive distributions resulting from Bayesian forecasting models \citep{Cesur2016}, bootstrap aggregating \citep{Bergmeir2016}, model pooling \citep{Timmermann2006,Kapetanios2015}, or sampling from a fitted model \citep{Hyndman2018}. 
+The $m$-vector $\mathbf{e}_{T}(h)$ consists of $h$-step ahead base forecast errors that follow a normal distribution with mean zero and covariance matrix $\boldsymbol{\Sigma}_h$. It can be estimated by taking a sample of $n$ prediction errors $\mathbf{\hat{e}}_{T}(h)$ from the predictive distribution of $\mathbf{y}_{T}(h) $. Sampling from the predictive distribution allows also to obtain an estimate for the mean of the incoherent base forecasts $E\left[\mathbf{y}_{T}(h)\right] = \mathbf{\hat{y}}_{T}(h)$.  These draws may originate from posterior predictive distributions resulting from Bayesian forecasting models \citep{Cesur2016}, bootstrap aggregating \citep{Bergmeir2016}, model pooling \citep{Timmermann2006,Kapetanios2015}, or sampling from a fitted model \citep{Hyndman2018}.
 
 In order to reconcile all forecasting horizons jointly, the coherence errors $\boldsymbol{\alpha}_h$ are modeled to be state-dependent. They are assumed to follow a random walk, which is very common in the literature on time-varying parameters \citep[see, for instance,][and references therein]{Primiceri2005}. This implies that the best guess for a coherence error in any given forecasting period is the error in the preceding period. The state equation is, therefore, specified as
 \begin{align}
@@ -161,7 +161,7 @@ The latent states are sampled jointly using the efficient state smoothing and si
 	\label{eq:meas}
 	\textbf{y} & = \textbf{X} \boldsymbol{\alpha} + \textbf{Z} \boldsymbol{\beta} + \textbf{e}, \quad \textbf{e} \sim \mathcal{N}(\textbf{0}, \boldsymbol{\Sigma}),
 \end{align}
-where the parameters of interest are given by 
+where the parameters of interest are given by
 \begin{align*}
 		\underset{((H+1)m \times 1)}{\boldsymbol{\alpha}} &= \begin{bNiceMatrix}
 		\boldsymbol{\alpha}_0\\
@@ -234,7 +234,7 @@ The covariance matrix of the state equation errors $\boldsymbol{\Omega}$ is chos
 \omega_i \sim \mathcal{IG}(c_1/2,d_1/2), \quad \text{where} \quad c_1 &= c_0 + H\\
 	d_1 &= d_0 + (\boldsymbol{\alpha}_{h,i} - \boldsymbol{\alpha}_{h-1,i})'(\boldsymbol{\alpha}_{h,i} - \boldsymbol{\alpha}_{h-1,i})
 \end{align*}
-where $\boldsymbol{\alpha}_{h,i}$ denotes the reconciliation error of series $i \in \{1, \hdots, m \}$ at forecasting period $h \in \{1, \hdots, H\}$. We choose a weakly informative proper prior distribution with $c_0 = 3$ and $d_0 = 0.01$ in order to restrict the movement of the reconciliation biases slightly. 
+where $\boldsymbol{\alpha}_{h,i}$ denotes the reconciliation error of series $i \in \{1, \hdots, m \}$ at forecasting period $h \in \{1, \hdots, H\}$. We choose a weakly informative proper prior distribution with $c_0 = 3$ and $d_0 = 0.01$ in order to restrict the movement of the reconciliation biases slightly.
 
 The covariance matrix of the base forecast errors $\boldsymbol{\Sigma}_h$ is assumed to be diagonal as well since it can be very cumbersome to estimate in large hierarchies and for longer forecasting horizons. The diagonal elements $\sigma_{1,h}, \hdots, \sigma_{m,h}$ are, therefore, drawn from an inverse-gamma distribution according to
 \begin{align*}
@@ -255,7 +255,7 @@ Figure~\ref{fig:weights} demonstrates the impact of different prior assumptions 
 	\includegraphics[width=\textwidth]{fig/fig_biases}
 	\captionab{Prior Weighting Schemes}{The 45$^{\circ}$ line indicates where the unreconciled base forecasts on the x-axis are equal to reconciled forecast means on the ordinate.}\label{fig:weights}
 \end{figure}
-Each panel corresponds to a different prior choice for $\boldsymbol{\Sigma}_h$. Subfigure~(1) shows that the forecast biases for each margin are treated equally in an ordinary least squares regression, consequently the means of $Y_A$ and $Y_B$ are adjusted upwards while the mean of $Y_0$ is adjusted downwards. Subfigure~(2) shows reconciliation biases that are weighted with the inverse of their corresponding forecast variances. This leads to a smaller adjustment in $Y_B$ (the reconciled and base means are close) relative the others since it is more accurate. Subfigures (3) and (4) shrink the reconciled forecasts of $Y_0$ and $Y_A$ towards their base forecasts. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster. 
+Each panel corresponds to a different prior choice for $\boldsymbol{\Sigma}_h$. Subfigure~(1) shows that the forecast biases for each margin are treated equally in an ordinary least squares regression, consequently the means of $Y_A$ and $Y_B$ are adjusted upwards while the mean of $Y_0$ is adjusted downwards. Subfigure~(2) shows reconciliation biases that are weighted with the inverse of their corresponding forecast variances. This leads to a smaller adjustment in $Y_B$ (the reconciled and base means are close) relative the others since it is more accurate. Subfigures (3) and (4) shrink the reconciled forecasts of $Y_0$ and $Y_A$ towards their base forecasts. There may exist prior information on the reliability of certain models or the requirement to fix some forecasts at specific values. This could be due to better data availability, higher suitability of a particular model or subjective judgment of the forecaster.
 
 Besides the shrinkage of specific reconciliation biases towards zero, there are several other weighting methods conceivable. Section \ref{sec:resweight} provides empirical applications and highlights the usefulness of shrinkage reconciliation in operational forecasting.
 
@@ -274,15 +274,15 @@ We use a comprehensive dataset containing exports of Swiss goods, collected by t
 		\cmidrule(lr{.5em}){1-2}
 		Geographical & Categorical & & & & & &\\
 		\midrule
-World & Total & 1 & 12,129 & - & - & - & - \\ 
-World & Category & 12 & 1,011 & 1,340 & 66 & 4,292 & 1,023 \\ 
-World & Subcategory & 48 & 253 & 619 & 0 & 3,844 & 137 \\ 
-Region & Total & 8 & 1,516 & 2,493 & 136 & 7,498 & 1,384 \\ 
-Region & Category & 96 & 126 & 344 & 0 & 2,571 & 60 \\ 
-Region & Subcategory & 377 & 32 & 146 & 0 & 2,271 & 9 \\ 
-Country & Total & 245 & 50 & 212 & 0 & 2,527 & 14 \\ 
-Country & Category & 2,848 & 4 & 29 & 0 & 683 & 0 \\ 
-Country & Subcategory & 9,483 & 1 & 13 & 0 & 567 & 0 \\ 
+World & Total & 1 & 12,129 & - & - & - & - \\
+World & Category & 12 & 1,011 & 1,340 & 66 & 4,292 & 1,023 \\
+World & Subcategory & 48 & 253 & 619 & 0 & 3,844 & 137 \\
+Region & Total & 8 & 1,516 & 2,493 & 136 & 7,498 & 1,384 \\
+Region & Category & 96 & 126 & 344 & 0 & 2,571 & 60 \\
+Region & Subcategory & 377 & 32 & 146 & 0 & 2,271 & 9 \\
+Country & Total & 245 & 50 & 212 & 0 & 2,527 & 14 \\
+Country & Category & 2,848 & 4 & 29 & 0 & 683 & 0 \\
+Country & Subcategory & 9,483 & 1 & 13 & 0 & 567 & 0 \\
 		\bottomrule
 		\addlinespace
 	\end{tabularx}
@@ -291,7 +291,7 @@ Country & Subcategory & 9,483 & 1 & 13 & 0 & 567 & 0 \\
 
 All values shown refer to the invoiced price of the goods in Swiss francs, including transport and insurance costs as well as other expenditure up to the Swiss border. If the invoice is in a foreign currency, the invoiced amounts are converted using the previous day's exchange rate. As a result, the figures are affected by exchange rate fluctuations. However, prices respond in a way that mitigates the influence of exchange rate fluctuations, due to a quick exchange rate pass-through, documented by \cite{Bonadio2020} for imports as well as exports.
 
-Figure~\ref{fig:area} shows the historical development of the regional and categorical hierarchies. As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Western Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia, with around 17\% each in 2018. Exports to Africa and the Middle East, Latin America and the Caribbean, Central Asia and Eastern Europe, South Asia, Australia and Oceania account only for about 10\% combined. The hierarchical grouping by categories is more evenly distributed, but has been subject to greater shifts in its composition. The most important categories are `Chemicals and Pharmaceuticals', `Precision Instruments' and `Machines and Electronics'. The two hierarchical groupings are quite different. The geographic hierarchy widens towards the bottom, but with a majority of the export volume going to European countries it is nevertheless highly concentrated. The categorical hierarchy, on the other hand, has fewer subgroups and therefore remains narrow towards the bottom. Compared to the regional hierarchy, the export volume is however more evenly distributed. 
+Figure~\ref{fig:area} shows the historical development of the regional and categorical hierarchies. As a result of its status as a small open economy in a rapidly globalizing world, Swiss exports have increased significantly since the late 1980s. Accounting for more than half of total exports, Western Europe is a key market for Swiss goods. Increasingly larger shares of exports also go to North America and East Asia, with around 17\% each in 2018. Exports to Africa and the Middle East, Latin America and the Caribbean, Central Asia and Eastern Europe, South Asia, Australia and Oceania account only for about 10\% combined. The hierarchical grouping by categories is more evenly distributed, but has been subject to greater shifts in its composition. The most important categories are `Chemicals and Pharmaceuticals', `Precision Instruments' and `Machines and Electronics'. The two hierarchical groupings are quite different. The geographic hierarchy widens towards the bottom, but with a majority of the export volume going to European countries it is nevertheless highly concentrated. The categorical hierarchy, on the other hand, has fewer subgroups and therefore remains narrow towards the bottom. Compared to the regional hierarchy, the export volume is however more evenly distributed.
 
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_area}
@@ -339,7 +339,7 @@ It is also instructive to look at the development of the relative forecasting ac
 \end{figure}
 
 \subsection{Comparison of Forecasting Horizons}
-In order to check whether the accuracy improvements are significant, we test for equality of the mean squared errors of reconciled and unreconciled forecasts. Since it is not possible to get unreconciled forecasts by constraining the parameter space of the reconciliation procedure, the comparison involves non-nested models. Following \cite{Clark2013}, we therefore rely on the test statistic proposed by \cite{Diebold1995}, using the variance correction suggested by \cite{Harvey1997}. It accounts for serial correlation in the squared error loss while testing for significance in the difference between two squared forecast errors at various forecasting horizons. Table~\ref{tab:dmtest} shows the p-values for the one-sided test, where the alternative hypothesis is that the accuracy of reconciliation methods is greater. 
+In order to check whether the accuracy improvements are significant, we test for equality of the mean squared errors of reconciled and unreconciled forecasts. Since it is not possible to get unreconciled forecasts by constraining the parameter space of the reconciliation procedure, the comparison involves non-nested models. Following \cite{Clark2013}, we therefore rely on the test statistic proposed by \cite{Diebold1995}, using the variance correction suggested by \cite{Harvey1997}. It accounts for serial correlation in the squared error loss while testing for significance in the difference between two squared forecast errors at various forecasting horizons. Table~\ref{tab:dmtest} shows the p-values for the one-sided test, where the alternative hypothesis is that the accuracy of reconciliation methods is greater.
 
 \begin{table}[H]
 	\caption{Tests for Predictive Accuracy}\label{tab:dmtest}
@@ -349,23 +349,23 @@ In order to check whether the accuracy improvements are significant, we test for
 		 & \multicolumn{3}{c}{Entire Sample} & \multicolumn{3}{c}{Moderate Period} & \multicolumn{3}{c}{Crisis and Recovery}\\
 		 & \multicolumn{3}{c}{1998 - 2018} & \multicolumn{3}{c}{1998 - 2006} & \multicolumn{3}{c}{2007 - 2018}\\
 		\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
-		 & {12} & {24} & {36} & {12} & {24} & {36} &  {12} & {24} & {36} \\ 
+		 & {12} & {24} & {36} & {12} & {24} & {36} &  {12} & {24} & {36} \\
 		\midrule
 		\multicolumn{10}{l}{\textbf{Single-Level}}\\
 		\addlinespace
-		Bottom Up & 0.49 & 0.28 & 0.29 & 0.84 & 0.86 & 0.67 & 0.10 & 0.12 & 0.14 \\ 
-		Middle Out (Category) & 0.14 & 0.05* & 0.17 & 0.28 & 0.13 & 0.09 & 0.19 & 0.16 & 0.33 \\ 
-		Middle Out (Region) & 0.02* & 0.04* & 0.01* & 0.08 & 0.15 & 0.05 & 0.08 & 0.10 & 0.02* \\ 
-		Top Down (Category) & 0.11 & 0.14 & 0.13 & 0.16 & 0.15 & 0.14 & 0.16 & 0.14 & 0.08 \\ 
+		Bottom Up & 0.49 & 0.28 & 0.29 & 0.84 & 0.86 & 0.67 & 0.10 & 0.12 & 0.14 \\
+		Middle Out (Category) & 0.14 & 0.05* & 0.17 & 0.28 & 0.13 & 0.09 & 0.19 & 0.16 & 0.33 \\
+		Middle Out (Region) & 0.02* & 0.04* & 0.01* & 0.08 & 0.15 & 0.05 & 0.08 & 0.10 & 0.02* \\
+		Top Down (Category) & 0.11 & 0.14 & 0.13 & 0.16 & 0.15 & 0.14 & 0.16 & 0.14 & 0.08 \\
 		Top Down (Region) & 0.14 & 0.14 & 0.84 & 0.07 & 0.15 & 0.16 & 0.14 & 0.12 & 0.92 \\
 		\midrule
 		\multicolumn{10}{l}{\textbf{Optimal Combination}}\\
 		\addlinespace
 		No Scaling & 0.00** & 0.00** & 0.01* & 0.05 & 0.08 & 0.03* & 0.01* & 0.01** & 0.02* \\
-		Structural Scaling & 0.05* & 0.04* & 0.09 & 0.37 & 0.40 & 0.19 & 0.00** & 0.02* & 0.06 \\ 
-		Variance Scaling & 0.02* & 0.01* & 0.05* & 0.22 & 0.15 & 0.07 & 0.00** & 0.01** & 0.05* \\ 
+		Structural Scaling & 0.05* & 0.04* & 0.09 & 0.37 & 0.40 & 0.19 & 0.00** & 0.02* & 0.06 \\
+		Variance Scaling & 0.02* & 0.01* & 0.05* & 0.22 & 0.15 & 0.07 & 0.00** & 0.01** & 0.05* \\
 		MinT & 0.03* & 0.01** & 0.08 & 0.14 & 0.10 & 0.13 & 0.04* & 0.03* & 0.11 \\
-		BSR & 0.14 & 0.08 & 0.12 & 0.57 & 0.62 & 0.25 & 0.01** & 0.04* & 0.09 \\ 
+		BSR & 0.14 & 0.08 & 0.12 & 0.57 & 0.62 & 0.25 & 0.01** & 0.04* & 0.09 \\
 		\bottomrule
 		\addlinespace
 	\end{tabularx}
@@ -390,14 +390,14 @@ Another way to dissect the results is to identify which time series see the grea
 
 Reconciliation techniques are useful for complex operational structures because base forecasts can be generated independently at all hierarchical levels. However, it is usually costly to incorporate specific adjustments into all base forecasts as they rely on different methods and information sets. For instance, some predictions may contain managerial decisions that are difficult to incorporate into models at other levels of the hierarchy. Because reconciliation procedures minimize the distance between coherent and incoherent forecasts, it often occurs that the judgmental adjustments to a specific forecast are diluted because they are not reflected in other base forecasts. The reconciled forecasts allow then for aligned decision-making, but do not fully reflect the judgmental adjustments to a few specific base forecasts. An advantage of the generalized weighting scheme proposed in section \ref{sec:weighting} is that the reconciliation errors can be targeted directly. This allows the forecaster to shrink certain reconciled forecasts towards their base forecast.
 
-An example for the usefulness of shrinkage reconciliation is given by the reclassification of electricity as a good instead of a service in foreign trade statistics (see also section \ref{sec:comp}). Starting in early 2002, this change in accounting standards increased the share of energy sources from almost 0\% to more than 2\% of total merchandise exports. Figure~\ref{fig:electricity} shows various forecasting scenarios for exports of energy sources. All predictions are based on a training sample that includes historical data up the first observation with the new accounting standard. 
+An example for the usefulness of shrinkage reconciliation is given by the reclassification of electricity as a good instead of a service in foreign trade statistics (see also section \ref{sec:comp}). Starting in early 2002, this change in accounting standards increased the share of energy sources from almost 0\% to more than 2\% of total merchandise exports. Figure~\ref{fig:electricity} shows various forecasting scenarios for exports of energy sources. All predictions are based on a training sample that includes historical data up the first observation with the new accounting standard.
 \begin{figure}[H]
 	\includegraphics[width=\textwidth]{fig/fig_electricity}
 	\captionab{Forecasting Scenarios for Exports of Energy Sources}{Monthly exports of energy sources from 2000 to 2002 in million Swiss francs. The structural break in January 2002 is caused by the reclassification of electrical energy as a good instead of a service.}\label{fig:electricity}
 \end{figure}
 Scenario (1) shows the forecast for exports of energy sources using the same model as before the structural change. It is evident that it fails to capture the structural break and adjusts very slowly as more observations pour in. Scenario (2) assumes a judgmental decision to use a random walk forecast after observing the increase in export volumes in January. Even though the forecaster has prior knowledge that a random walk forecast is appropriate for this series, the models at other levels assume the structural break to be an outlier. They dominate any information from the random walk forecast and it is shifted downwards during the reconciliation procedure. The only solution would be an adjustment of the base forecasts for all other series, which is cumbersome given the complex categorical and geographical data structure. Scenario (3) relies on a random walk forecast as well, but uses shrinkage reconciliation to put more weight on this particular forecast. This forces the reconciled prediction to stay close to its base forecast, which provides a reasonable projection for exports of energy sources in 2002.
 
-Since the reconciliation procedure distributes the coherency errors across the entire hierarchy, this also leads to some accuracy gains at other levels. More importantly, it allows managers to align their decisions with other units without sacrificing forecast accuracy. Shrinkage reconciliation thus improves alignment of decisions across complex hierarchies by allocating more weight to predictions in which managers have more confidence. 
+Since the reconciliation procedure distributes the coherency errors across the entire hierarchy, this also leads to some accuracy gains at other levels. More importantly, it allows managers to align their decisions with other units without sacrificing forecast accuracy. Shrinkage reconciliation thus improves alignment of decisions across complex hierarchies by allocating more weight to predictions in which managers have more confidence.
 
 Besides the shrinkage of specific reconciliation biases towards zero, several other weighting methods are conceivable. Possible approaches include the weighting of each series by its level in the hierarchy or by the number of series at each node in the hierarchy. This allows for the emulation of the `structural scaling', `bottom-up', `middle-out' and `top-down' approaches. This is particularly relevant for judgmental adjustments of forecasts in complex operational structures. An important example is the case where forecasts at the top level are assumed to be correct because they contain information on managerial decisions that is not available to forecasters at lower units. As a result, all remaining base forecasts should be reconciled such that they are coherent with the aggregate forecast at the strategic level. Another common example is the case where forecasts at the most disaggregate, operational level are trusted more and predictions are aggregated from the bottom level.
 
@@ -410,17 +410,17 @@ We illustrate these two cases by reconciling a set of predictions using the appr
 		\toprule
 		\multirow{2}{*}{Target Level} & \multirow{2}{*}{Evaluation Level}  & \multicolumn{3}{c}{Appropriate Methods} & \multirow{2}{*}{Benchmark}\\
 		\cmidrule(lr{.5em}){3-5}
-		& & Top-Down & Bottom-Up & Shrinkage &\\ 
+		& & Top-Down & Bottom-Up & Shrinkage &\\
 		\midrule
 		\multirow{4}{*}{Top Level} 		& Total / World 		& 0 	  & & 0 &  0.6\\
-		& Total / Region 		 &  37.2  & & 2.4 & 1.0\\ 
-		& Category / World   &  17.4  & 	&  2.8  & 1.1\\ 
-		& Category / Region &  - 		 & 	 &   3.0 & 11.6\\ 
+		& Total / Region 		 &  37.2  & & 2.4 & 1.0\\
+		& Category / World   &  17.4  & 	&  2.8  & 1.1\\
+		& Category / Region &  - 		 & 	 &   3.0 & 11.6\\
 		\addlinespace
 		\multirow{4}{*}{Bottom Level}& Total / World 		& & 2.5  & 2.5 & 0.6\\
-		& Total / Region 		& & 2.8 & 2.8 & 1.0\\ 
-		& Category / World   & & 3.6 &  3.6 & 1.1\\ 
-		& Category / Region  & &  0  & 0 & 11.6\\ 
+		& Total / Region 		& & 2.8 & 2.8 & 1.0\\
+		& Category / World   & & 3.6 &  3.6 & 1.1\\
+		& Category / Region  & &  0  & 0 & 11.6\\
 		\bottomrule
 		\addlinespace
 	\end{tabularx}
@@ -436,7 +436,7 @@ This paper extends the literature on hierarchical forecast combination and align
 
 Using a comprehensive hierarchical dataset of Swiss goods exports, we demonstrate that optimal combination methods improve the forecasting accuracy significantly compared to the unreconciled case and simpler reconciliation methods. While the `MinT' approach shows the largest improvements at aggregate levels, more parsimonious approaches such as variance scaling or Bayesian state-space reconciliation improve the accuracy also at more disaggregate levels. Even though reconciled forecasts are significantly more accurate on average, no reconciliation method consistently outperforms the unreconciled forecasts across the hierarchy or over time. Forecasts at aggregate levels tend to benefit more from reconciliation than noisy series at the bottom of a hierarchy. At the same level, forecasts that account for a larger share of the total are on average more accurate after reconciliation. Optimal combination methods are shown to be particularly useful in the case of misspecified models and during periods of high volatility in the time series. In addition, state-space methods increase the robustness of forecasts at the operational level, thus increasing the usefulness of bottom-level forecasts for decision-making.
 
-The proposed method is useful for operational forecasting. Instead of using predictive accuracy as the only objective, it enables the practitioner to introduce judgmental adjustments into the reconciliation procedure. This allows, for instance, more weight to be assigned to forecasts for which managers have more confidence. Furthermore, the shrinkage approach also works for complex hierarchical data structures which are common in operational forecasting. It provides, for example, coherent predictions for sales data that can be aggregated according to product category, market segment, sales outlet, trade mark and other characteristics. Possible applications extend, of course, beyond demand forecasting to any hierarchical data that organizations base their decisions on. 
+The proposed method is useful for operational forecasting. Instead of using predictive accuracy as the only objective, it enables the practitioner to introduce judgmental adjustments into the reconciliation procedure. This allows, for instance, more weight to be assigned to forecasts for which managers have more confidence. Furthermore, the shrinkage approach also works for complex hierarchical data structures which are common in operational forecasting. It provides, for example, coherent predictions for sales data that can be aggregated according to product category, market segment, sales outlet, trade mark and other characteristics. Possible applications extend, of course, beyond demand forecasting to any hierarchical data that organizations base their decisions on.
 
 % bibliography
 \bibliography{library}
